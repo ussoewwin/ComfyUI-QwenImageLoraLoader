@@ -81,7 +81,7 @@ Use `NunchakuQwenImageLoraStack` to apply multiple LoRAs with dynamic UI control
 - ComfyUI
 - ComfyUI-nunchaku plugin (with required modification)
 - PyTorch
-- Python 3.8+
+- Python 3.10+
 
 ## Compatibility
 

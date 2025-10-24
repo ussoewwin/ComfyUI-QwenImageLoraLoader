@@ -81,15 +81,21 @@ except ImportError:
 
 ### Automated Installation (Recommended)
 
-**Instead of manually editing the code above, you can use the included batch file for automatic installation:**
+**The batch file `install_qwen_lora.bat` automatically adds the above code to your ComfyUI-nunchaku `__init__.py` file:**
 
-1. **Run the installation script:**
+1. **What the batch file does:**
+   - Automatically detects your ComfyUI installation path
+   - Backs up the original `__init__.py` file (creates `__init__.py.backup`)
+   - Adds the exact import code shown above to the end of ComfyUI-nunchaku's `__init__.py`
+   - Performs error checking to ensure all required files exist
+   - Provides user feedback throughout the process
+
+2. **Run the installation script:**
    - Double-click `install_qwen_lora.bat` to automatically configure the integration
-   - This script will automatically add the required code to ComfyUI-nunchaku's `__init__.py`
-   - The script includes automatic backup, error checking, and user feedback
+   - No manual code editing required - the script handles everything
    - Restart ComfyUI after installation
 
-2. **Uninstall if needed:**
+3. **Uninstall if needed:**
    - Double-click `uninstall_qwen_lora.bat` to restore the original configuration
    - This will restore the backup and remove the integration code
 

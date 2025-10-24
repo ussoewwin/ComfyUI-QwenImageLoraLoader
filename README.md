@@ -26,10 +26,7 @@ This LoRA loader was extracted and modified from the fork version:
 git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 ```
 
-2. Install dependencies:
-```bash
-pip install nunchaku
-```
+2. Ensure you have the official ComfyUI-nunchaku plugin installed (which includes nunchaku as a dependency).
 
 ## Integration with ComfyUI-nunchaku
 
@@ -82,10 +79,9 @@ Use `NunchakuQwenImageLoraStack` to apply multiple LoRAs with dynamic UI control
 ## Requirements
 
 - ComfyUI
-- Nunchaku
+- ComfyUI-nunchaku plugin (with required modification)
 - PyTorch
 - Python 3.8+
-- ComfyUI-nunchaku plugin (with required modification)
 
 ## Compatibility
 

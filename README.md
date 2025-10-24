@@ -21,12 +21,23 @@ This LoRA loader was extracted and modified from the fork version:
 
 ## Installation
 
+### Quick Installation (Recommended)
+
 1. Clone this repository to your ComfyUI custom_nodes directory:
 ```bash
 git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 ```
 
 2. Ensure you have the official ComfyUI-nunchaku plugin installed (which includes nunchaku as a dependency).
+
+3. **Run the installation script:**
+   - Double-click `install_qwen_lora.bat` to automatically configure the integration
+   - This script will automatically modify the ComfyUI-nunchaku `__init__.py` file
+   - Restart ComfyUI
+
+### Manual Installation
+
+If you prefer manual installation, see [INSTALLATION.md](INSTALLATION.md) for detailed instructions.
 
 ## Integration with ComfyUI-nunchaku
 
@@ -68,13 +79,42 @@ except ImportError:
 - Standard `from ... import ...` fails due to different package structures
 - `importlib.util` allows direct module loading from file paths
 
+### Automated Installation (Recommended)
+
+**Instead of manually editing the code above, you can use the included batch file for automatic installation:**
+
+1. **Run the installation script:**
+   - Double-click `install_qwen_lora.bat` to automatically configure the integration
+   - This script will automatically add the required code to ComfyUI-nunchaku's `__init__.py`
+   - The script includes automatic backup, error checking, and user feedback
+   - Restart ComfyUI after installation
+
+2. **Uninstall if needed:**
+   - Double-click `uninstall_qwen_lora.bat` to restore the original configuration
+   - This will restore the backup and remove the integration code
+
 ## Usage
 
-### Single LoRA Loading
-Use `NunchakuQwenImageLoraLoader` to load and apply a single LoRA to your Qwen Image model.
+### Available Nodes
+- **NunchakuQwenImageLoraLoader**: Single LoRA loader
+- **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI
 
-### Multiple LoRA Stacking
-Use `NunchakuQwenImageLoraStack` to apply multiple LoRAs with dynamic UI control. The number of LoRA slots adjusts automatically based on the `lora_count` parameter.
+### Basic Usage
+1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
+2. Add either `NunchakuQwenImageLoraLoader` or `NunchakuQwenImageLoraStack` node
+3. Select your LoRA file and set the strength
+4. Connect to your workflow
+
+### Dynamic UI Control
+The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visible LoRA slots based on the `lora_count` parameter (1-10).
+
+## Features
+
+- **Easy Installation**: Automated installation script included
+- **Automatic Integration**: No manual code editing required
+- **Backup & Restore**: Automatic backup of original files
+- **Cross-Platform**: Works on Windows with batch files
+- **Error Handling**: Comprehensive error checking and user feedback
 
 ## Requirements
 

@@ -121,6 +121,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Backup & Restore**: Automatic backup of original files
 - **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
+- **Issue #1 Fixed**: Resolved "ComfyUI\custom_nodes not found" error with improved path detection
 
 ## Requirements
 
@@ -135,6 +136,19 @@ This node is designed to work with:
 - ComfyUI-nunchaku plugin (modified)
 - Nunchaku Qwen Image models
 - Standard ComfyUI workflows
+
+## Changelog
+
+### v1.1.0 (Latest)
+- **Fixed Issue #1**: Resolved "ComfyUI\custom_nodes not found" error
+- **Improved Path Detection**: Replaced unreliable wildcard search with relative path detection
+- **Enhanced Error Messages**: Added clear directory structure guidance
+- **Better User Experience**: More reliable installation process
+
+### v1.0.0
+- Initial release with LoRA loading functionality
+- Automated installation scripts
+- Integration with ComfyUI-nunchaku
 
 ## License
 

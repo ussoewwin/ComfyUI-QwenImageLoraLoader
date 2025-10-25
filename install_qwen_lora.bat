@@ -2,29 +2,29 @@
 echo ComfyUI-QwenImageLoraLoader Installation Script
 echo ================================================
 
-REM ComfyUI\custom_nodes を検索
-for /f "delims=" %%i in ('dir /s /b /ad "*ComfyUI\custom_nodes" 2^>nul') do (
-    set "CUSTOM_NODES_PATH=%%i"
-    goto :found
-)
+REM Assuming the script is located at ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader/
+set "SCRIPT_DIR=%~dp0"
+for %%i in ("%SCRIPT_DIR%..\..") do set "COMFYUI_ROOT=%%~fi"
 
-:found
-if "%CUSTOM_NODES_PATH%"=="" (
-    echo ERROR: ComfyUI\custom_nodes not found.
-    echo Please ensure ComfyUI is installed and run this script from:
-    echo - ComfyUI root directory
-    echo - ComfyUI/custom_nodes directory
-    echo - ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader directory
+set "CUSTOM_NODES_PATH=%COMFYUI_ROOT%\custom_nodes"
+set "NUNCHAKU_PATH=%CUSTOM_NODES_PATH%\ComfyUI-nunchaku"
+set "LORA_LOADER_PATH=%CUSTOM_NODES_PATH%\ComfyUI-QwenImageLoraLoader"
+
+if not exist "%CUSTOM_NODES_PATH%" (
+    echo ERROR: custom_nodes folder not found at %CUSTOM_NODES_PATH%
+    echo Please run this script from the ComfyUI-QwenImageLoraLoader directory inside custom_nodes.
+    echo.
+    echo Expected directory structure:
+    echo ComfyUI/
+    echo   custom_nodes/
+    echo     ComfyUI-QwenImageLoraLoader/
+    echo       install_qwen_lora.bat
     pause
     exit /b 1
 )
 
-REM ComfyUIのルートパスを取得
-for %%i in ("%CUSTOM_NODES_PATH%\..") do set "COMFYUI_ROOT=%%~fi"
 echo Found ComfyUI at: %COMFYUI_ROOT%
 
-set "NUNCHAKU_PATH=%COMFYUI_ROOT%\custom_nodes\ComfyUI-nunchaku"
-set "LORA_LOADER_PATH=%COMFYUI_ROOT%\custom_nodes\ComfyUI-QwenImageLoraLoader"
 
 echo.
 echo Checking ComfyUI-nunchaku installation...

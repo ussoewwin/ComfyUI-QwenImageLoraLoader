@@ -121,7 +121,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Backup & Restore**: Automatic backup of original files
 - **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
-- **Issue #1 Fixed**: Resolved "ComfyUI\custom_nodes not found" error with improved path detection
+- **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection
 
 ## Requirements
 
@@ -140,10 +140,15 @@ This node is designed to work with:
 ## Changelog
 
 ### v1.1.0 (Latest)
-- **Fixed Issue #1**: Resolved "ComfyUI\custom_nodes not found" error
-- **Improved Path Detection**: Replaced unreliable wildcard search with relative path detection
-- **Enhanced Error Messages**: Added clear directory structure guidance
-- **Better User Experience**: More reliable installation process
+- **Fixed [Issue #1](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1)**: Resolved "ComfyUI\custom_nodes not found" error reported by @mcv1234
+- **Improved Path Detection**: Replaced unreliable wildcard search with relative path detection using script directory
+- **Enhanced Error Messages**: Added clear directory structure guidance and expected folder layout
+- **Better User Experience**: More reliable installation process with comprehensive error checking
+- **Technical Details**: 
+  - Changed from `dir /s /b /ad "*ComfyUI\custom_nodes"` to relative path calculation
+  - Uses `%~dp0` (script directory) to calculate ComfyUI root with `..\..` navigation
+  - Added validation for `custom_nodes` folder existence
+  - Improved error messages with expected directory structure display
 
 ### v1.0.0
 - Initial release with LoRA loading functionality

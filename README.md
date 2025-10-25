@@ -121,7 +121,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Backup & Restore**: Automatic backup of original files
 - **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
-- **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection
+- **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
 
 ## Requirements
 
@@ -141,14 +141,16 @@ This node is designed to work with:
 
 ### v1.1.0 (Latest)
 - **Fixed [Issue #1](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1)**: Resolved "ComfyUI\custom_nodes not found" error reported by @mcv1234
-- **Improved Path Detection**: Replaced unreliable wildcard search with relative path detection using script directory
+- **Special Thanks**: This fix was implemented based on the excellent solution provided by @mcv1234 in the GitHub issue
+- **Improved Path Detection**: Replaced unreliable wildcard search with relative path detection using script directory (solution by @mcv1234)
 - **Enhanced Error Messages**: Added clear directory structure guidance and expected folder layout
 - **Better User Experience**: More reliable installation process with comprehensive error checking
 - **Technical Details**: 
-  - Changed from `dir /s /b /ad "*ComfyUI\custom_nodes"` to relative path calculation
+  - Changed from `dir /s /b /ad "*ComfyUI\custom_nodes"` to relative path calculation (as suggested by @mcv1234)
   - Uses `%~dp0` (script directory) to calculate ComfyUI root with `..\..` navigation
   - Added validation for `custom_nodes` folder existence
   - Improved error messages with expected directory structure display
+- **Community Contribution**: This improvement was made possible by the community feedback and solution provided by @mcv1234
 
 ### v1.0.0
 - Initial release with LoRA loading functionality

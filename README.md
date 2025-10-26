@@ -193,6 +193,15 @@ This node is designed to work with:
 2. Follow the nunchaku installation instructions to install the nunchaku wheel
 3. Restart ComfyUI
 
+## Known Limitations
+
+### RES4LYF Sampler Compatibility Issue
+- **Status**: Currently Not Supported
+- **Issue**: Device mismatch errors occur when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
+- **Workaround**: Use other sampler types (e.g., res_samplers, standard samplers) with LoRA
+- **Technical Note**: The device mismatch occurs in `ComfyUI-nunchaku\models\qwenimage.py` at `self.time_text_embed(timestep, hidden_states)` due to RES4LYF sampler's specific tensor device handling requirements. This LoRA loader cannot fix this issue.
+- **Related Issues**: [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8)
+
 ## Changelog
 
 ### v1.5.3 (Latest)

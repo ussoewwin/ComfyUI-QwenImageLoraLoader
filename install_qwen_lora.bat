@@ -53,40 +53,21 @@ if exist "%NUNCHAKU_PATH%\__init__.py" (
 
 echo Adding LoRA loader integration code...
 
-REM Create temporary file with UTF-8 encoding
-set "TEMP_FILE=%TEMP%\qwen_lora_integration.txt"
-(
-echo.
-echo # ComfyUI-QwenImageLoraLoader Integration
-echo try:
-echo     # Import from the independent ComfyUI-QwenImageLoraLoader
-echo     import sys
-echo     import os
-echo     qwen_lora_path = os.path.join^(os.path.dirname^(__file__^), "..", "ComfyUI-QwenImageLoraLoader"^)
-echo     if qwen_lora_path not in sys.path:
-echo         sys.path.insert^(0, qwen_lora_path^)
-echo     
-echo     # Import directly from the file path
-echo     import importlib.util
-echo     spec = importlib.util.spec_from_file_location^("qwenimage", os.path.join^(qwen_lora_path, "nodes", "lora", "qwenimage.py"^)^)
-echo     qwenimage_module = importlib.util.module_from_spec^(spec^)
-echo     spec.loader.exec_module^(qwenimage_module^)
-echo     
-echo     NunchakuQwenImageLoraLoader = qwenimage_module.NunchakuQwenImageLoraLoader
-echo     NunchakuQwenImageLoraStack = qwenimage_module.NunchakuQwenImageLoraStack
-echo.
-echo     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
-echo     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
-echo     logger.info^("Successfully imported Qwen Image LoRA loaders from ComfyUI-QwenImageLoraLoader"^)
-echo except ImportError:
-echo     logger.exception^("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:"^)
-) > "%TEMP_FILE%"
+REM Check if already installed
+findstr /C:"ComfyUI-QwenImageLoraLoader Integration" "%NUNCHAKU_PATH%\__init__.py" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Already installed. Integration code already exists in __init__.py
+    pause
+    exit /b 0
+)
 
-REM Append UTF-8 encoded content to __init__.py using PowerShell
-powershell -Command "Get-Content '%TEMP_FILE%' -Encoding UTF8 | Add-Content '%NUNCHAKU_PATH%\__init__.py' -Encoding UTF8"
-
-REM Clean up temporary file
-del "%TEMP_FILE%"
+REM Append integration code using Python script
+python "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
+if errorlevel 1 (
+    echo ERROR: Failed to append integration code
+    pause
+    exit /b 1
+)
 
 echo.
 echo Installation completed successfully!

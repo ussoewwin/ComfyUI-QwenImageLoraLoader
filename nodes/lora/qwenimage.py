@@ -6,6 +6,13 @@ for applying LoRA weights to Nunchaku Qwen Image models within ComfyUI.
 import copy
 import logging
 import os
+import sys
+
+# Fix import path for this module
+current_dir = os.path.dirname(os.path.abspath(__file__))
+lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+if lora_loader_dir not in sys.path:
+    sys.path.insert(0, lora_loader_dir)
 
 import folder_paths
 

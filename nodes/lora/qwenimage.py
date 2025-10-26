@@ -75,7 +75,7 @@ class NunchakuQwenImageLoraLoader:
 
         model_wrapper = model.model.diffusion_model
 
-        from ...wrappers.qwenimage import ComfyQwenImageWrapper
+        from wrappers.qwenimage import ComfyQwenImageWrapper
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
         # Debug logging
@@ -216,7 +216,7 @@ class NunchakuQwenImageLoraStack:
 
         model_wrapper = model.model.diffusion_model
 
-        from ...wrappers.qwenimage import ComfyQwenImageWrapper
+        from wrappers.qwenimage import ComfyQwenImageWrapper
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
         # Debug logging

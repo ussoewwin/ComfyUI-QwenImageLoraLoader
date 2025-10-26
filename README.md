@@ -195,30 +195,7 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.5.1 (Latest)
-- **Fixed Critical Bug**: Added sys.path fix at module level to resolve `ModuleNotFoundError: No module named 'wrappers.qwenimage'` error
-- **Reported by**: User error report
-- **Problem**: LoRA loader nodes failed with `ModuleNotFoundError: No module named 'wrappers.qwenimage'` error even after v1.5.0 fix
-- **Root Cause**: While v1.5.0 changed imports from relative to absolute, the module's `sys.path` wasn't properly initialized when the module was loaded. The installation script adds the path to ComfyUI-nunchaku's `__init__.py`, but the LoRA loader module itself needs to ensure its own path is in `sys.path`
-- **Technical Solution**: Added `sys.path` initialization at the module level in `nodes/lora/qwenimage.py`
-  - Calculates the ComfyUI-QwenImageLoraLoader directory path from the current file's location
-  - Adds it to `sys.path` before any imports that need it
-  - Ensures absolute imports work correctly regardless of how the module is loaded
-- **Technical Details**:
-  ```python
-  import sys
-  current_dir = os.path.dirname(os.path.abspath(__file__))
-  lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-  if lora_loader_dir not in sys.path:
-      sys.path.insert(0, lora_loader_dir)
-  ```
-- **Benefits**:
-  - Absolute imports now work correctly in all loading scenarios
-  - No more `ModuleNotFoundError` errors
-  - Module can be loaded regardless of import mechanism
-  - Completely resolves Issue #6
-
-### v1.5.2
+### v1.5.2 (Latest)
 - **Fixed Critical Bug**: Resolved persistent `ModuleNotFoundError: No module named 'wrappers.qwenimage'` error
 - **Reported by**: Multiple users experiencing intermittent import failures
 - **Problem**: Despite v1.5.0 and v1.5.1 fixes, some users still experienced `ModuleNotFoundError` when executing LoRA nodes

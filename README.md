@@ -139,6 +139,60 @@ This node is designed to work with:
 - Nunchaku Qwen Image models
 - Standard ComfyUI workflows
 
+## Troubleshooting
+
+### Error: "attempted relative import with no known parent package"
+
+**Problem**: This error occurs when ComfyUI tries to load the LoRA loader nodes but fails due to import issues.
+
+**Error Message**: `ValueError: attempted relative import with no known parent package`
+
+**Root Cause**: The error was caused by using relative imports (`from ...wrappers`) in the LoRA loader code. Relative imports only work when the module is loaded as part of a package. However, ComfyUI-nunchaku loads the module directly using `importlib.util`, which bypasses package initialization. As a result, Python cannot resolve the relative import paths.
+
+**Solution**: Fixed in v1.5.0 by changing relative imports to absolute imports:
+- **Before**: `from ...wrappers.qwenimage import ComfyQwenImageWrapper`
+- **After**: `from wrappers.qwenimage import ComfyQwenImageWrapper`
+
+**How to Fix**:
+1. Make sure you have the latest version of ComfyUI-QwenImageLoraLoader
+2. Run `install_qwen_lora.bat` to ensure proper integration
+3. Restart ComfyUI
+
+**Technical Details**:
+- The installation script adds `ComfyUI-QwenImageLoraLoader` to `sys.path`
+- This allows absolute imports to work correctly
+- The absolute import `from wrappers.qwenimage import` resolves to `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`
+
+### Error: Installation Script Not Running
+
+**Problem**: The batch file doesn't execute or shows errors.
+
+**Solution**:
+1. Right-click `install_qwen_lora.bat` and select "Run as Administrator"
+2. Check that both `ComfyUI-nunchaku` and `ComfyUI-QwenImageLoraLoader` are in your `ComfyUI/custom_nodes` directory
+3. Verify Python is installed and accessible from the command line
+4. Check the console output for specific error messages
+
+### Error: Nodes Not Appearing in ComfyUI
+
+**Problem**: After installation, the LoRA loader nodes don't appear in ComfyUI.
+
+**Solution**:
+1. Restart ComfyUI completely (close all instances)
+2. Check the ComfyUI console for error messages
+3. Verify that the integration code was added to `ComfyUI-nunchaku/__init__.py` (search for "ComfyUI-QwenImageLoraLoader Integration")
+4. If the integration code is missing, re-run `install_qwen_lora.bat`
+5. Check that your ComfyUI-nunchaku version is compatible
+
+### Error: "ModuleNotFoundError: No module named 'nunchaku'"
+
+**Problem**: The nunchaku package is not installed.
+
+**Solution**:
+1. Install ComfyUI-nunchaku plugin from the official repository
+2. Follow the nunchaku installation instructions to install the nunchaku wheel
+3. Restart ComfyUI
+
 ## Changelog
 
 ### v1.4.0 (Latest)

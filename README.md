@@ -142,6 +142,8 @@ This node is designed to work with:
 
 ### v1.2.0 (Latest)
 - **Fixed [Issue #2](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/2)**: Resolved UTF-8 encoding error that caused `SyntaxError: (unicode error) 'utf-8' codec can't decode byte 0x90 in position 0`
+- **Reported by**: @AHEKOT (GitHub Issue #2)
+- **Special Thanks**: This critical bug was discovered and reported by @AHEKOT, who provided detailed error traces and screenshots
 - **Technical Fix**: Changed the batch file to use PowerShell for UTF-8 encoding when writing Python code to `__init__.py`
 - **Root Cause**: Windows batch files write in Shift-JIS encoding by default, which causes Python to fail when reading files as UTF-8
 - **Solution**: Temporary file creation + PowerShell UTF-8 encoding ensures proper file encoding
@@ -150,6 +152,7 @@ This node is designed to work with:
   - Uses PowerShell `Get-Content` and `Add-Content` with `-Encoding UTF8` parameters
   - Ensures all Python code is written with proper UTF-8 encoding
 - **Impact**: Installation script now works correctly without encoding errors
+- **Community Contribution**: This fix was made possible by @AHEKOT's thorough bug reporting and error documentation
 
 ### v1.1.0
 - **Fixed [Issue #1](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1)**: Resolved "ComfyUI\custom_nodes not found" error reported by @mcv1234

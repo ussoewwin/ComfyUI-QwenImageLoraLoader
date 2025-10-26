@@ -122,6 +122,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
 - **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
+- **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using PowerShell for proper UTF-8 encoding when writing to `__init__.py`
 
 ## Requirements
 
@@ -139,7 +140,18 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.1.0 (Latest)
+### v1.2.0 (Latest)
+- **Fixed [Issue #2](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/2)**: Resolved UTF-8 encoding error that caused `SyntaxError: (unicode error) 'utf-8' codec can't decode byte 0x90 in position 0`
+- **Technical Fix**: Changed the batch file to use PowerShell for UTF-8 encoding when writing Python code to `__init__.py`
+- **Root Cause**: Windows batch files write in Shift-JIS encoding by default, which causes Python to fail when reading files as UTF-8
+- **Solution**: Temporary file creation + PowerShell UTF-8 encoding ensures proper file encoding
+- **Technical Details**:
+  - Changed from direct append (`>>`) to temp file method
+  - Uses PowerShell `Get-Content` and `Add-Content` with `-Encoding UTF8` parameters
+  - Ensures all Python code is written with proper UTF-8 encoding
+- **Impact**: Installation script now works correctly without encoding errors
+
+### v1.1.0
 - **Fixed [Issue #1](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1)**: Resolved "ComfyUI\custom_nodes not found" error reported by @mcv1234
 - **Special Thanks**: This fix was implemented based on the excellent solution provided by @mcv1234 in the GitHub issue
 - **Improved Path Detection**: Replaced unreliable wildcard search with relative path detection using script directory (solution by @mcv1234)

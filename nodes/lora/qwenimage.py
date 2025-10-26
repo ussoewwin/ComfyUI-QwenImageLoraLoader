@@ -104,16 +104,22 @@ class NunchakuQwenImageLoraLoader:
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
         # Debug logging
-        logger.info(f"🔍 Model wrapper type: {type(model_wrapper).__name__}")
-        logger.info(f"🔍 Model wrapper module: {type(model_wrapper).__module__}")
-        logger.info(f"🔍 Is ComfyQwenImageWrapper? {isinstance(model_wrapper, ComfyQwenImageWrapper)}")
-        logger.info(f"🔍 Is NunchakuQwenImageTransformer2DModel? {isinstance(model_wrapper, NunchakuQwenImageTransformer2DModel)}")
+        model_wrapper_type_name = type(model_wrapper).__name__
+        model_wrapper_module = type(model_wrapper).__module__
+        logger.info(f"🔍 Model wrapper type: '{model_wrapper_type_name}'")
+        logger.info(f"🔍 Model wrapper module: {model_wrapper_module}")
+        logger.info(f"🔍 Type repr: {repr(type(model_wrapper))}")
+        logger.info(f"🔍 Has 'model' attr? {hasattr(model_wrapper, 'model')}")
+        logger.info(f"🔍 Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
         
         # Check if it's already wrapped
-        if isinstance(model_wrapper, ComfyQwenImageWrapper):
+        # ComfyQwenImageWrapper has a 'model' attribute that contains the transformer
+        # and a 'loras' list attribute
+        if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
             # Already wrapped, proceed normally
+            logger.info("✅ Model is already wrapped (detected via attributes)")
             transformer = model_wrapper.model
-        elif isinstance(model_wrapper, NunchakuQwenImageTransformer2DModel) or model_wrapper.__class__.__name__ == "NunchakuQwenImageTransformer2DModel":
+        elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuQwenImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first
             logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
             
@@ -132,8 +138,9 @@ class NunchakuQwenImageLoraLoader:
             model_wrapper = wrapped_model
             transformer = model_wrapper.model
         else:
-            logger.error("❌ Model type mismatch! Please use 'Nunchaku Qwen Image DiT Loader'.")
-            raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {type(model_wrapper).__name__}.")
+            logger.error(f"❌ Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
+            logger.error("Please use 'Nunchaku Qwen Image DiT Loader'.")
+            raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {model_wrapper_type_name}.")
 
         # Flux-style deepcopy
         model_wrapper.model = None
@@ -259,16 +266,22 @@ class NunchakuQwenImageLoraStack:
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
         # Debug logging
-        logger.info(f"🔍 Model wrapper type: {type(model_wrapper).__name__}")
-        logger.info(f"🔍 Model wrapper module: {type(model_wrapper).__module__}")
-        logger.info(f"🔍 Is ComfyQwenImageWrapper? {isinstance(model_wrapper, ComfyQwenImageWrapper)}")
-        logger.info(f"🔍 Is NunchakuQwenImageTransformer2DModel? {isinstance(model_wrapper, NunchakuQwenImageTransformer2DModel)}")
+        model_wrapper_type_name = type(model_wrapper).__name__
+        model_wrapper_module = type(model_wrapper).__module__
+        logger.info(f"🔍 Model wrapper type: '{model_wrapper_type_name}'")
+        logger.info(f"🔍 Model wrapper module: {model_wrapper_module}")
+        logger.info(f"🔍 Type repr: {repr(type(model_wrapper))}")
+        logger.info(f"🔍 Has 'model' attr? {hasattr(model_wrapper, 'model')}")
+        logger.info(f"🔍 Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
         
         # Check if it's already wrapped
-        if isinstance(model_wrapper, ComfyQwenImageWrapper):
+        # ComfyQwenImageWrapper has a 'model' attribute that contains the transformer
+        # and a 'loras' list attribute
+        if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
             # Already wrapped, proceed normally
+            logger.info("✅ Model is already wrapped (detected via attributes)")
             transformer = model_wrapper.model
-        elif isinstance(model_wrapper, NunchakuQwenImageTransformer2DModel) or model_wrapper.__class__.__name__ == "NunchakuQwenImageTransformer2DModel":
+        elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuQwenImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first
             logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
             
@@ -287,8 +300,9 @@ class NunchakuQwenImageLoraStack:
             model_wrapper = wrapped_model
             transformer = model_wrapper.model
         else:
-            logger.error("❌ Model type mismatch! Please use 'Nunchaku Qwen Image DiT Loader'.")
-            raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {type(model_wrapper).__name__}.")
+            logger.error(f"❌ Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
+            logger.error("Please use 'Nunchaku Qwen Image DiT Loader'.")
+            raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {model_wrapper_type_name}.")
 
         # Flux-style deepcopy
         model_wrapper.model = None

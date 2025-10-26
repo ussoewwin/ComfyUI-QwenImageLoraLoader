@@ -8,7 +8,7 @@ import logging
 
 from nunchaku import NunchakuQwenImageTransformer2DModel
 from nunchaku.caching.fbcache import cache_context, create_cache_context
-from ..nunchaku_code.lora_qwen import compose_loras_v2, reset_lora_v2
+from nunchaku_code.lora_qwen import compose_loras_v2, reset_lora_v2
 
 logger = logging.getLogger(__name__)
 

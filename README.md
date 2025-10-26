@@ -122,7 +122,8 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
 - **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
-- **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using PowerShell for proper UTF-8 encoding when writing to `__init__.py` (thanks to @AHEKOT's bug report)
+- **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using dedicated Python script for proper UTF-8 encoding (thanks to @AHEKOT's bug report)
+- **Issue #3 Fixed (v1.4.0)**: Resolved [Node break cached progress error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/3) by implementing proper IS_CHANGED method with hash-based change detection (thanks to @AHEKOT's bug report)
 
 ## Requirements
 
@@ -140,7 +141,33 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.3.0 (Latest)
+### v1.4.0 (Latest)
+- **Fixed Critical Bug**: Resolved [Issue #3 - Node break cached progress](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/3) reported by @AHEKOT
+- **Reported by**: @AHEKOT (GitHub Issue #3)
+- **Special Thanks**: This critical bug was discovered and reported by @AHEKOT, who identified the issue with cached progress being broken
+- **Problem**: LoRA nodes were breaking ComfyUI's cached progress during image generation, causing the progress bar to reset and restart repeatedly
+- **Root Cause**: The `IS_CHANGED` method was returning `float("NaN")` instead of a proper change detection hash
+  - `float("NaN")` causes ComfyUI to always treat the node as "changed"
+  - This invalidates the cache after every frame, forcing unnecessary re-execution
+  - Result: Progress bar jumps back and forth, cache is constantly invalidated, generation becomes unstable
+- **Technical Solution**: Implemented proper hash-based change detection for both LoRA nodes
+  - **NunchakuQwenImageLoraLoader**: Creates SHA256 hash from `model`, `lora_name`, and `lora_strength`
+  - **NunchakuQwenImageLoraStack**: Creates SHA256 hash from `model`, `lora_count`, and all 10 LoRA slots (names and strengths)
+  - Returns hex digest as the cache key
+- **Technical Details**:
+  - Uses Python's `hashlib.sha256()` to generate deterministic hashes
+  - Same inputs always produce same hash → cache is used correctly
+  - Different inputs produce different hashes → node re-executes as expected
+  - No more false positives causing cache invalidation
+- **Benefits**:
+  - Stable cached progress during generation
+  - No more progress bar jumping back and forth
+  - Proper cache utilization for better performance
+  - Smooth generation experience
+  - VRAM usage optimized due to proper cache behavior
+- **Community Contribution**: This fix was made possible by @AHEKOT's bug reporting and issue tracking
+
+### v1.3.0
 - **Fixed Critical Bug**: Resolved `SyntaxError: invalid character '' (U+FFFD)` error when running installation script
 - **Problem**: PowerShell output was being written directly into Python files, causing syntax errors
 - **Root Cause**: Using PowerShell commands with piping (`Get-Content | Add-Content`) caused PowerShell status messages and metadata to be included in the output, which were then written into `__init__.py`

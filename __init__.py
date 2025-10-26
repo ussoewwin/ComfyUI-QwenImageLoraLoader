@@ -23,10 +23,17 @@ try:
 except ImportError:
     logger.exception("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:")
 
+# Add version to all node classes for ComfyUI Manager
+for node_class in NODE_CLASS_MAPPINGS.values():
+    node_class.__version__ = __version__
+
 NODE_DISPLAY_NAME_MAPPINGS = {k: v.TITLE for k, v in NODE_CLASS_MAPPINGS.items()}
 
 # Register JavaScript extensions
 WEB_DIRECTORY = "js"
 
-__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY", "__version__"]
+# Make version available at module level for ComfyUI Manager
+VERSION = __version__
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY", "__version__", "VERSION"]
 logger.info("=" * (80 + len(" ComfyUI-QwenImageLoraLoader Initialization ")))

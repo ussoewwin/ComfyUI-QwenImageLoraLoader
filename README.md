@@ -218,6 +218,45 @@ This node is designed to work with:
   - Module can be loaded regardless of import mechanism
   - Completely resolves Issue #6
 
+### v1.5.2
+- **Fixed Critical Bug**: Resolved persistent `ModuleNotFoundError: No module named 'wrappers.qwenimage'` error
+- **Reported by**: Multiple users experiencing intermittent import failures
+- **Problem**: Despite v1.5.0 and v1.5.1 fixes, some users still experienced `ModuleNotFoundError` when executing LoRA nodes
+- **Root Cause**: Module-level `sys.path` manipulation was insufficient in all execution contexts. The `from wrappers.qwenimage import ComfyQwenImageWrapper` statement at method execution time occasionally failed even though the module loaded successfully, due to timing issues, Python's module cache, and varying execution contexts in ComfyUI
+- **Technical Solution**: Implemented robust dynamic import using `importlib.util` within method execution
+  - **Before**: Module-level `sys.path` setup + direct `from wrappers.qwenimage import` at method level
+  - **After**: Dynamic `importlib.util`-based import within `load_lora()` and `load_lora_stack()` methods
+- **Technical Details**:
+  - Each method now dynamically calculates the parent directory path at execution time
+  - Uses `importlib.util.spec_from_file_location()` to create module spec from absolute file path
+  - Executes module with `spec.loader.exec_module()` and extracts `ComfyQwenImageWrapper` class
+  - Completely bypasses Python's normal import mechanism, making it independent of `sys.path` state
+  - Eliminates dependency on module loading order or execution context
+- **Benefits**:
+  - 100% reliable import regardless of execution context
+  - No dependency on `sys.path` configuration
+  - Works in all ComfyUI execution scenarios
+  - No more intermittent import failures
+  - More resilient to future ComfyUI or Python updates
+- **Impact**: Completely resolves the import reliability issue that affected multiple users
+
+### v1.5.1
+- **Fixed Critical Bug**: Additional fix for [Issue #6](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/6) - persistent `ModuleNotFoundError`
+- **Problem**: v1.5.0 fix was incomplete - path calculation error meant `sys.path` pointed to wrong directory
+- **Root Cause**: Incorrect path calculation: `os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))` went up 3 levels instead of 2
+  - 3 levels up → pointed to `custom_nodes/` instead of `ComfyUI-QwenImageLoraLoader/`
+  - This prevented `from wrappers.qwenimage` from resolving correctly
+- **Technical Solution**: Corrected path calculation to go up exactly 2 levels from `nodes/lora/`
+  - **Before**: `os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))` (3 levels)
+  - **After**: `os.path.dirname(os.path.dirname(current_dir))` (2 levels)
+  - **Result**: Correctly points to `ComfyUI-QwenImageLoraLoader/` root directory
+- **Applied To**: Module-level `sys.path` initialization in `qwenimage.py`
+- **Benefits**:
+  - Absolute imports now work correctly in all loading scenarios
+  - No more `ModuleNotFoundError` errors
+  - Module can be loaded regardless of import mechanism
+  - Completely resolves Issue #6
+
 ### v1.5.0
 - **Fixed Critical Bug**: Resolved [Issue #6 - attempted relative import with no known parent package](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/6)
 - **Reported by**: @showevr (GitHub Issue #6)

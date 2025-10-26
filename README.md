@@ -195,7 +195,28 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.5.2 (Latest)
+### v1.5.3 (Latest)
+- **Fixed Critical Bug**: Resolved `TypeError: This LoRA loader only works with Nunchaku Qwen Image models, but got ComfyQwenImageWrapper` error in different workflows
+- **Problem**: LoRA loader failed when model was already wrapped with `ComfyQwenImageWrapper` in some workflows, even though the wrapper was correct
+- **Root Cause**: Using type name comparison (`type(model_wrapper).__name__ == "ComfyQwenImageWrapper"`) failed in some execution contexts due to dynamic imports and different module loading paths. When `ComfyQwenImageWrapper` was loaded from different import paths, Python treated them as different classes even though they were functionally identical
+- **Technical Solution**: Changed from type name comparison to attribute-based detection
+  - **Before**: `if type(model_wrapper).__name__ == "ComfyQwenImageWrapper"`
+  - **After**: `if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras')`
+  - The `ComfyQwenImageWrapper` class always has `model` (transformer) and `loras` (LoRA list) attributes
+  - This detection method works regardless of how the class was imported or loaded
+- **Technical Details**:
+  - Added comprehensive debug logging to help diagnose type detection issues
+  - Logs now show type name, module, attributes, and full type representation
+  - Enhanced error messages with detailed type information
+  - Applied fix to both `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` classes
+- **Benefits**:
+  - Works with all workflows regardless of model loading order
+  - No dependency on import mechanism or module path
+  - More robust and resilient to Python module system quirks
+  - Better debugging capabilities with detailed logging
+- **Impact**: Completely resolves the TypeError that occurred when using LoRA nodes in certain workflow configurations
+
+### v1.5.2
 - **Fixed Critical Bug**: Resolved persistent `ModuleNotFoundError: No module named 'wrappers.qwenimage'` error
 - **Reported by**: Multiple users experiencing intermittent import failures
 - **Problem**: Despite v1.5.0 and v1.5.1 fixes, some users still experienced `ModuleNotFoundError` when executing LoRA nodes

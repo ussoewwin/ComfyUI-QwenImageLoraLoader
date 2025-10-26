@@ -18,14 +18,14 @@ NODE_CLASS_MAPPINGS = {}
 try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack
 
+    # Add version to classes before creating NODE_CLASS_MAPPINGS
+    NunchakuQwenImageLoraLoader.__version__ = __version__
+    NunchakuQwenImageLoraStack.__version__ = __version__
+
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
 except ImportError:
     logger.exception("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:")
-
-# Add version to all node classes for ComfyUI Manager
-for node_class in NODE_CLASS_MAPPINGS.values():
-    node_class.__version__ = __version__
 
 NODE_DISPLAY_NAME_MAPPINGS = {k: v.TITLE for k, v in NODE_CLASS_MAPPINGS.items()}
 

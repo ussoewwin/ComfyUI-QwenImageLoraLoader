@@ -52,6 +52,9 @@ if exist "%NUNCHAKU_PATH%\__init__.py" (
 )
 
 echo Adding LoRA loader integration code...
+
+REM Create temporary file with UTF-8 encoding
+set "TEMP_FILE=%TEMP%\qwen_lora_integration.txt"
 (
 echo.
 echo # ComfyUI-QwenImageLoraLoader Integration
@@ -77,7 +80,13 @@ echo     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLo
 echo     logger.info^("Successfully imported Qwen Image LoRA loaders from ComfyUI-QwenImageLoraLoader"^)
 echo except ImportError:
 echo     logger.exception^("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:"^)
-) >> "%NUNCHAKU_PATH%\__init__.py"
+) > "%TEMP_FILE%"
+
+REM Append UTF-8 encoded content to __init__.py using PowerShell
+powershell -Command "Get-Content '%TEMP_FILE%' -Encoding UTF8 | Add-Content '%NUNCHAKU_PATH%\__init__.py' -Encoding UTF8"
+
+REM Clean up temporary file
+del "%TEMP_FILE%"
 
 echo.
 echo Installation completed successfully!

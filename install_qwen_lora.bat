@@ -45,6 +45,9 @@ if not exist "%LORA_LOADER_PATH%" (
     exit /b 1
 )
 
+REM CRITICAL: Backup mechanism - NEVER remove or modify this section
+REM This backup allows users to restore their __init__.py if anything goes wrong
+REM Without this, we cannot take responsibility if users' files get corrupted
 echo Backing up original __init__.py...
 if exist "%NUNCHAKU_PATH%\__init__.py" (
     copy "%NUNCHAKU_PATH%\__init__.py" "%NUNCHAKU_PATH%\__init__.py.backup"

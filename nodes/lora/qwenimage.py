@@ -22,8 +22,8 @@ class NunchakuQwenImageLoraLoader:
     Node for loading and applying a LoRA to a Nunchaku Qwen Image model.
     """
     @classmethod
-    def IS_CHANGED(s, *args, **kwargs):
-        return float("NaN")
+    def IS_CHANGED(s, lora_name, lora_strength, **kwargs):
+        return hash((lora_name, lora_strength))
 
     @classmethod
     def INPUT_TYPES(s):
@@ -122,8 +122,14 @@ class NunchakuQwenImageLoraStack:
     Node for loading and applying multiple LoRAs to a Nunchaku Qwen Image model with dynamic UI.
     """
     @classmethod
-    def IS_CHANGED(cls, **kwargs):
-        return float("nan")
+    def IS_CHANGED(cls, lora_count, **kwargs):
+        # Create a hash based on all lora parameters
+        lora_params = []
+        for i in range(1, lora_count + 1):
+            lora_name = kwargs.get(f"lora_name_{i}")
+            lora_strength = kwargs.get(f"lora_strength_{i}", 1.0)
+            lora_params.append((lora_name, lora_strength))
+        return hash(tuple(lora_params))
 
     @classmethod
     def VALIDATE_INPUTS(cls, **kwargs):

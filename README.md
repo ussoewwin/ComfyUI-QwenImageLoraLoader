@@ -195,7 +195,23 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.4.0 (Latest)
+### v1.5.0 (Latest)
+- **Fixed Critical Bug**: Resolved [Issue #6 - attempted relative import with no known parent package](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/6)
+- **Reported by**: @showevr (GitHub Issue #6)
+- **Special Thanks**: This bug was discovered and reported by @showevr
+- **Problem**: LoRA loader nodes failed to load with `ValueError: attempted relative import with no known parent package` error
+- **Root Cause**: Using relative imports (`from ...wrappers.qwenimage import ComfyQwenImageWrapper`) in the LoRA loader code. Relative imports only work when the module is loaded as part of a package, but ComfyUI-nunchaku loads the module directly using `importlib.util`, which bypasses package initialization
+- **Technical Solution**: Changed relative imports to absolute imports in `qwenimage.py`
+  - **Before**: `from ...wrappers.qwenimage import ComfyQwenImageWrapper`
+  - **After**: `from wrappers.qwenimage import ComfyQwenImageWrapper`
+- **Technical Details**:
+  - The installation script adds `ComfyUI-QwenImageLoraLoader` to `sys.path`
+  - This allows absolute imports to work correctly
+  - The absolute import `from wrappers.qwenimage import` resolves to `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`
+  - Applied fix to both `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` classes
+- **Community Contribution**: This fix was made possible by @showevr's bug reporting
+
+### v1.4.0
 - **Fixed Critical Bug**: Resolved [Issue #3 - Node break cached progress](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/3) reported by @AHEKOT
 - **Reported by**: @AHEKOT (GitHub Issue #3)
 - **Special Thanks**: This critical bug was discovered and reported by @AHEKOT, who identified the issue with cached progress being broken

@@ -10,9 +10,13 @@ import sys
 
 # Fix import path for this module
 current_dir = os.path.dirname(os.path.abspath(__file__))
-lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+# Go up 2 levels: nodes/lora -> nodes -> ComfyUI-QwenImageLoraLoader
+lora_loader_dir = os.path.dirname(os.path.dirname(current_dir))
 if lora_loader_dir not in sys.path:
     sys.path.insert(0, lora_loader_dir)
+    print(f"[DEBUG] Added to sys.path: {lora_loader_dir}")
+    print(f"[DEBUG] wrappers dir exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers'))}")
+    print(f"[DEBUG] qwenimage.py exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers', 'qwenimage.py'))}")
 
 import folder_paths
 
@@ -82,7 +86,21 @@ class NunchakuQwenImageLoraLoader:
 
         model_wrapper = model.model.diffusion_model
 
-        from wrappers.qwenimage import ComfyQwenImageWrapper
+        # Dynamic import with explicit path manipulation
+        import sys
+        import importlib.util
+        lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        if lora_loader_dir not in sys.path:
+            sys.path.insert(0, lora_loader_dir)
+        
+        spec = importlib.util.spec_from_file_location(
+            "wrappers.qwenimage",
+            os.path.join(lora_loader_dir, "wrappers", "qwenimage.py")
+        )
+        wrappers_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(wrappers_module)
+        ComfyQwenImageWrapper = wrappers_module.ComfyQwenImageWrapper
+        
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
         # Debug logging
@@ -223,7 +241,21 @@ class NunchakuQwenImageLoraStack:
 
         model_wrapper = model.model.diffusion_model
 
-        from wrappers.qwenimage import ComfyQwenImageWrapper
+        # Dynamic import with explicit path manipulation
+        import sys
+        import importlib.util
+        lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        if lora_loader_dir not in sys.path:
+            sys.path.insert(0, lora_loader_dir)
+        
+        spec = importlib.util.spec_from_file_location(
+            "wrappers.qwenimage",
+            os.path.join(lora_loader_dir, "wrappers", "qwenimage.py")
+        )
+        wrappers_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(wrappers_module)
+        ComfyQwenImageWrapper = wrappers_module.ComfyQwenImageWrapper
+        
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
         # Debug logging

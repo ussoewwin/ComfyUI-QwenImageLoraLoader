@@ -140,7 +140,23 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.2.0 (Latest)
+### v1.3.0 (Latest)
+- **Fixed Critical Bug**: Resolved `SyntaxError: invalid character '' (U+FFFD)` error when running installation script
+- **Problem**: PowerShell output was being written directly into Python files, causing syntax errors
+- **Root Cause**: Using PowerShell commands with piping (`Get-Content | Add-Content`) caused PowerShell status messages and metadata to be included in the output, which were then written into `__init__.py`
+- **Solution**: Replaced PowerShell-based approach with a dedicated Python script (`append_integration.py`)
+- **Technical Details**:
+  - Created standalone Python script `append_integration.py` that handles UTF-8 file writing
+  - Batch file now calls the Python script instead of using inline PowerShell commands
+  - Python script uses proper UTF-8 encoding when writing to `__init__.py`
+  - Eliminates any possibility of output artifacts contaminating Python files
+- **Benefits**:
+  - More reliable and maintainable solution
+  - No risk of shell output pollution
+  - Cleaner separation of concerns between batch file and Python code
+  - Better error handling and user feedback
+
+### v1.2.0
 - **Fixed [Issue #2](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/2)**: Resolved UTF-8 encoding error that caused `SyntaxError: (unicode error) 'utf-8' codec can't decode byte 0x90 in position 0`
 - **Reported by**: @AHEKOT (GitHub Issue #2)
 - **Special Thanks**: This critical bug was discovered and reported by @AHEKOT, who provided detailed error traces and screenshots

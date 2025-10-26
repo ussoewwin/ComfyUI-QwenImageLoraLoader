@@ -122,7 +122,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
 - **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
-- **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using PowerShell for proper UTF-8 encoding when writing to `__init__.py`
+- **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using PowerShell for proper UTF-8 encoding when writing to `__init__.py` (thanks to @AHEKOT's bug report)
 
 ## Requirements
 

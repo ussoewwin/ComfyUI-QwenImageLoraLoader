@@ -206,6 +206,8 @@ This node is designed to work with:
 - **Status**: Currently Not Fixed
 - **Issue**: The 10th LoRA control row always displays in the LoRA Stack node, regardless of the selected `lora_count` value ([Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9))
 - **Impact**: Minor visual issue - does not affect functionality. Users will see one extra empty LoRA row even when `lora_count` is set to less than 10
+
+![Issue #9 - Extra LoRA Row](images/issue9_extra_lora_row.png)
 - **Attempted Solutions**: Multiple approaches were attempted including:
   - Modifying `widget.type` to hide widgets
   - Using `widget.visible` property

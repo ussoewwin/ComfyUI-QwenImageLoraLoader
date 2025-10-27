@@ -32,12 +32,12 @@ git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 
 3. **Choose the appropriate installation script based on your ComfyUI setup:**
 
-#### For Regular ComfyUI Installations
+#### For ComfyUI Installations with Global Python Environment
 - **Script**: `install_qwen_lora.bat`
 - **Python Environment**: Uses global Python environment (system-installed Python)
 - **Requirements**: Python must be installed and accessible from command line (`python` command)
 - **Usage**: Double-click `install_qwen_lora.bat`
-- **When to use**: Standard ComfyUI installations where Python is installed globally
+- **When to use**: ComfyUI installations where Python is installed globally on the system
 
 #### For Portable ComfyUI Installations with Embedded Python
 - **Script**: `install_qwen_lora_portable.bat`
@@ -111,12 +111,12 @@ except ImportError:
 
 #### Installation Script Details:
 
-**`install_qwen_lora.bat` (Regular ComfyUI)**
+**`install_qwen_lora.bat` (Global Python Environment)**
 - **Python Command**: `python` (uses global Python environment)
 - **Requirements**: Python must be installed and accessible from command line
 - **Path Detection**: Uses relative path calculation from script location
 - **Error Handling**: Checks for Python availability and file existence
-- **When to use**: Standard ComfyUI installations with global Python
+- **When to use**: ComfyUI installations with global Python environment
 
 **`install_qwen_lora_portable.bat` (Portable ComfyUI)**
 - **Python Command**: `[ComfyUIFolder]/python_embeded/python.exe` (uses embedded Python)

@@ -202,6 +202,20 @@ This node is designed to work with:
 - **Technical Note**: The device mismatch occurs in `ComfyUI-nunchaku\models\qwenimage.py` at `self.time_text_embed(timestep, hidden_states)` due to RES4LYF sampler's specific tensor device handling requirements. This LoRA loader cannot fix this issue.
 - **Related Issues**: [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8)
 
+### LoRA Stack Node UI Issue
+- **Status**: Currently Not Fixed
+- **Issue**: The 10th LoRA control row always displays in the LoRA Stack node, regardless of the selected `lora_count` value ([Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9))
+- **Impact**: Minor visual issue - does not affect functionality. Users will see one extra empty LoRA row even when `lora_count` is set to less than 10
+- **Attempted Solutions**: Multiple approaches were attempted including:
+  - Modifying `widget.type` to hide widgets
+  - Using `widget.visible` property
+  - Direct DOM manipulation with `display: none`
+  - Various widget hiding mechanisms from `efficiency-nodes-comfyui`
+- **Technical Challenge**: ComfyUI's widget system and DOM rendering mechanism make this difficult to resolve without affecting node height calculations or causing other UI issues
+- **Current Status**: Despite extensive efforts to fix this issue, a reliable solution that works across all ComfyUI versions has not been found. The development team acknowledges this limitation and will continue monitoring for potential solutions
+- **Workaround**: None required - this is purely a cosmetic issue and does not impact LoRA functionality
+- **Related Issues**: [Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9)
+
 ## Changelog
 
 ### v1.5.3 (Latest)

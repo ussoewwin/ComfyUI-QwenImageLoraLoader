@@ -208,6 +208,7 @@ This node is designed to work with:
 - **Impact**: Minor visual issue - does not affect functionality. Users will see one extra empty LoRA row even when `lora_count` is set to less than 10
 
 <img src="images/issue9_extra_lora_row.png" alt="Issue #9 - Extra LoRA Row" width="50%">
+
 - **Attempted Solutions**: Multiple approaches were attempted including:
   - Modifying `widget.type` to hide widgets
   - Using `widget.visible` property

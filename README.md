@@ -30,11 +30,29 @@ git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 
 2. Ensure you have the official ComfyUI-nunchaku plugin installed (which includes nunchaku as a dependency).
 
-3. **Run the installation script:**
-   - **For regular ComfyUI installations**: Double-click `install_qwen_lora.bat`
-   - **For portable ComfyUI installations with embedded Python**: Double-click `install_qwen_lora_portable.bat`
-   - This script will automatically modify the ComfyUI-nunchaku `__init__.py` file
-   - Restart ComfyUI
+3. **Choose the appropriate installation script based on your ComfyUI setup:**
+
+#### For Regular ComfyUI Installations
+- **Script**: `install_qwen_lora.bat`
+- **Python Environment**: Uses global Python environment (system-installed Python)
+- **Requirements**: Python must be installed and accessible from command line (`python` command)
+- **Usage**: Double-click `install_qwen_lora.bat`
+- **When to use**: Standard ComfyUI installations where Python is installed globally
+
+#### For Portable ComfyUI Installations with Embedded Python
+- **Script**: `install_qwen_lora_portable.bat`
+- **Python Environment**: Uses embedded Python (`python_embeded` folder)
+- **Requirements**: ComfyUI installation with `python_embeded` folder containing `python.exe`
+- **Usage**: Double-click `install_qwen_lora_portable.bat`
+- **When to use**: Portable ComfyUI installations that include embedded Python
+- **Automatic Detection**: Script automatically searches for `python_embeded` in multiple locations:
+  - `[ComfyUIFolder]/ComfyUI/python_embeded/python.exe`
+  - `[ComfyUIFolder]/python_embeded/python.exe` (most common)
+- **Folder Name Independence**: Works with any ComfyUI folder name (not limited to "ComfyUI")
+
+4. **After running the installation script:**
+   - The script will automatically modify the ComfyUI-nunchaku `__init__.py` file
+   - Restart ComfyUI to use the new LoRA loader nodes
 
 ### Manual Installation
 
@@ -82,24 +100,43 @@ except ImportError:
 
 ### Automated Installation (Recommended)
 
-**The batch file `install_qwen_lora.bat` automatically adds the above code to your ComfyUI-nunchaku `__init__.py` file:**
+**Both batch files automatically add the integration code to your ComfyUI-nunchaku `__init__.py` file:**
 
-1. **What the batch file does:**
-   - Automatically detects your ComfyUI installation path
-   - Backs up the original `__init__.py` file (creates `__init__.py.backup`)
-   - Adds the exact import code shown above to the end of ComfyUI-nunchaku's `__init__.py`
-   - Performs error checking to ensure all required files exist
-   - Provides user feedback throughout the process
+#### What the installation scripts do:
+- **Path Detection**: Automatically detects your ComfyUI installation path using relative path calculation
+- **Backup Creation**: Backs up the original `__init__.py` file (creates `__init__.py.backup`)
+- **Code Integration**: Adds the exact import code shown above to the end of ComfyUI-nunchaku's `__init__.py`
+- **Error Checking**: Performs comprehensive error checking to ensure all required files exist
+- **User Feedback**: Provides detailed feedback throughout the installation process
 
-2. **Run the installation script:**
-   - **For regular ComfyUI installations**: Double-click `install_qwen_lora.bat`
-   - **For portable ComfyUI installations with embedded Python**: Double-click `install_qwen_lora_portable.bat`
-   - No manual code editing required - the script handles everything
-   - Restart ComfyUI after installation
+#### Installation Script Details:
 
-3. **Uninstall if needed:**
-   - Double-click `uninstall_qwen_lora.bat` to restore the original configuration
-   - This will restore the backup and remove the integration code
+**`install_qwen_lora.bat` (Regular ComfyUI)**
+- **Python Command**: `python` (uses global Python environment)
+- **Requirements**: Python must be installed and accessible from command line
+- **Path Detection**: Uses relative path calculation from script location
+- **Error Handling**: Checks for Python availability and file existence
+- **When to use**: Standard ComfyUI installations with global Python
+
+**`install_qwen_lora_portable.bat` (Portable ComfyUI)**
+- **Python Command**: `[ComfyUIFolder]/python_embeded/python.exe` (uses embedded Python)
+- **Requirements**: ComfyUI installation with `python_embeded` folder
+- **Automatic Detection**: Searches for `python_embeded` in multiple possible locations:
+  - `[ComfyUIFolder]/ComfyUI/python_embeded/python.exe`
+  - `[ComfyUIFolder]/python_embeded/python.exe` (most common pattern)
+- **Folder Name Independence**: Works with any ComfyUI folder name (not limited to "ComfyUI")
+- **Error Handling**: Provides detailed error messages if embedded Python is not found
+- **When to use**: Portable ComfyUI installations with embedded Python
+
+#### Running the Installation:
+1. **Choose the appropriate script** based on your ComfyUI setup (see Installation section above)
+2. **Double-click the batch file** - no manual code editing required
+3. **Follow the on-screen instructions** - the script handles everything automatically
+4. **Restart ComfyUI** after successful installation
+
+#### Uninstall if needed:
+- Double-click `uninstall_qwen_lora.bat` to restore the original configuration
+- This will restore the backup and remove the integration code
 
 ## Usage
 

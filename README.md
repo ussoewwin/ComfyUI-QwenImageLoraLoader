@@ -31,7 +31,8 @@ git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 2. Ensure you have the official ComfyUI-nunchaku plugin installed (which includes nunchaku as a dependency).
 
 3. **Run the installation script:**
-   - Double-click `install_qwen_lora.bat` to automatically configure the integration
+   - **For regular ComfyUI installations**: Double-click `install_qwen_lora.bat`
+   - **For portable ComfyUI installations with embedded Python**: Double-click `install_qwen_lora_portable.bat`
    - This script will automatically modify the ComfyUI-nunchaku `__init__.py` file
    - Restart ComfyUI
 
@@ -91,7 +92,8 @@ except ImportError:
    - Provides user feedback throughout the process
 
 2. **Run the installation script:**
-   - Double-click `install_qwen_lora.bat` to automatically configure the integration
+   - **For regular ComfyUI installations**: Double-click `install_qwen_lora.bat`
+   - **For portable ComfyUI installations with embedded Python**: Double-click `install_qwen_lora_portable.bat`
    - No manual code editing required - the script handles everything
    - Restart ComfyUI after installation
 

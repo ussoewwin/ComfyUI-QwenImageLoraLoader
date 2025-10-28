@@ -9,7 +9,7 @@ ComfyUI-QwenImageLoraLoader is a LoRA loader for Nunchaku Qwen Image models. Thi
 ### 1. Required Software
 - **ComfyUI** (official version)
 - **ComfyUI-nunchaku** (official version)
-- **Python 3.10-3.12**
+- **Python 3.10-3.13**
 
 ### 2. Pre-installation
 Follow these steps in order:

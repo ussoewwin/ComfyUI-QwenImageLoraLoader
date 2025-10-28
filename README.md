@@ -316,7 +316,7 @@ This node is designed to work with:
   - Order change detection
   - LoRA addition/removal detection
   - Reference sharing edge cases
-- **Impact**: Completely resolves the inconsistent LoRA application issue when re-running workflows with multiple LoRAs
+- **Impact**: Significantly improves LoRA change detection reliability and should resolve the reported issue where LoRAs fail to apply on re-run. However, if issues persist in specific edge cases, please report them with detailed reproduction steps
 
 ### v1.5.3
 - **Fixed Critical Bug**: Resolved `TypeError: This LoRA loader only works with Nunchaku Qwen Image models, but got ComfyQwenImageWrapper` error in different workflows

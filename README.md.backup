@@ -30,33 +30,10 @@ git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 
 2. Ensure you have the official ComfyUI-nunchaku plugin installed (which includes nunchaku as a dependency).
 
-3. **Choose the appropriate installation script based on your ComfyUI setup:**
-
-> **Note**: The automated installation batch files (`.bat`) are **Windows-only**. For macOS and Linux users, please use the [Manual Installation](#manual-installation) method below.
-
-#### For ComfyUI Installations with Global Python Environment (Windows)
-- **Script**: `install_qwen_lora.bat`
-- **Platform**: Windows only
-- **Python Environment**: Uses global Python environment (system-installed Python)
-- **Requirements**: Python must be installed and accessible from command line (`python` command)
-- **Usage**: Double-click `install_qwen_lora.bat`
-- **When to use**: ComfyUI installations where Python is installed globally on the system
-
-#### For Portable ComfyUI Installations with Embedded Python (Windows)
-- **Script**: `install_qwen_lora_portable.bat`
-- **Platform**: Windows only
-- **Python Environment**: Uses embedded Python (`python_embeded` folder)
-- **Requirements**: ComfyUI installation with `python_embeded` folder containing `python.exe`
-- **Usage**: Double-click `install_qwen_lora_portable.bat`
-- **When to use**: Portable ComfyUI installations that include embedded Python
-- **Automatic Detection**: Script automatically searches for `python_embeded` in multiple locations:
-  - `[ComfyUIFolder]/ComfyUI/python_embeded/python.exe`
-  - `[ComfyUIFolder]/python_embeded/python.exe` (most common)
-- **Folder Name Independence**: Works with any ComfyUI folder name (not limited to "ComfyUI")
-
-4. **After running the installation script:**
-   - The script will automatically modify the ComfyUI-nunchaku `__init__.py` file
-   - Restart ComfyUI to use the new LoRA loader nodes
+3. **Run the installation script:**
+   - Double-click `install_qwen_lora.bat` to automatically configure the integration
+   - This script will automatically modify the ComfyUI-nunchaku `__init__.py` file
+   - Restart ComfyUI
 
 ### Manual Installation
 
@@ -104,43 +81,23 @@ except ImportError:
 
 ### Automated Installation (Recommended)
 
-**Both batch files automatically add the integration code to your ComfyUI-nunchaku `__init__.py` file:**
+**The batch file `install_qwen_lora.bat` automatically adds the above code to your ComfyUI-nunchaku `__init__.py` file:**
 
-#### What the installation scripts do:
-- **Path Detection**: Automatically detects your ComfyUI installation path using relative path calculation
-- **Backup Creation**: Backs up the original `__init__.py` file (creates `__init__.py.backup`)
-- **Code Integration**: Adds the exact import code shown above to the end of ComfyUI-nunchaku's `__init__.py`
-- **Error Checking**: Performs comprehensive error checking to ensure all required files exist
-- **User Feedback**: Provides detailed feedback throughout the installation process
+1. **What the batch file does:**
+   - Automatically detects your ComfyUI installation path
+   - Backs up the original `__init__.py` file (creates `__init__.py.backup`)
+   - Adds the exact import code shown above to the end of ComfyUI-nunchaku's `__init__.py`
+   - Performs error checking to ensure all required files exist
+   - Provides user feedback throughout the process
 
-#### Installation Script Details:
+2. **Run the installation script:**
+   - Double-click `install_qwen_lora.bat` to automatically configure the integration
+   - No manual code editing required - the script handles everything
+   - Restart ComfyUI after installation
 
-**`install_qwen_lora.bat` (Global Python Environment)**
-- **Python Command**: `python` (uses global Python environment)
-- **Requirements**: Python must be installed and accessible from command line
-- **Path Detection**: Uses relative path calculation from script location
-- **Error Handling**: Checks for Python availability and file existence
-- **When to use**: ComfyUI installations with global Python environment
-
-**`install_qwen_lora_portable.bat` (Portable ComfyUI)**
-- **Python Command**: `[ComfyUIFolder]/python_embeded/python.exe` (uses embedded Python)
-- **Requirements**: ComfyUI installation with `python_embeded` folder
-- **Automatic Detection**: Searches for `python_embeded` in multiple possible locations:
-  - `[ComfyUIFolder]/ComfyUI/python_embeded/python.exe`
-  - `[ComfyUIFolder]/python_embeded/python.exe` (most common pattern)
-- **Folder Name Independence**: Works with any ComfyUI folder name (not limited to "ComfyUI")
-- **Error Handling**: Provides detailed error messages if embedded Python is not found
-- **When to use**: Portable ComfyUI installations with embedded Python
-
-#### Running the Installation:
-1. **Choose the appropriate script** based on your ComfyUI setup (see Installation section above)
-2. **Double-click the batch file** - no manual code editing required
-3. **Follow the on-screen instructions** - the script handles everything automatically
-4. **Restart ComfyUI** after successful installation
-
-#### Uninstall if needed:
-- Double-click `uninstall_qwen_lora.bat` to restore the original configuration
-- This will restore the backup and remove the integration code
+3. **Uninstall if needed:**
+   - Double-click `uninstall_qwen_lora.bat` to restore the original configuration
+   - This will restore the backup and remove the integration code
 
 ## Usage
 
@@ -167,7 +124,6 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
 - **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using dedicated Python script for proper UTF-8 encoding (thanks to @AHEKOT's bug report)
 - **Issue #3 Fixed (v1.4.0)**: Resolved [Node break cached progress error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/3) by implementing proper IS_CHANGED method with hash-based change detection (thanks to @AHEKOT's bug report)
-- **Issue #10 Fixed**: Added portable ComfyUI support with embedded Python detection ([Issue #10](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/10)) - **Special Thanks**: This crucial feature was suggested by @vvhitevvizard, who identified the need for embedded Python support in portable ComfyUI installations. Without this suggestion, portable ComfyUI users would not have been able to use this LoRA loader.
 
 ## Requirements
 
@@ -237,86 +193,30 @@ This node is designed to work with:
 2. Follow the nunchaku installation instructions to install the nunchaku wheel
 3. Restart ComfyUI
 
-## Known Limitations
-
-### RES4LYF Sampler Compatibility Issue
-- **Status**: Currently Not Supported
-- **Issue**: Device mismatch errors occur when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
-- **Workaround**: Use other sampler types (e.g., res_samplers, standard samplers) with LoRA
-- **Technical Note**: The device mismatch occurs in `ComfyUI-nunchaku\models\qwenimage.py` at `self.time_text_embed(timestep, hidden_states)` due to RES4LYF sampler's specific tensor device handling requirements. This LoRA loader cannot fix this issue.
-- **Related Issues**: [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8)
-
-### LoRA Stack Node UI Issue
-- **Status**: Currently Not Fixed
-- **Issue**: The 10th LoRA control row always displays in the LoRA Stack node, regardless of the selected `lora_count` value ([Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9))
-- **Impact**: Minor visual issue - does not affect functionality. Users will see one extra empty LoRA row even when `lora_count` is set to less than 10
-
-<img src="images/issue9_extra_lora_row.png" alt="Issue #9 - Extra LoRA Row" width="50%">
-
-- **Attempted Solutions**: Multiple approaches were attempted including:
-  - Modifying `widget.type` to hide widgets
-  - Using `widget.visible` property
-  - Direct DOM manipulation with `display: none`
-  - Various widget hiding mechanisms from `efficiency-nodes-comfyui`
-- **Technical Challenge**: ComfyUI's widget system and DOM rendering mechanism make this difficult to resolve without affecting node height calculations or causing other UI issues
-- **Current Status**: Despite extensive efforts to fix this issue, a reliable solution that works across all ComfyUI versions has not been found. The development team acknowledges this limitation and will continue monitoring for potential solutions
-- **Workaround**: None required - this is purely a cosmetic issue and does not impact LoRA functionality
-- **Related Issues**: [Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9)
-
 ## Changelog
 
 ### v1.5.4 (Latest)
-- **Fixed Critical Bug**: Resolved Issue #11 - Multiple LoRAs not applying on re-run ([Issue #11](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/11))
-- **Reported by**: [@recursionlaplace-eng](https://github.com/recursionlaplace-eng) - "当有多个lora存在时, 再次运行, lora可能不生效" (When multiple LoRAs exist, re-running may cause LoRAs to not take effect)
-- **Problem**: When using multiple LoRAs, re-executing the workflow could result in LoRAs not being applied, even though they were applied successfully in the previous run
-- **Root Cause**: Shallow comparison logic in LoRA change detection (`self._applied_loras != self.loras`)
-  - The comparison used Python's list equality operator `!=`, which compares list contents
-  - However, due to shallow copy (`self._applied_loras = self.loras.copy()`), the comparison could fail to detect when LoRA state needed to be reapplied
-  - When model internal state was reset (e.g., due to VRAM management, CPU offload, or cache clearing), but the comparison returned `False`, LoRA reapplication would be skipped
-  - This was especially problematic with multiple LoRAs because:
-    1. List comparison could return `False` even when model internal state was dirty
-    2. Shallow copy means tuple references are shared between `_applied_loras` and `loras`
-    3. In some execution contexts, both lists could reference the same objects, making change detection fail
-- **Technical Solution**: Implemented deep comparison logic with explicit checks
-  - **Before**: Simple list inequality `if self._applied_loras != self.loras or model_is_dirty:`
-  - **After**: Deep comparison with explicit length check and element-by-element comparison:
-    ```python
-    # Deep comparison of LoRA stacks to detect any changes
-    # This ensures we catch changes in weights, paths, or order
-    loras_changed = False
-    if self._applied_loras is None or len(self._applied_loras) != len(self.loras):
-        loras_changed = True
-    else:
-        for applied, current in zip(self._applied_loras, self.loras):
-            if applied != current:
-                loras_changed = True
-                break
-    
-    if loras_changed or model_is_dirty:
-    ```
+- **Fixed Critical Bug**: Resolved `RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!` error reported in [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7)
+- **Reported by**: @markha1 (GitHub Issue #7)
+- **Special Thanks**: This critical bug was discovered and reported by @markha1, who identified the device mismatch error when using res_samplers
+- **Problem**: LoRA loader caused device mismatch error where some tensors remained on CPU while the model was on GPU, resulting in runtime crashes during image generation
+- **Root Cause**: After LoRA composition, the `timestep` tensor was not explicitly moved to the model's device (GPU). While `x` and `context` tensors were correctly moved to the GPU, the `timestep` tensor remained on CPU, causing PyTorch operations to fail with "Expected all tensors to be on the same device" error
+- **Technical Solution**: Added explicit device movement for the `timestep` tensor in the `_execute_model` method
+  - **Before**: Only `x` and `context` tensors were moved to the model's device
+  - **After**: Added `timestep` tensor device check and movement in `_execute_model` method
+  - The fix ensures all input tensors (`x`, `context`, `timestep`) are on the same device before forward pass
 - **Technical Details**:
-  - **Explicit None Check**: Ensures initial state is always detected (`self._applied_loras is None`)
-  - **Length Comparison**: Detects LoRA addition/removal immediately (`len(self._applied_loras) != len(self.loras)`)
-  - **Element-by-Element Comparison**: Detects changes in:
-    - LoRA file paths (different LoRA files)
-    - LoRA strengths/weights (strength value changes)
-    - LoRA order (same LoRAs in different order)
-  - **Early Break**: Stops checking as soon as first difference is found for efficiency
-  - **Robustness**: Works regardless of reference sharing or shallow copy issues
-- **Why This Matters**:
-  - **Multiple LoRA Scenarios**: Critical for workflows using 2+ LoRAs
-  - **VRAM Management**: Model state can be reset by ComfyUI's memory management
-  - **CPU Offload**: LoRA state can be lost when model moves between CPU/GPU
-  - **Cache Clearing**: Internal caches can invalidate LoRA composition
-  - **Workflow Re-execution**: Ensures consistent results across multiple runs
-- **Testing**: Comprehensive test suite validates:
-  - Initial LoRA load detection
-  - No false positives (same LoRAs = no change)
-  - Weight change detection
-  - Order change detection
-  - LoRA addition/removal detection
-  - Reference sharing edge cases
-- **Impact**: Completely resolves the inconsistent LoRA application issue when re-running workflows with multiple LoRAs
+  - Added device check for `timestep` tensor: `if isinstance(timestep, torch.Tensor) and timestep.device != model_device:`
+  - Explicitly move timestep to model device: `timestep = timestep.to(model_device)`
+  - Applied fix in `ComfyQwenImageWrapper._execute_model` method in `wrappers/qwenimage.py`
+  - Fix is executed before any forward pass operations
+- **Benefits**:
+  - Eliminates device mismatch runtime errors
+  - Works correctly with all sampler types (including res_samplers)
+  - More robust tensor device handling
+  - Prevents crashes during image generation
+- **Impact**: Completely resolves the device mismatch error that prevented image generation when using res_samplers and certain LoRA combinations
+- **Related Issue**: [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7)
 
 ### v1.5.3
 - **Fixed Critical Bug**: Resolved `TypeError: This LoRA loader only works with Nunchaku Qwen Image models, but got ComfyQwenImageWrapper` error in different workflows

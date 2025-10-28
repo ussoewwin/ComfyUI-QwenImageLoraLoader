@@ -95,8 +95,20 @@ class ComfyQwenImageWrapper(nn.Module):
             not self.loras and # We expect no LoRA
             hasattr(self.model, "_lora_slots") and self.model._lora_slots # But the model actually has LoRA
         )
+        
+        # Deep comparison of LoRA stacks to detect any changes
+        # This ensures we catch changes in weights, paths, or order
+        loras_changed = False
+        if self._applied_loras is None or len(self._applied_loras) != len(self.loras):
+            loras_changed = True
+        else:
+            for applied, current in zip(self._applied_loras, self.loras):
+                if applied != current:
+                    loras_changed = True
+                    break
+        
         # Check if the LoRA stack has been changed by a loader node
-        if self._applied_loras != self.loras or model_is_dirty:
+        if loras_changed or model_is_dirty:
             # The compose function handles resetting before applying the new stack
             reset_lora_v2(self.model)
             self._applied_loras = self.loras.copy()

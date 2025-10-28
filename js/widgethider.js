@@ -6,7 +6,8 @@ let origProps = {};
 let initialized = false;
 
 const findWidgetByName = (node, name) => {
-    return node.widgets ? node.widgets.find((w) => w.name === name) : null;
+    const widget = node.widgets ? node.widgets.find((w) => w.name === name) : null;
+    return widget;
 };
 
 const doesInputWithNameExist = (node, name) => {
@@ -23,7 +24,9 @@ function toggleWidget(node, widget, show = false, suffix = "") {
         origProps[widget.name] = { origType: widget.type, origComputeSize: widget.computeSize };
     }
 
-    widget.type = show ? origProps[widget.name].origType : HIDDEN_TAG + suffix;
+    const newType = show ? origProps[widget.name].origType : HIDDEN_TAG + suffix;
+    
+    widget.type = newType;
     widget.computeSize = show ? origProps[widget.name].origComputeSize : () => [0, -4];
 
     widget.linkedWidgets?.forEach(w => toggleWidget(node, w, show, ":" + widget.name));
@@ -34,8 +37,8 @@ function toggleWidget(node, widget, show = false, suffix = "") {
 
 // Handle multi-widget visibilities
 function handleVisibility(node, countValue) {
-    // First hide ALL widgets
-    for (let i = 1; i <= 10; i++) {
+    // Hide widgets beyond countValue (this fixes Issue #9)
+    for (let i = countValue + 1; i <= 10; i++) {
         const nameWidget = findWidgetByName(node, `lora_name_${i}`);
         const strengthWidget = findWidgetByName(node, `lora_strength_${i}`);
         
@@ -43,38 +46,13 @@ function handleVisibility(node, countValue) {
         if (strengthWidget) toggleWidget(node, strengthWidget, false);
     }
 
-    // Show only the widgets up to lora_count
+    // Show widgets up to countValue
     for (let i = 1; i <= countValue; i++) {
         const nameWidget = findWidgetByName(node, `lora_name_${i}`);
         const strengthWidget = findWidgetByName(node, `lora_strength_${i}`);
         
         if (nameWidget) toggleWidget(node, nameWidget, true);
         if (strengthWidget) toggleWidget(node, strengthWidget, true);
-    }
-    
-    // Final height update after all widgets are processed
-    if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
-        const newHeight = node.computeSize()[1];
-        const paddedHeight = newHeight + 30;
-        node.setSize([node.size[0], paddedHeight]);
-        
-        if (node.graph && typeof node.graph.setDirty === 'function') {
-            node.graph.setDirty(true, true);
-        }
-        
-        // Additional height adjustment with multiple attempts
-        [10, 50, 100, 200].forEach(delay => {
-            setTimeout(() => {
-                const finalHeight = node.computeSize()[1];
-                const finalPaddedHeight = finalHeight + 30;
-                if (finalPaddedHeight !== node.size[1]) {
-                    node.setSize([node.size[0], finalPaddedHeight]);
-                    if (node.graph && typeof node.graph.setDirty === 'function') {
-                        node.graph.setDirty(true, true);
-                    }
-                }
-            }, delay);
-        });
     }
 }
 
@@ -118,11 +96,17 @@ app.registerExtension({
         
         if (node.comfyClass === "NunchakuQwenImageLoraStack") {
             console.log("QwenImage LoRA Stack: Initializing node");
+            
+            // Debug: list all widget names
+            if (node.widgets) {
+                console.log("All widgets:", node.widgets.map(w => w.name).join(", "));
+            }
+            
             const loraCountWidget = findWidgetByName(node, "lora_count");
             
             if (loraCountWidget) {
-                // First, hide all widgets to get a clean state
-                for (let i = 1; i <= 10; i++) {
+                // Hide extra widgets beyond lora_count (fixes Issue #9)
+                for (let i = loraCountWidget.value + 1; i <= 10; i++) {
                     const nameWidget = findWidgetByName(node, `lora_name_${i}`);
                     const strengthWidget = findWidgetByName(node, `lora_strength_${i}`);
                     if (nameWidget) toggleWidget(node, nameWidget, false);

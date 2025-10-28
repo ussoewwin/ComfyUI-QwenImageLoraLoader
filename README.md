@@ -265,7 +265,60 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.5.3 (Latest)
+### v1.5.4 (Latest)
+- **Fixed Critical Bug**: Resolved Issue #11 - Multiple LoRAs not applying on re-run ([Issue #11](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/11))
+- **Reported by**: [@recursionlaplace-eng](https://github.com/recursionlaplace-eng) - "当有多个lora存在时, 再次运行, lora可能不生效" (When multiple LoRAs exist, re-running may cause LoRAs to not take effect)
+- **Problem**: When using multiple LoRAs, re-executing the workflow could result in LoRAs not being applied, even though they were applied successfully in the previous run
+- **Root Cause**: Shallow comparison logic in LoRA change detection (`self._applied_loras != self.loras`)
+  - The comparison used Python's list equality operator `!=`, which compares list contents
+  - However, due to shallow copy (`self._applied_loras = self.loras.copy()`), the comparison could fail to detect when LoRA state needed to be reapplied
+  - When model internal state was reset (e.g., due to VRAM management, CPU offload, or cache clearing), but the comparison returned `False`, LoRA reapplication would be skipped
+  - This was especially problematic with multiple LoRAs because:
+    1. List comparison could return `False` even when model internal state was dirty
+    2. Shallow copy means tuple references are shared between `_applied_loras` and `loras`
+    3. In some execution contexts, both lists could reference the same objects, making change detection fail
+- **Technical Solution**: Implemented deep comparison logic with explicit checks
+  - **Before**: Simple list inequality `if self._applied_loras != self.loras or model_is_dirty:`
+  - **After**: Deep comparison with explicit length check and element-by-element comparison:
+    ```python
+    # Deep comparison of LoRA stacks to detect any changes
+    # This ensures we catch changes in weights, paths, or order
+    loras_changed = False
+    if self._applied_loras is None or len(self._applied_loras) != len(self.loras):
+        loras_changed = True
+    else:
+        for applied, current in zip(self._applied_loras, self.loras):
+            if applied != current:
+                loras_changed = True
+                break
+    
+    if loras_changed or model_is_dirty:
+    ```
+- **Technical Details**:
+  - **Explicit None Check**: Ensures initial state is always detected (`self._applied_loras is None`)
+  - **Length Comparison**: Detects LoRA addition/removal immediately (`len(self._applied_loras) != len(self.loras)`)
+  - **Element-by-Element Comparison**: Detects changes in:
+    - LoRA file paths (different LoRA files)
+    - LoRA strengths/weights (strength value changes)
+    - LoRA order (same LoRAs in different order)
+  - **Early Break**: Stops checking as soon as first difference is found for efficiency
+  - **Robustness**: Works regardless of reference sharing or shallow copy issues
+- **Why This Matters**:
+  - **Multiple LoRA Scenarios**: Critical for workflows using 2+ LoRAs
+  - **VRAM Management**: Model state can be reset by ComfyUI's memory management
+  - **CPU Offload**: LoRA state can be lost when model moves between CPU/GPU
+  - **Cache Clearing**: Internal caches can invalidate LoRA composition
+  - **Workflow Re-execution**: Ensures consistent results across multiple runs
+- **Testing**: Comprehensive test suite validates:
+  - Initial LoRA load detection
+  - No false positives (same LoRAs = no change)
+  - Weight change detection
+  - Order change detection
+  - LoRA addition/removal detection
+  - Reference sharing edge cases
+- **Impact**: Completely resolves the inconsistent LoRA application issue when re-running workflows with multiple LoRAs
+
+### v1.5.3
 - **Fixed Critical Bug**: Resolved `TypeError: This LoRA loader only works with Nunchaku Qwen Image models, but got ComfyQwenImageWrapper` error in different workflows
 - **Problem**: LoRA loader failed when model was already wrapped with `ComfyQwenImageWrapper` in some workflows, even though the wrapper was correct
 - **Root Cause**: Using type name comparison (`type(model_wrapper).__name__ == "ComfyQwenImageWrapper"`) failed in some execution contexts due to dynamic imports and different module loading paths. When `ComfyQwenImageWrapper` was loaded from different import paths, Python treated them as different classes even though they were functionally identical

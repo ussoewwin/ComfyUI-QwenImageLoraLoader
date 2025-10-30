@@ -45,17 +45,6 @@ if not exist "%LORA_LOADER_PATH%" (
     exit /b 1
 )
 
-REM CRITICAL: Backup mechanism - NEVER remove or modify this section
-REM This backup allows users to restore their __init__.py if anything goes wrong
-REM Without this, we cannot take responsibility if users' files get corrupted
-echo Backing up original __init__.py...
-if exist "%NUNCHAKU_PATH%\__init__.py" (
-    copy "%NUNCHAKU_PATH%\__init__.py" "%NUNCHAKU_PATH%\__init__.py.backup"
-    echo Backup created: __init__.py.backup
-)
-
-echo Adding LoRA loader integration code...
-
 REM Check if already installed
 findstr /C:"ComfyUI-QwenImageLoraLoader Integration" "%NUNCHAKU_PATH%\__init__.py" >nul 2>&1
 if %errorlevel% equ 0 (
@@ -63,6 +52,8 @@ if %errorlevel% equ 0 (
     pause
     exit /b 0
 )
+
+echo Adding LoRA loader integration code...
 
 REM Append integration code using Python script
 py -3 "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
@@ -86,3 +77,4 @@ echo.
 echo Please restart ComfyUI to use the new nodes.
 echo.
 pause
+timeout /t -1 >nul

@@ -6,13 +6,17 @@ Script to append ComfyUI-QwenImageLoraLoader integration code to ComfyUI-nunchak
 
 import sys
 import os
+import shutil
+
+BEGIN_MARKER = "# BEGIN ComfyUI-QwenImageLoraLoader Integration"
+END_MARKER = "# END ComfyUI-QwenImageLoraLoader Integration"
 
 def append_integration_code(init_py_path):
     """Append the integration code to __init__.py file"""
     
-    integration_code = '''
+    integration_code = f'''
 
-# ComfyUI-QwenImageLoraLoader Integration
+{BEGIN_MARKER}
 try:
     # Import from the independent ComfyUI-QwenImageLoraLoader
     import sys
@@ -35,11 +39,35 @@ try:
     logger.info("Successfully imported Qwen Image LoRA loaders from ComfyUI-QwenImageLoraLoader")
 except ImportError:
     logger.exception("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:")
+{END_MARKER}
 '''
 
     try:
+        # Read file content
+        with open(init_py_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Check if already installed
+        if BEGIN_MARKER in content and END_MARKER in content:
+            print("Integration code already present. Skipping.")
+            return True
+        
+        # Create backup only if not exists and no integration code
+        backup_path = init_py_path + ".qwen_image_backup"
+        if not os.path.exists(backup_path):
+            try:
+                shutil.copy2(init_py_path, backup_path)
+                print(f"Backup created: {backup_path}")
+            except Exception as backup_error:
+                print(f"Warning: Could not create backup: {backup_error}")
+                # Continue anyway - the block removal function can handle this
+        
+        # Append integration code
         with open(init_py_path, 'a', encoding='utf-8') as f:
+            if not content.endswith('\n'):
+                f.write('\n')
             f.write(integration_code)
+        
         print(f"Successfully appended integration code to: {init_py_path}")
         return True
     except Exception as e:

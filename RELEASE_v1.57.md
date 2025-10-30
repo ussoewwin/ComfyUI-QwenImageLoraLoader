@@ -1,87 +1,68 @@
-# Release v1.57: Duplicate Installation Prevention
-
-**Release Date**: January 2025  
-**Reporter**: [@ussoewwin](https://github.com/ussoewwin)
+# v1.57 — Duplicate installation prevention; backup consolidation; comprehensive block removal
 
 ## Summary
 
-Fixed critical bug where running the installer multiple times would create duplicate integration blocks in `ComfyUI-nunchaku/__init__.py`, breaking the plugin. This release implements comprehensive duplicate prevention mechanisms.
+* Fixes a critical bug where running the installer multiple times would create duplicate integration blocks in `ComfyUI-nunchaku/__init__.py`, breaking the plugin.
+* Adds three comprehensive safety mechanisms:
+  * Marker-based duplicate detection → skip if already installed
+  * Backup consolidation → single `.qwen_image_backup` created only once
+  * Legacy block removal → handles old-style blocks without markers
+* Normal installation/uninstallation flows remain unchanged.
 
-## The Problem
+## Problem
 
-Running the installer multiple times (e.g., during troubleshooting, updates, or accidental double-clicks) would repeatedly append the same integration code to `__init__.py`, creating:
-- Multiple identical blocks
-- Conflicts in node registration
-- Broken plugin functionality
-- Manual cleanup required
+* Some users see duplicate integration blocks in `ComfyUI-nunchaku/__init__.py` after running the installer multiple times (e.g., during troubleshooting, updates, or accidental double-clicks).
+* Root cause:
+  * No duplicate detection existed, so every installer run appended the same integration code
+  * Backup file was created by both batch scripts and Python script, causing two backups (`.backup` and `.qwen_image_backup`)
+  * Backup could be overwritten on second run, making recovery impossible
+  * Old-style blocks (without BEGIN/END markers) couldn't be removed by uninstaller
 
-Additionally, the backup file would be overwritten on second run, making recovery impossible.
+## Technical Solution
 
-## Modified Files
+* **Marker-based duplicate detection**: Check for both BEGIN_MARKER and END_MARKER before appending; skip if found
+* **Backup consolidation**: Remove backup creation from batch files; only Python script creates `.qwen_image_backup` once
+* **Backup creation order**: Check for duplicates BEFORE creating backup, ensure backup contains original state
+* **Legacy block removal**: Regex pattern to detect and remove old-style blocks without markers
+* **Uninstaller strategy**: Prefer backup restoration, fallback to marker-based removal
 
-The following files were modified to implement duplicate prevention and backup consolidation:
+## Code Changes
 
-1. **`append_integration.py`** - Core integration appending logic with marker-based duplicate detection
-2. **`remove_integration.py`** - Block removal for both new and legacy formats (NEW FILE)
-3. **`install_qwen_lora.bat`** - Global Python installer (removed duplicate backup creation)
-4. **`install_qwen_lora_portable.bat`** - Portable/embedded Python installer (removed duplicate backup creation)
-5. **`uninstall_qwen_lora.bat`** - Global Python uninstaller (unified to `.qwen_image_backup` only)
-6. **`uninstall_qwen_lora_portable.bat`** - Portable/embedded Python uninstaller (NEW FILE, unified to `.qwen_image_backup` only)
-7. **`README.md`** - Added v1.57 changelog entry with release link
+### File 1: `append_integration.py`
 
----
+**Key edits:**
+* Added duplicate detection using BEGIN/END markers
+* Ensured backup is created only once (no overwriting)
+* Fixed backup creation order (after duplicate check, before append)
+* Added error handling for backup creation failures
 
-### 1. `append_integration.py`
+### Code-level Explanation (with references)
 
-#### Marker-Based Duplicate Detection
-
-**Lines 49-51**: Implements duplicate prevention by checking for existing installation markers
-
-```python
-if BEGIN_MARKER in content and END_MARKER in content:
-    print("Integration code already present. Skipping.")
-    return True
-```
-
-- **Line 49**: Checks if both BEGIN_MARKER and END_MARKER exist in the file
-- **Line 50**: Prints informative message to user
-- **Line 51**: Returns True to exit gracefully without modifications
-- **Result**: If integration block is already present, the script skips installation entirely
-
-#### Backup Protection
-
-**Lines 54-57**: Ensures backup file is only created once
-
-```python
-backup_path = init_py_path + ".qwen_image_backup"
-if not os.path.exists(backup_path):
-    shutil.copy2(init_py_path, backup_path)
-    print(f"Backup created: {backup_path}")
-```
-
-- **Line 54**: Defines unique backup file path with `.qwen_image_backup` extension
-- **Line 55**: Checks if backup file already exists
-- **Line 56**: Creates backup only if it doesn't exist yet
-- **Line 57**: Prints confirmation message
-- **Result**: No overwriting of existing backups, allowing safe reinstallation
-
-### 2. `append_integration.py` (Revised)
-
-#### Corrected Backup Creation Order
-
-**Lines 45-75**: Fixed backup creation to happen BEFORE append, but AFTER duplicate check
+1. **Read file content**
 
 ```python
 try:
     # Read file content
     with open(init_py_path, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+```
+
+Lines 46-48: Opens file and reads entire content into variable for duplicate checking.
+
+2. **Check for duplicate blocks**
+
+```python
     # Check if already installed
     if BEGIN_MARKER in content and END_MARKER in content:
         print("Integration code already present. Skipping.")
         return True
-    
+```
+
+Lines 50-53: Searches for both BEGIN and END markers. If both found, exits immediately without modifications.
+
+3. **Create backup only if not exists**
+
+```python
     # Create backup only if not exists and no integration code
     backup_path = init_py_path + ".qwen_image_backup"
     if not os.path.exists(backup_path):
@@ -91,7 +72,13 @@ try:
         except Exception as backup_error:
             print(f"Warning: Could not create backup: {backup_error}")
             # Continue anyway - the block removal function can handle this
-    
+```
+
+Lines 55-63: Creates backup with unique name `.qwen_image_backup` only if it doesn't exist. Continues even if backup creation fails.
+
+4. **Append integration code**
+
+```python
     # Append integration code
     with open(init_py_path, 'a', encoding='utf-8') as f:
         if not content.endswith('\n'):
@@ -100,22 +87,18 @@ try:
     
     print(f"Successfully appended integration code to: {init_py_path}")
     return True
-except Exception as e:
-    print(f"Error appending integration code: {e}")
-    return False
 ```
 
-**Key Changes**:
-- **Lines 46-48**: Read content first into variable scope
-- **Lines 50-53**: Check for duplicate BEFORE creating backup
-- **Lines 55-63**: Create backup ONLY if no duplicates AND backup doesn't exist
-- **Result**: Backup file always contains original state (before any integration blocks)
+Lines 65-72: Appends integration block with BEGIN/END markers. Ensures newline before block.
 
-### 3. `remove_integration.py`
+### File 2: `remove_integration.py` (NEW FILE)
 
-#### Legacy Block Removal
+**Key edits:**
+* Added legacy block removal for old-style blocks without markers
+* Implemented two-stage removal (new-style markers → legacy blocks)
+* Clean whitespace handling for proper block removal
 
-**Lines 39-67**: Removes old-style blocks without markers
+1. **Track legacy block comment**
 
 ```python
 def _remove_legacy_block(text: str) -> tuple[str, int]:
@@ -126,11 +109,24 @@ def _remove_legacy_block(text: str) -> tuple[str, int]:
     start = text.find(old_comment)
     if start == -1:
         return text, 0
-    
+```
+
+Lines 40-47: Searches for old-style comment marker. Returns if not found.
+
+2. **Match entire block with regex**
+
+```python
     # Find the try-except block that starts after the comment
     pattern = r'# ComfyUI-QwenImageLoraLoader Integration\ntry:.*?except ImportError:.*?logger\.exception\(.*?\)'
     
     match = re.search(pattern, text, re.DOTALL)
+```
+
+Line 131: Uses regex with DOTALL to match entire try-except block spanning multiple lines.
+
+3. **Calculate block boundaries and trim**
+
+```python
     if match:
         start_pos = match.start()
         end_pos = match.end()
@@ -146,17 +142,9 @@ def _remove_legacy_block(text: str) -> tuple[str, int]:
     return text, removed
 ```
 
-- **Line 41**: Defines old-style comment marker
-- **Line 45**: Searches for old comment pattern
-- **Line 51**: Uses regex to match entire try-except block
-- **Lines 56-57**: Calculates block boundaries
-- **Lines 59-61**: Trims leading whitespace
-- **Line 64**: Removes block cleanly
-- **Result**: Old integration blocks removed even without markers
+Lines 53-66: Calculates exact boundaries, trims leading whitespace, removes block cleanly.
 
-#### Complete Block Removal Logic
-
-**Lines 70-89**: Removes both new and legacy blocks
+4. **Remove all blocks (new + legacy)**
 
 ```python
 def _remove_all_blocks(text: str) -> tuple[str, int]:
@@ -181,18 +169,17 @@ def _remove_all_blocks(text: str) -> tuple[str, int]:
     return text, removed
 ```
 
-- **Lines 71-83**: Removes new-style blocks with BEGIN/END markers
-- **Line 86**: Calls legacy removal function
-- **Line 87**: Combines removal counts
-- **Result**: All integration blocks removed regardless of format
+Lines 70-89: First removes all BEGIN/END marker blocks, then calls legacy removal. Returns total count.
 
-### 3. `install_qwen_lora.bat` and `install_qwen_lora_portable.bat`
+### File 3: `install_qwen_lora.bat` and `install_qwen_lora_portable.bat`
 
-#### Removed Duplicate Backup Creation
+**Key edits:**
+* Removed backup creation logic from batch files
+* Added duplicate check using `findstr` before calling Python script
+* Cleaner separation of concerns (batch handles checks, Python handles backup)
 
-**Lines 48-54 (Global) / Lines 75-81 (Portable)**: Simplified to remove redundant backup logic
+**Global Installer:**
 
-**Global Installer (`install_qwen_lora.bat`)**:
 ```bat
 REM Check if already installed
 findstr /C:"ComfyUI-QwenImageLoraLoader Integration" "%NUNCHAKU_PATH%\__init__.py" >nul 2>&1
@@ -208,7 +195,10 @@ REM Append integration code using Python script
 py -3 "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
 ```
 
-**Portable Installer (`install_qwen_lora_portable.bat`)**:
+Lines 48-64: Checks for existing integration, exits if found. Calls Python script for actual work.
+
+**Portable Installer:**
+
 ```bat
 REM Check if already installed
 findstr /C:"ComfyUI-QwenImageLoraLoader Integration" "%NUNCHAKU_PATH%\__init__.py" >nul 2>&1
@@ -224,19 +214,17 @@ REM Append integration code using embedded Python
 "%PYTHON_CMD%" "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
 ```
 
-**Key Changes**:
-- **Before**: Batch files created `.backup` file, then `append_integration.py` created `.qwen_image_backup`
-- **After**: Only `append_integration.py` creates backup (`.qwen_image_backup` only)
-- **Benefit**: Prevents backup from being created after integration block is already added
-- **Both installers**: Added duplicate check using `findstr` before calling Python script
+Lines 75-91: Same duplicate check, uses embedded Python instead of `py -3`.
 
-### 4. `uninstall_qwen_lora.bat` and `uninstall_qwen_lora_portable.bat`
+### File 4: `uninstall_qwen_lora.bat` and `uninstall_qwen_lora_portable.bat`
 
-#### Uninstallation Strategy
+**Key edits:**
+* Unified to `.qwen_image_backup` only (removed `.backup` fallback)
+* Two-stage uninstallation (backup restoration → block removal)
+* Added portable version with embedded Python support
 
-**Lines 23-43 (Global) / Lines 47-65 (Portable)**: Implements two-stage uninstallation approach
+**Global Uninstaller:**
 
-**Global Uninstaller (`uninstall_qwen_lora.bat`)**:
 ```bat
 echo Checking for backups...
 
@@ -261,7 +249,10 @@ pause
 exit /b 0
 ```
 
-**Portable Uninstaller (`uninstall_qwen_lora_portable.bat`)**:
+Lines 23-43: Checks for `.qwen_image_backup`, restores if found, exits. Otherwise calls `remove_integration.py`.
+
+**Portable Uninstaller:**
+
 ```bat
 echo Checking for backups...
 
@@ -284,80 +275,51 @@ pause
 exit /b 0
 ```
 
-**Key Changes**:
-- **Line 26/50**: Checks if `.qwen_image_backup` file exists
-- **Line 27/51**: Restores original `__init__.py` from backup
-- **Line 29/53**: Exits immediately if backup restoration succeeds
-- **Lines 35-39/59-60**: Fallback if no backup exists
-- **Line 37**: Global uses `where py` + `call py -3`, Portable uses embedded Python directly
-- **Line 38/60**: Calls `remove_integration.py` to remove blocks
-- **Result**: Prefer backup restoration, fallback to marker-based removal
-- **Key Change**: Removed `.backup` fallback - unified to `.qwen_image_backup` only
+Lines 47-74: Same logic, uses embedded Python directly.
 
-## Key Features
+## Rationale
 
-### 1. **Idempotent Installation**
-- Running installer multiple times is safe
-- Second run detects existing installation and skips
-- No duplicate code, no manual intervention needed
+* Duplicate detection prevents repeated appending when installer is run multiple times
+* Backup consolidation eliminates confusion from multiple backup files
+* Checking duplicates before creating backup ensures backup always contains original state
+* Legacy block removal handles installations from older versions
+* Two-stage uninstallation (backup → removal) provides fallback if backup is missing
+* No change to normal execution: when installation is clean, additional checks are dormant
 
-### 2. **Backup Protection**
-- Original `__init__.py` is backed up once
-- Subsequent installs don't overwrite the backup
-- Original state can always be restored
+## Expected Impact
 
-### 3. **Comprehensive Uninstallation**
-- Two-stage approach: backup restoration or marker removal
-- Handles cases with or without backup file
-- Removes all duplicate blocks in a single operation
+* Running installer multiple times is now safe (second run detects and skips)
+* Backup protection prevents data loss from overwrites
+* Uninstaller works reliably with or without backup
+* Backward compatible with old-style blocks
+* No changes to UI, node I/O, or normal execution paths
 
-### 4. **User-Friendly Messaging**
-- Clear messages about installation status
-- Informative error handling
-- No silent failures
+## How to Verify
 
-## Testing
+* Clean installation:
+  * Run `install_qwen_lora.bat` or `install_qwen_lora_portable.bat` once
+  * Verify `.qwen_image_backup` is created
+  * Confirm integration block is added to `__init__.py`
+* Duplicate prevention:
+  * Run installer second time
+  * Verify message "Integration code already present. Skipping."
+  * Confirm no additional integration blocks added
+* Uninstallation with backup:
+  * Run `uninstall_qwen_lora.bat` or `uninstall_qwen_lora_portable.bat`
+  * Verify message "Restored from backup"
+  * Confirm `__init__.py` is restored to original
+* Uninstallation without backup:
+  * Delete `.qwen_image_backup` file manually
+  * Run uninstaller
+  * Verify message "No backup found. Removing integration blocks..."
+  * Confirm integration blocks are removed from `__init__.py`
 
-Tested scenarios:
-1. ✅ Clean installation (first run)
-2. ✅ Reinstallation (second run - skips)
-3. ✅ Multiple reinstallations (skips all subsequent runs)
-4. ✅ Uninstallation with backup
-5. ✅ Uninstallation without backup
-6. ✅ Reinstallation after uninstallation
-7. ✅ Recovery from duplicate blocks
+## Acknowledgments
 
-## Migration
+* This update addresses duplicate installation issues reported by users during troubleshooting and updates
+* Special thanks to the community for identifying backup corruption patterns
 
-**For users with v1.56 or earlier**:
-- No action required if installation is working
-- If you have duplicate blocks, run uninstaller then reinstaller
-- All future installs will be protected against duplicates
+## Links
 
-**For new users**:
-- Install normally using `install_qwen_lora.bat` or `install_qwen_lora_portable.bat`
-- You can safely run the installer multiple times without issues
-
-## Technical Benefits
-
-1. **Reliability**: Eliminates user errors from duplicate installations
-2. **Maintainability**: Cleaner code with proper state management
-3. **Safety**: Original files are always recoverable
-4. **Robustness**: Handles edge cases and manual modifications
-5. **Professional**: Production-ready behavior expected in deployment scripts
-
-## Related Issues
-
-- Resolves duplicate installation issues
-- Prevents backup file corruption
-- Fixes uninstallation reliability
-
-## Credits
-
-- Implemented by: @ussoewwin
-- Tested by: @ussoewwin
-- Special thanks: Community feedback on installation issues
-
----
-
-**Full Changelog**: See [README.md](README.md) for complete version history.
+* Tags page: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/tags
+* v1.57 release: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.57

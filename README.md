@@ -116,8 +116,8 @@ except ImportError:
 #### Installation Script Details:
 
 **`install_qwen_lora.bat` (Global Python Environment)**
-- **Python Command**: `py -3`（グローバル Python ランチャーを明示使用）
-- **Requirements**: Python がインストールされ、`py` ランチャーが利用可能であること
+- **Python Command**: `py -3` (explicitly use the Python launcher)
+- **Requirements**: Python installed and the `py` launcher available
 - **Path Detection**: Uses relative path calculation from script location
 - **Error Handling**: Checks for Python availability and file existence
 - **When to use**: ComfyUI installations with global Python environment
@@ -266,10 +266,10 @@ This node is designed to work with:
 ## Changelog
 
 ### v1.55 (Latest)
-- 変更: インストーラ `install_qwen_lora.bat` の実行コマンドを `python` から `py -3` に変更
-- 目的: 一部環境で Microsoft Store 版のダミー `python` が拾われてサイレントに失敗する問題を回避
-- 影響: 機能変更なし。インストール成功率の向上のみ
-- 推奨: 既存ユーザーは v1.55 に更新し、必要に応じて再インストールを実行
+- Change: Installer `install_qwen_lora.bat` now uses `py -3` instead of `python`
+- Purpose: Avoid silent failures on environments where the Microsoft Store proxy `python` is picked up from PATH
+- Impact: No functional change; improves installation reliability only
+- Recommendation: Update to v1.55 and re-run installation only if you experienced installer failures
 
 ### v1.5.4 (Latest)
 - **Fixed Critical Bug**: Resolved Issue #11 - Multiple LoRAs not applying on re-run ([Issue #11](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/11))

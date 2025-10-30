@@ -34,7 +34,7 @@ Follow these steps in order:
 - **Script**: `install_qwen_lora.bat`
 - **Platform**: Windows only
 - **Python Environment**: Uses global Python environment (system-installed Python)
-- **Requirements**: Python must be installed and accessible from command line (`python` command)
+- **Requirements**: Python installed and the `py` launcher available (`py -3`)
 - **Usage**: Double-click `install_qwen_lora.bat`
 - **When to use**: ComfyUI installations where Python is installed globally on the system
 

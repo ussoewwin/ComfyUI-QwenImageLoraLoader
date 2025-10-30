@@ -209,6 +209,60 @@ This node is designed to work with:
 - This allows absolute imports to work correctly
 - The absolute import `from wrappers.qwenimage import` resolves to `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`
 
+### Error: Corrupted or Unable to Recover `ComfyUI-nunchaku/__init__.py`
+
+**Problem**: The `__init__.py` file in ComfyUI-nunchaku is corrupted, broken, or cannot be restored using the uninstaller backup.
+
+**Symptoms**:
+- `SyntaxError` when importing ComfyUI-nunchaku
+- Nodes fail to load
+- Cannot uninstall or reinstall the loader
+- No backup file available
+
+**Recovery Steps**:
+
+1. **Locate ComfyUI-nunchaku directory**:
+   - Global installation: `%PYTHON_PATH%\Lib\site-packages\ComfyUI-nunchaku\`
+   - Portable installation: `[ComfyUIFolder]\custom_nodes\ComfyUI-nunchaku\`
+
+2. **Backup the corrupted file** (if it exists):
+   ```batch
+   cd [ComfyUI-nunchaku-path]
+   copy __init__.py __init__.py.corrupted
+   ```
+
+3. **Get official `__init__.py` from ComfyUI-nunchaku repository**:
+   - Official repository: https://github.com/chflame163/ComfyUI-nunchaku
+   - Download the raw `__init__.py` file from the latest release/main branch:
+     ```
+     https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
+     ```
+
+4. **Replace the corrupted file**:
+   ```batch
+   cd [ComfyUI-nunchaku-path]
+   REM Download and replace __init__.py
+   certutil -urlcache -split -f "https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py" __init__.py
+   ```
+   
+   Or manually:
+   - Copy the downloaded `__init__.py` to `[ComfyUI-nunchaku-path]\`
+
+5. **Reinstall ComfyUI-QwenImageLoraLoader**:
+   - Run `install_qwen_lora.bat` or `install_qwen_lora_portable.bat` again
+   - The script will add the integration code to the fresh `__init__.py`
+
+6. **Verify**:
+   - Restart ComfyUI
+   - Check if nodes load without errors
+   - Check if `__init__.py.qwen_image_backup` was created
+
+**Prevention**:
+- Do NOT manually edit `ComfyUI-nunchaku/__init__.py` directly
+- Always use the installation/uninstallation scripts provided
+- Keep backups of critical files
+- Report issues if uninstaller fails to restore backup
+
 ### Error: Installation Script Not Running
 
 **Problem**: The batch file doesn't execute or shows errors.

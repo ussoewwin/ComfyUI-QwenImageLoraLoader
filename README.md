@@ -270,6 +270,7 @@ This node is designed to work with:
 ### v1.56 (Latest)
 - **Fixed Critical Bug**: Resolved [Issue #13](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/13) – Applied LoRA compositions to 0 module after crash/offload
 - **Reported by**: [@coffings20-gif](https://github.com/coffings20-gif) – "After a crash he ignores my LoRA loader: Applied LoRA compositions to 0 module (using CPU offloader)"
+ - **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56
 
 ### v1.55 (Latest)
 - Change: Installer `install_qwen_lora.bat` now uses `py -3` instead of `python`

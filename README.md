@@ -4,6 +4,8 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
+> Latest release: [v1.56 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56)
+
 ## Source
 
 This LoRA loader was extracted and modified from GavChap's fork:

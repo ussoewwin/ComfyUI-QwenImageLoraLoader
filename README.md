@@ -266,7 +266,7 @@ This node is designed to work with:
 ## Changelog
 
 ### v1.56
-- Full release notes are published on the tags page. Please see: [v1.56 release notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/tags)
+- Full release notes: [v1.56 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56)
 
 ### v1.55 (Latest)
 - Change: Installer `install_qwen_lora.bat` now uses `py -3` instead of `python`

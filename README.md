@@ -267,8 +267,20 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.56
-- Full release notes: [v1.56 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56)
+### v1.56 (Latest)
+
+* **Fixed Critical Bug**: Mitigates post-crash/offload case where LoRA applies to 0 target modules — see [Issue #13](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/13)
+* **Reported by**: [@coffings20-gif](https://github.com/coffings20-gif) — "After a crash he ignores my LoRA loader: Applied LoRA compositions to 0 module (using CPU offloader)"
+* **Problem**: After a crash or when toggling CPU offload, the transformer device/offload-manager state may change and the LoRA target discovery can temporarily return an empty set, making composition apply to 0 modules
+* **Technical Solution**:
+  - Added device-transition detection (CPU⇄GPU / offload rebuild) and force re-compose when detected
+  - If composition returns 0 targets while LoRAs exist, perform one safe reset→re-compose retry (single attempt)
+  - Normal paths unchanged; fully backward compatible
+* **How to Verify**:
+  - Single: apply a LoRA, tweak strength ±0.01, re-run (should apply)
+  - Stack: set lora_count=3, assign 2–3 LoRAs, toggle 1→3→1, re-run (should apply)
+  - Offload: switch disable/enable/auto and re-run (should apply)
+* **Full notes**: [v1.56 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56)
 
 ### v1.55 (Latest)
 - Change: Installer `install_qwen_lora.bat` now uses `py -3` instead of `python`

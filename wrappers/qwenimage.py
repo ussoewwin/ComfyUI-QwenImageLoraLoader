@@ -57,6 +57,9 @@ class ComfyQwenImageWrapper(nn.Module):
         self._linspace_cache_h = {}
         self._linspace_cache_w = {}
 
+        # Track last seen device to detect CPU/GPU moves that require re-compose
+        self._last_device = None
+
     def to_safely(self, device):
         """Safely move the model to the specified device."""
         if hasattr(self.model, "to_safely"):
@@ -106,9 +109,16 @@ class ComfyQwenImageWrapper(nn.Module):
                 if applied != current:
                     loras_changed = True
                     break
+
+        # Detect device transition (e.g., CPU offload on/off) and force re-compose
+        try:
+            current_device = next(self.model.parameters()).device
+        except Exception:
+            current_device = None
+        device_changed = (self._last_device != current_device)
         
         # Check if the LoRA stack has been changed by a loader node
-        if loras_changed or model_is_dirty:
+        if loras_changed or model_is_dirty or device_changed:
             # The compose function handles resetting before applying the new stack
             reset_lora_v2(self.model)
             self._applied_loras = self.loras.copy()
@@ -150,6 +160,19 @@ class ComfyQwenImageWrapper(nn.Module):
             # 4. Compose LoRAs. This changes internal tensor shapes.
             compose_loras_v2(self.model, self.loras)
 
+            # Validate composition result; if 0 targets after a crash/transition, retry once
+            try:
+                has_slots = hasattr(self.model, "_lora_slots") and bool(self.model._lora_slots)
+            except Exception:
+                has_slots = True
+            if self.loras and not has_slots:
+                logger.warning("LoRA composition reported 0 target modules. Forcing reset and one retry.")
+                try:
+                    reset_lora_v2(self.model)
+                    compose_loras_v2(self.model, self.loras)
+                except Exception as e:
+                    logger.error(f"LoRA re-compose retry failed: {e}")
+
             # 5. Re-build offload manager if it's supposed to be on
             # This block now runs if offload was on *or* if our new check decided to turn it on.
             if should_enable_offload:
@@ -177,6 +200,9 @@ class ComfyQwenImageWrapper(nn.Module):
                 self.model.set_offload(True, **offload_settings)
 
             # --- END MODIFIED SECTION ---
+
+            # Update last known device signature after (re)composition
+            self._last_device = current_device
 
         # Caching logic
         use_caching = getattr(self.model, "residual_diff_threshold_multi", 0) != 0 or getattr(self.model, "_is_cached",

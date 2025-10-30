@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.56 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56)
+> Latest release: [v1.57 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.57)
 
 ## Source
 
@@ -267,12 +267,17 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.56 (Latest)
+### v1.57 (Latest)
+- **Fixed Critical Bug**: Resolved duplicate integration blocks when running installer multiple times
+- **Reported by**: [@ussoewwin](https://github.com/ussoewwin)
+- **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.57
+
+### v1.56
 - **Fixed Critical Bug**: Resolved [Issue #13](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/13) – Applied LoRA compositions to 0 module after crash/offload
 - **Reported by**: [@coffings20-gif](https://github.com/coffings20-gif) – "After a crash he ignores my LoRA loader: Applied LoRA compositions to 0 module (using CPU offloader)"
- - **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56
+- **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.56
 
-### v1.55 (Latest)
+### v1.55
 - Change: Installer `install_qwen_lora.bat` now uses `py -3` instead of `python`
 - Purpose: Avoid silent failures on environments where the Microsoft Store proxy `python` is picked up from PATH
 - Impact: No functional change; improves installation reliability only

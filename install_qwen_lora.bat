@@ -65,7 +65,7 @@ if %errorlevel% equ 0 (
 )
 
 REM Append integration code using Python script
-python "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
+py -3 "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
 if errorlevel 1 (
     echo ERROR: Failed to append integration code
     pause

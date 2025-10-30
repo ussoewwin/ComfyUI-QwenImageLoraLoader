@@ -19,6 +19,18 @@ Additionally, the backup file would be overwritten on second run, making recover
 
 ## Modified Files
 
+The following files were modified to implement duplicate prevention and backup consolidation:
+
+1. **`append_integration.py`** - Core integration appending logic with marker-based duplicate detection
+2. **`remove_integration.py`** - Block removal for both new and legacy formats (NEW FILE)
+3. **`install_qwen_lora.bat`** - Global Python installer (removed duplicate backup creation)
+4. **`install_qwen_lora_portable.bat`** - Portable/embedded Python installer (removed duplicate backup creation)
+5. **`uninstall_qwen_lora.bat`** - Global Python uninstaller (unified to `.qwen_image_backup` only)
+6. **`uninstall_qwen_lora_portable.bat`** - Portable/embedded Python uninstaller (NEW FILE, unified to `.qwen_image_backup` only)
+7. **`README.md`** - Added v1.57 changelog entry with release link
+
+---
+
 ### 1. `append_integration.py`
 
 #### Marker-Based Duplicate Detection
@@ -53,7 +65,53 @@ if not os.path.exists(backup_path):
 - **Line 57**: Prints confirmation message
 - **Result**: No overwriting of existing backups, allowing safe reinstallation
 
-### 2. `remove_integration.py`
+### 2. `append_integration.py` (Revised)
+
+#### Corrected Backup Creation Order
+
+**Lines 45-75**: Fixed backup creation to happen BEFORE append, but AFTER duplicate check
+
+```python
+try:
+    # Read file content
+    with open(init_py_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Check if already installed
+    if BEGIN_MARKER in content and END_MARKER in content:
+        print("Integration code already present. Skipping.")
+        return True
+    
+    # Create backup only if not exists and no integration code
+    backup_path = init_py_path + ".qwen_image_backup"
+    if not os.path.exists(backup_path):
+        try:
+            shutil.copy2(init_py_path, backup_path)
+            print(f"Backup created: {backup_path}")
+        except Exception as backup_error:
+            print(f"Warning: Could not create backup: {backup_error}")
+            # Continue anyway - the block removal function can handle this
+    
+    # Append integration code
+    with open(init_py_path, 'a', encoding='utf-8') as f:
+        if not content.endswith('\n'):
+            f.write('\n')
+        f.write(integration_code)
+    
+    print(f"Successfully appended integration code to: {init_py_path}")
+    return True
+except Exception as e:
+    print(f"Error appending integration code: {e}")
+    return False
+```
+
+**Key Changes**:
+- **Lines 46-48**: Read content first into variable scope
+- **Lines 50-53**: Check for duplicate BEFORE creating backup
+- **Lines 55-63**: Create backup ONLY if no duplicates AND backup doesn't exist
+- **Result**: Backup file always contains original state (before any integration blocks)
+
+### 3. `remove_integration.py`
 
 #### Legacy Block Removal
 
@@ -128,32 +186,113 @@ def _remove_all_blocks(text: str) -> tuple[str, int]:
 - **Line 87**: Combines removal counts
 - **Result**: All integration blocks removed regardless of format
 
-### 3. `uninstall_qwen_lora.bat`
+### 3. `install_qwen_lora.bat` and `install_qwen_lora_portable.bat`
+
+#### Removed Duplicate Backup Creation
+
+**Lines 48-54 (Global) / Lines 75-81 (Portable)**: Simplified to remove redundant backup logic
+
+**Global Installer (`install_qwen_lora.bat`)**:
+```bat
+REM Check if already installed
+findstr /C:"ComfyUI-QwenImageLoraLoader Integration" "%NUNCHAKU_PATH%\__init__.py" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Already installed. Integration code already exists in __init__.py
+    pause
+    exit /b 0
+)
+
+echo Adding LoRA loader integration code...
+
+REM Append integration code using Python script
+py -3 "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
+```
+
+**Portable Installer (`install_qwen_lora_portable.bat`)**:
+```bat
+REM Check if already installed
+findstr /C:"ComfyUI-QwenImageLoraLoader Integration" "%NUNCHAKU_PATH%\__init__.py" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Already installed. Integration code already exists in __init__.py
+    pause
+    exit /b 0
+)
+
+echo Adding LoRA loader integration code...
+
+REM Append integration code using embedded Python
+"%PYTHON_CMD%" "%LORA_LOADER_PATH%\append_integration.py" "%NUNCHAKU_PATH%\__init__.py"
+```
+
+**Key Changes**:
+- **Before**: Batch files created `.backup` file, then `append_integration.py` created `.qwen_image_backup`
+- **After**: Only `append_integration.py` creates backup (`.qwen_image_backup` only)
+- **Benefit**: Prevents backup from being created after integration block is already added
+- **Both installers**: Added duplicate check using `findstr` before calling Python script
+
+### 4. `uninstall_qwen_lora.bat` and `uninstall_qwen_lora_portable.bat`
 
 #### Uninstallation Strategy
 
-**Lines 25-34**: Implements two-stage uninstallation approach
+**Lines 23-43 (Global) / Lines 47-65 (Portable)**: Implements two-stage uninstallation approach
 
+**Global Uninstaller (`uninstall_qwen_lora.bat`)**:
 ```bat
+echo Checking for backups...
+
+REM Try new-style backup first
 if exist "%NUNCHAKU_PATH%\__init__.py.qwen_image_backup" (
     copy "%NUNCHAKU_PATH%\__init__.py.qwen_image_backup" "%NUNCHAKU_PATH%\__init__.py" >nul
     echo Restored from backup: __init__.py.qwen_image_backup
-) else (
-    echo No backup found. Using py -3 to remove integration block only...
-    where py >nul 2>&1
-    if not errorlevel 1 (
-        call py -3 "%SCRIPT_DIR%remove_integration.py"
-    )
+    echo [OK] Qwen Image LoRA Loader integration removed.
+    pause
+    exit /b 0
 )
+
+REM No backup found - remove integration blocks using Python script
+echo No backup found. Removing integration blocks...
+where py >nul 2>&1
+if not errorlevel 1 (
+    call py -3 "%SCRIPT_DIR%remove_integration.py"
+)
+
+echo [OK] Qwen Image LoRA Loader integration removed.
+pause
+exit /b 0
 ```
 
-- **Line 25**: Checks if backup file exists
-- **Line 26**: Restores original `__init__.py` from backup
-- **Line 27**: Prints restoration confirmation
-- **Lines 28-33**: Fallback if no backup exists
-- **Line 30**: Checks if Python launcher is available
-- **Line 32**: Calls `remove_integration.py` to remove blocks
+**Portable Uninstaller (`uninstall_qwen_lora_portable.bat`)**:
+```bat
+echo Checking for backups...
+
+REM Try new-style backup first
+if exist "%NUNCHAKU_PATH%\__init__.py.qwen_image_backup" (
+    copy "%NUNCHAKU_PATH%\__init__.py.qwen_image_backup" "%NUNCHAKU_PATH%\__init__.py" >nul
+    echo Restored from backup: __init__.py.qwen_image_backup
+    echo [OK] Qwen Image LoRA Loader integration removed.
+    pause
+    exit /b 0
+)
+
+REM No backup found - remove integration blocks using Python script
+echo No backup found. Removing integration blocks...
+"%PYTHON_CMD%" "%SCRIPT_DIR%remove_integration.py"
+
+echo.
+echo [OK] Qwen Image LoRA Loader integration removed.
+pause
+exit /b 0
+```
+
+**Key Changes**:
+- **Line 26/50**: Checks if `.qwen_image_backup` file exists
+- **Line 27/51**: Restores original `__init__.py` from backup
+- **Line 29/53**: Exits immediately if backup restoration succeeds
+- **Lines 35-39/59-60**: Fallback if no backup exists
+- **Line 37**: Global uses `where py` + `call py -3`, Portable uses embedded Python directly
+- **Line 38/60**: Calls `remove_integration.py` to remove blocks
 - **Result**: Prefer backup restoration, fallback to marker-based removal
+- **Key Change**: Removed `.backup` fallback - unified to `.qwen_image_backup` only
 
 ## Key Features
 

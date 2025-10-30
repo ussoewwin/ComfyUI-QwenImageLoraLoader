@@ -265,6 +265,9 @@ This node is designed to work with:
 
 ## Changelog
 
+### v1.56
+- Full release notes are published on the tags page. Please see: [v1.56 release notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/tags)
+
 ### v1.55 (Latest)
 - Change: Installer `install_qwen_lora.bat` now uses `py -3` instead of `python`
 - Purpose: Avoid silent failures on environments where the Microsoft Store proxy `python` is picked up from PATH

@@ -283,7 +283,7 @@ This node is designed to work with:
 - Impact: No functional change; improves installation reliability only
 - Recommendation: Update to v1.55 and re-run installation only if you experienced installer failures
 
-### v1.5.4 (Latest)
+### v1.5.4
 - **Fixed Critical Bug**: Resolved Issue #11 - Multiple LoRAs not applying on re-run ([Issue #11](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/11))
 - **Reported by**: [@recursionlaplace-eng](https://github.com/recursionlaplace-eng) - "当有多个lora存在时, 再次运行, lora可能不生效" (When multiple LoRAs exist, re-running may cause LoRAs to not take effect)
 - **Problem**: When using multiple LoRAs, re-executing the workflow could result in LoRAs not being applied, even though they were applied successfully in the previous run

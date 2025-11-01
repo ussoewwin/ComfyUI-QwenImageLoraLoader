@@ -267,7 +267,7 @@ This node is designed to work with:
 - **Simplified Installation**: No batch scripts or manual file editing needed - just `git clone` and restart
 - **Cleaner Architecture**: Node registration happens automatically via ComfyUI's built-in mechanism
 - **Backward Compatible**: All existing LoRA files and workflows continue to work
-- **Technical Details**: See [WHY_NO_NUNCHAKU_INTEGRATION.md](WHY_NO_NUNCHAKU_INTEGRATION.md) for complete explanation
+- **Technical Details**: See [v1.60 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60) for complete explanation
 - **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60
 
 ### v1.57 (Previous)

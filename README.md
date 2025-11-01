@@ -232,59 +232,9 @@ Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely inde
 
 ## Emergency Recovery: Restore Official ComfyUI-nunchaku `__init__.py`
 
-**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository as a last resort:
+**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, see the **Upgrade Guide for v1.57 and Earlier Users**, specifically **Option 3: Method B** ([Restore Official Nunchaku `__init__.py` from Repository](#method-b-restore-official-nunchaku-__init__py-from-repository)) for detailed recovery instructions.
 
-### Step 1: Download the Original File
-
-Download the official `__init__.py` from the Nunchaku repository:
-
-```bash
-cd ComfyUI/custom_nodes/ComfyUI-nunchaku
-curl -o __init__.py https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
-```
-
-Or on Windows without curl:
-
-```bash
-cd ComfyUI/custom_nodes/ComfyUI-nunchaku
-powershell -Command "(New-Object System.Net.WebClient).DownloadFile('https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py', '__init__.py')"
-```
-
-### Step 2: Verify the File
-
-After downloading, verify the file is correct:
-
-```bash
-# Check file size (should be reasonable, not empty)
-ls -la __init__.py
-
-# Or on Windows:
-dir __init__.py
-```
-
-### Step 3: Restart ComfyUI
-
-```bash
-# Restart ComfyUI completely
-```
-
-### Important Notes
-
-- **The official `__init__.py` will NOT have any ComfyUI-QwenImageLoraLoader integration code**, which is exactly what we want
-- **v1.60 will still work perfectly** because it uses the standalone loading mechanism
-- The restored file will be clean and up-to-date with the official Nunchaku repository
-- All your existing workflows and LoRA files will continue to work
-
-### Alternative: Manual Backup Restoration
-
-If you have a backup file from before the integration code was added:
-
-```bash
-cd ComfyUI/custom_nodes/ComfyUI-nunchaku
-cp __init__.py.backup __init__.py
-# Or if you used a different backup name:
-cp __init__.py.original __init__.py
-```
+The recovery process downloads the official clean version from the Nunchaku repository, and v1.60 will continue to work perfectly because it uses the standalone loading mechanism.
 
 ## Usage
 
@@ -350,60 +300,6 @@ This node is designed to work with:
 - The installation script adds `ComfyUI-QwenImageLoraLoader` to `sys.path`
 - This allows absolute imports to work correctly
 - The absolute import `from wrappers.qwenimage import` resolves to `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`
-
-### Error: Corrupted or Unable to Recover `ComfyUI-nunchaku/__init__.py`
-
-**Problem**: The `__init__.py` file in ComfyUI-nunchaku is corrupted, broken, or cannot be restored using the uninstaller backup.
-
-**Symptoms**:
-- `SyntaxError` when importing ComfyUI-nunchaku
-- Nodes fail to load
-- Cannot uninstall or reinstall the loader
-- No backup file available
-
-**Recovery Steps**:
-
-1. **Locate ComfyUI-nunchaku directory**:
-   - Global installation: `%PYTHON_PATH%\Lib\site-packages\ComfyUI-nunchaku\`
-   - Portable installation: `[ComfyUIFolder]\custom_nodes\ComfyUI-nunchaku\`
-
-2. **Backup the corrupted file** (if it exists):
-   ```batch
-   cd [ComfyUI-nunchaku-path]
-   copy __init__.py __init__.py.corrupted
-   ```
-
-3. **Get official `__init__.py` from ComfyUI-nunchaku repository**:
-   - Official repository: https://github.com/chflame163/ComfyUI-nunchaku
-   - Download the raw `__init__.py` file from the latest release/main branch:
-     ```
-     https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
-     ```
-
-4. **Replace the corrupted file**:
-   ```batch
-   cd [ComfyUI-nunchaku-path]
-   REM Download and replace __init__.py
-   certutil -urlcache -split -f "https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py" __init__.py
-   ```
-   
-   Or manually:
-   - Copy the downloaded `__init__.py` to `[ComfyUI-nunchaku-path]\`
-
-5. **Reinstall ComfyUI-QwenImageLoraLoader**:
-   - Run `install_qwen_lora.bat` or `install_qwen_lora_portable.bat` again
-   - The script will add the integration code to the fresh `__init__.py`
-
-6. **Verify**:
-   - Restart ComfyUI
-   - Check if nodes load without errors
-   - Check if `__init__.py.qwen_image_backup` was created
-
-**Prevention**:
-- Do NOT manually edit `ComfyUI-nunchaku/__init__.py` directly
-- Always use the installation/uninstallation scripts provided
-- Keep backups of critical files
-- Report issues if uninstaller fails to restore backup
 
 ### Error: Installation Script Not Running
 

@@ -61,21 +61,20 @@ function handleLoRAStackerLoraCount(node, widget) {
     console.log("QwenImage LoRA Stack: lora_count changed to:", widget.value);
     handleVisibility(node, widget.value);
     
-    // Multiple attempts with small padding to ensure all widgets are visible
-    [50, 150, 300].forEach((delay, index) => {
-        setTimeout(() => {
-            if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
-                const newHeight = node.computeSize()[1];
-                // Smaller padding: 12px base + 4px per attempt
-                const padding = 12 + (index * 4);
-                const paddedHeight = newHeight + padding;
-                node.setSize([node.size[0], paddedHeight]);
-                if (node.graph && typeof node.graph.setDirty === 'function') {
-                    node.graph.setDirty(true, true);
-                }
+    // Single recalculation with proper padding
+    setTimeout(() => {
+        if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
+            const newHeight = node.computeSize()[1];
+            // Use proportional padding based on number of visible widgets
+            const visibleCount = Math.min(widget.value, 10);
+            const padding = 50 + (visibleCount * 10);
+            const paddedHeight = newHeight + padding;
+            node.setSize([node.size[0], paddedHeight]);
+            if (node.graph && typeof node.graph.setDirty === 'function') {
+                node.graph.setDirty(true, true);
             }
-        }, delay);
-    });
+        }
+    }, 100);
 }
 
 // Map of node to widget handlers
@@ -122,20 +121,19 @@ app.registerExtension({
                 // Initialize with current lora_count value
                 handleVisibility(node, loraCountWidget.value);
                 
-                // Force initial height calculation with progressive padding
-                [50, 100, 200, 500].forEach((delay, index) => {
-                    setTimeout(() => {
-                        if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
-                            const newHeight = node.computeSize()[1];
-                            const padding = 20 + (index * 5);
-                            const paddedHeight = newHeight + padding;
-                            node.setSize([node.size[0], paddedHeight]);
-                            if (node.graph && typeof node.graph.setDirty === 'function') {
-                                node.graph.setDirty(true, true);
-                            }
+                // Force initial height calculation with proportional padding
+                setTimeout(() => {
+                    if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
+                        const newHeight = node.computeSize()[1];
+                        const visibleCount = Math.min(loraCountWidget.value, 10);
+                        const padding = 50 + (visibleCount * 10);
+                        const paddedHeight = newHeight + padding;
+                        node.setSize([node.size[0], paddedHeight]);
+                        if (node.graph && typeof node.graph.setDirty === 'function') {
+                            node.graph.setDirty(true, true);
                         }
-                    }, delay);
-                });
+                    }
+                }, 100);
             }
         }
         

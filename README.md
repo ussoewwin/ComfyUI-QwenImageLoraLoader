@@ -204,9 +204,15 @@ Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely inde
 
 ## Emergency Recovery: Restore Official ComfyUI-nunchaku `__init__.py`
 
-**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, see the **Upgrade Guide for v1.57 and Earlier Users**, specifically **Option 3: Manual Cleanup** for detailed recovery instructions.
+**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository:
 
-The recovery process downloads the official clean version from the Nunchaku repository, and v1.60 will continue to work perfectly because it uses the standalone loading mechanism.
+1. Download the official `__init__.py`: [https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py](https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py)
+
+2. Copy the downloaded file to: `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
+
+3. Restart ComfyUI
+
+The official `__init__.py` will not have any ComfyUI-QwenImageLoraLoader integration code. v1.60 will still work perfectly because it uses the standalone loading mechanism.
 
 ## Usage
 

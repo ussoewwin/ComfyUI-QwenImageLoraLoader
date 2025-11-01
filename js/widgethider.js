@@ -32,7 +32,7 @@ function toggleWidget(node, widget, show = false, suffix = "") {
     widget.linkedWidgets?.forEach(w => toggleWidget(node, w, show, ":" + widget.name));
 
     const newHeight = node.computeSize()[1];
-    node.setSize([node.size[0], newHeight]);
+    node.setSize([node.size[0], newHeight + 8]);
 }
 
 // Handle multi-widget visibilities
@@ -61,15 +61,21 @@ function handleLoRAStackerLoraCount(node, widget) {
     console.log("QwenImage LoRA Stack: lora_count changed to:", widget.value);
     handleVisibility(node, widget.value);
     
-    setTimeout(() => {
-        if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
-            const newHeight = node.computeSize()[1];
-            node.setSize([node.size[0], newHeight]);
-            if (node.graph && typeof node.graph.setDirty === 'function') {
-                node.graph.setDirty(true, true);
+    // Multiple attempts with small padding to ensure all widgets are visible
+    [50, 150, 300].forEach((delay, index) => {
+        setTimeout(() => {
+            if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
+                const newHeight = node.computeSize()[1];
+                // Smaller padding: 12px base + 4px per attempt
+                const padding = 12 + (index * 4);
+                const paddedHeight = newHeight + padding;
+                node.setSize([node.size[0], paddedHeight]);
+                if (node.graph && typeof node.graph.setDirty === 'function') {
+                    node.graph.setDirty(true, true);
+                }
             }
-        }
-    }, 50);
+        }, delay);
+    });
 }
 
 // Map of node to widget handlers
@@ -116,12 +122,13 @@ app.registerExtension({
                 // Initialize with current lora_count value
                 handleVisibility(node, loraCountWidget.value);
                 
-                // Force initial height calculation with multiple attempts
-                [50, 100, 200, 500].forEach(delay => {
+                // Force initial height calculation with progressive padding
+                [50, 100, 200, 500].forEach((delay, index) => {
                     setTimeout(() => {
                         if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
                             const newHeight = node.computeSize()[1];
-                            const paddedHeight = newHeight + 20;
+                            const padding = 20 + (index * 5);
+                            const paddedHeight = newHeight + padding;
                             node.setSize([node.size[0], paddedHeight]);
                             if (node.graph && typeof node.graph.setDirty === 'function') {
                                 node.graph.setDirty(true, true);

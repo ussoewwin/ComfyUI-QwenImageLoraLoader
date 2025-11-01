@@ -178,34 +178,6 @@ except ImportError:
 
 **Important:** Look for the BEGIN and END markers. Delete everything from `# BEGIN ComfyUI-QwenImageLoraLoader Integration` to `# END ComfyUI-QwenImageLoraLoader Integration` (inclusive).
 
-#### Method B: Restore Official Nunchaku `__init__.py` from Repository
-
-If manual deletion is too risky, you can restore the clean official version from the Nunchaku repository:
-
-1. Download the official `__init__.py`:
-
-   **On macOS/Linux:**
-   ```bash
-   cd ComfyUI/custom_nodes/ComfyUI-nunchaku
-   curl -o __init__.py https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
-   ```
-
-   **On Windows (PowerShell):**
-   ```powershell
-   cd ComfyUI\custom_nodes\ComfyUI-nunchaku
-   (New-Object System.Net.WebClient).DownloadFile('https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py', '__init__.py')
-   ```
-
-2. Verify the file downloaded correctly:
-   ```bash
-   ls -la __init__.py
-   # Should show a reasonable file size (not empty)
-   ```
-
-3. Restart ComfyUI
-
-**Result:** Your `__init__.py` will be restored to the official clean version without any integration code. v1.60 will still work perfectly because it uses the standalone loading mechanism.
-
 ## Why the Integration Code is No Longer Needed
 
 Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely independent custom node**. Here's why integration is no longer necessary:

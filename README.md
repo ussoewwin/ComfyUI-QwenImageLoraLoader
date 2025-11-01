@@ -105,7 +105,13 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 
 ### Option 2: Clean Up Old Integration Code (For Cleaner Repository)
 
+**⚠️ Windows Only - Batch Scripts Not Available for macOS/Linux**
+
 If you want to remove the old integration code from ComfyUI-nunchaku's `__init__.py`:
+
+**This option ONLY works on Windows.** If you are using macOS or Linux, please use Option 3 (Manual Cleanup) below.
+
+#### For Windows Users:
 
 1. Update to v1.60:
    ```bash
@@ -116,15 +122,15 @@ If you want to remove the old integration code from ComfyUI-nunchaku's `__init__
 2. Run the uninstaller to remove the old integration code:
 
    **For Global Python Environment:**
-   ```bash
-   cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
-   ./uninstall_qwen_lora.bat
+   ```cmd
+   cd ComfyUI\custom_nodes\ComfyUI-QwenImageLoraLoader
+   uninstall_qwen_lora.bat
    ```
 
    **For Portable ComfyUI with Embedded Python:**
-   ```bash
-   cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
-   ./uninstall_qwen_lora_portable.bat
+   ```cmd
+   cd ComfyUI\custom_nodes\ComfyUI-QwenImageLoraLoader
+   uninstall_qwen_lora_portable.bat
    ```
 
 3. The uninstaller will restore your ComfyUI-nunchaku `__init__.py` to its original state
@@ -133,11 +139,13 @@ If you want to remove the old integration code from ComfyUI-nunchaku's `__init__
 
 **After uninstalling the old integration code, the node will still work perfectly** because v1.60 uses the standalone loading mechanism.
 
-### Option 3: Manual Cleanup (For Advanced Users)
+### Option 3: Manual Cleanup (For macOS/Linux, or Users Who Prefer Manual Editing)
 
-If you prefer to manually edit files:
+**For macOS/Linux users** (batch scripts are not available), or if you prefer to manually edit files, you have two choices:
 
-1. Open `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
+#### Method A: Manually Delete the Integration Code Block
+
+1. Open `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py` in a text editor
 
 2. Find and delete the entire following block (it will be at the end of the file):
 
@@ -168,13 +176,41 @@ except ImportError:
 # END ComfyUI-QwenImageLoraLoader Integration
 ```
 
-3. Delete this entire block from the file
+3. Delete this entire block from the file (from `# BEGIN` to `# END` markers inclusive)
 
 4. Save the file
 
 5. Restart ComfyUI
 
 **Important:** Look for the BEGIN and END markers. Delete everything from `# BEGIN ComfyUI-QwenImageLoraLoader Integration` to `# END ComfyUI-QwenImageLoraLoader Integration` (inclusive).
+
+#### Method B: Restore Official Nunchaku `__init__.py` from Repository
+
+If manual deletion is too risky, you can restore the clean official version from the Nunchaku repository:
+
+1. Download the official `__init__.py`:
+
+   **On macOS/Linux:**
+   ```bash
+   cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+   curl -o __init__.py https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
+   ```
+
+   **On Windows (PowerShell):**
+   ```powershell
+   cd ComfyUI\custom_nodes\ComfyUI-nunchaku
+   (New-Object System.Net.WebClient).DownloadFile('https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py', '__init__.py')
+   ```
+
+2. Verify the file downloaded correctly:
+   ```bash
+   ls -la __init__.py
+   # Should show a reasonable file size (not empty)
+   ```
+
+3. Restart ComfyUI
+
+**Result:** Your `__init__.py` will be restored to the official clean version without any integration code. v1.60 will still work perfectly because it uses the standalone loading mechanism.
 
 ## Why the Integration Code is No Longer Needed
 

@@ -27,12 +27,12 @@ function toggleWidget(node, widget, show = false, suffix = "") {
     const newType = show ? origProps[widget.name].origType : HIDDEN_TAG + suffix;
     
     widget.type = newType;
-    widget.computeSize = show ? origProps[widget.name].origComputeSize : () => [0, 20];
+    widget.computeSize = show ? origProps[widget.name].origComputeSize : () => [0, -4];
 
     widget.linkedWidgets?.forEach(w => toggleWidget(node, w, show, ":" + widget.name));
 
     const newHeight = node.computeSize()[1];
-    node.setSize([node.size[0], newHeight + 8]);
+    node.setSize([node.size[0], newHeight + 35]);
 }
 
 // Handle multi-widget visibilities
@@ -61,12 +61,12 @@ function handleLoRAStackerLoraCount(node, widget) {
     console.log("QwenImage LoRA Stack: lora_count changed to:", widget.value);
     handleVisibility(node, widget.value);
     
-    // Multiple attempts with small padding to ensure all widgets are visible
+    // Multiple attempts with proper padding to ensure all widgets are visible
     [50, 150, 300].forEach((delay, index) => {
         setTimeout(() => {
             if (typeof node.setSize === 'function' && typeof node.computeSize === 'function') {
                 const newHeight = node.computeSize()[1];
-                // Smaller padding: 12px base + 4px per attempt
+                // Base padding: 12px + 4px per attempt
                 const padding = 12 + (index * 4);
                 const paddedHeight = newHeight + padding;
                 node.setSize([node.size[0], paddedHeight]);

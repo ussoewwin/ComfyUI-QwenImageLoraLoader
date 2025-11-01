@@ -64,8 +64,6 @@ If you prefer to install manually or are using macOS/Linux:
 ```bash
 cd /path/to/ComfyUI/custom_nodes
 git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
-cd ComfyUI-QwenImageLoraLoader
-pip install -r requirements.txt
 ```
 
 Then restart ComfyUI.

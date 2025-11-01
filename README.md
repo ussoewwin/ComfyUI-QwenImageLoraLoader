@@ -4,7 +4,21 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.57 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.57)
+> Latest release: [v1.60 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
+
+## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
+
+**As of v1.60, manual integration with ComfyUI-nunchaku's `__init__.py` is completely unnecessary.**
+
+The node now operates as a fully independent custom node that works out-of-the-box. Simply clone the repository into your `custom_nodes` folder and restart ComfyUI. The nodes will automatically appear in ComfyUI's node menu through ComfyUI's built-in automatic node loading mechanism.
+
+### What Changed in v1.60
+- ✅ **Removed dependency on ComfyUI-nunchaku integration** - The LoRA loader is now a standalone plugin
+- ✅ **Simplified installation** - No batch scripts or manual file editing required
+- ✅ **Cleaner architecture** - Node registration happens automatically
+- ✅ **Backward compatible** - All existing LoRA files and workflows continue to work
+
+For a detailed technical explanation of why integration is no longer needed, see [WHY_NO_NUNCHAKU_INTEGRATION.md](WHY_NO_NUNCHAKU_INTEGRATION.md)
 
 ## Source
 
@@ -23,126 +37,53 @@ This LoRA loader was extracted and modified from GavChap's fork:
 
 ## Installation
 
-### Quick Installation (Recommended)
+### Quick Installation (v1.60 - Simplified!)
 
 1. Clone this repository to your ComfyUI custom_nodes directory:
+
 ```bash
+cd ComfyUI/custom_nodes
 git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 ```
 
-2. Ensure you have the official ComfyUI-nunchaku plugin installed (which includes nunchaku as a dependency).
+2. Ensure you have the official ComfyUI-nunchaku plugin installed:
 
-3. **Choose the appropriate installation script based on your ComfyUI setup:**
-
-> **Note**: The automated installation batch files (`.bat`) are **Windows-only**. For macOS and Linux users, please use the [Manual Installation](#manual-installation) method below.
-
-#### For ComfyUI Installations with Global Python Environment (Windows)
-- **Script**: `install_qwen_lora.bat`
-- **Platform**: Windows only
-- **Python Environment**: Uses global Python environment (system-installed Python)
-- **Requirements**: Python must be installed and accessible from command line (`python` command)
-- **Usage**: Double-click `install_qwen_lora.bat`
-- **When to use**: ComfyUI installations where Python is installed globally on the system
-
-#### For Portable ComfyUI Installations with Embedded Python (Windows)
-- **Script**: `install_qwen_lora_portable.bat`
-- **Platform**: Windows only
-- **Python Environment**: Uses embedded Python (`python_embeded` folder)
-- **Requirements**: ComfyUI installation with `python_embeded` folder containing `python.exe`
-- **Usage**: Double-click `install_qwen_lora_portable.bat`
-- **When to use**: Portable ComfyUI installations that include embedded Python
-- **Automatic Detection**: Script automatically searches for `python_embeded` in multiple locations:
-  - `[ComfyUIFolder]/ComfyUI/python_embeded/python.exe`
-  - `[ComfyUIFolder]/python_embeded/python.exe` (most common)
-- **Folder Name Independence**: Works with any ComfyUI folder name (not limited to "ComfyUI")
-
-4. **After running the installation script:**
-   - The script will automatically modify the ComfyUI-nunchaku `__init__.py` file
-   - Restart ComfyUI to use the new LoRA loader nodes
-
-### Manual Installation
-
-If you prefer manual installation, see [INSTALLATION.md](INSTALLATION.md) for detailed instructions.
-
-## Integration with ComfyUI-nunchaku
-
-**IMPORTANT**: This node requires modification of the official ComfyUI-nunchaku plugin to function properly.
-
-### Required Modification
-
-You must modify the `__init__.py` file in your ComfyUI-nunchaku plugin to import this LoRA loader:
-
-```python
-try:
-    # Import from the independent ComfyUI-QwenImageLoraLoader
-    import sys
-    import os
-    qwen_lora_path = os.path.join(os.path.dirname(__file__), "..", "ComfyUI-QwenImageLoraLoader")
-    if qwen_lora_path not in sys.path:
-        sys.path.insert(0, qwen_lora_path)
-    
-    # Import directly from the file path
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("qwenimage", os.path.join(qwen_lora_path, "nodes", "lora", "qwenimage.py"))
-    qwenimage_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(qwenimage_module)
-    
-    NunchakuQwenImageLoraLoader = qwenimage_module.NunchakuQwenImageLoraLoader
-    NunchakuQwenImageLoraStack = qwenimage_module.NunchakuQwenImageLoraStack
-
-    NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
-    NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
-    logger.info("Successfully imported Qwen Image LoRA loaders from ComfyUI-QwenImageLoraLoader")
-except ImportError:
-    logger.exception("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:")
+```bash
+cd ComfyUI/custom_nodes
+git clone https://github.com/Nunchaku-tech/ComfyUI-nunchaku.git
 ```
 
-### Why This Modification is Required
+3. Restart ComfyUI
 
-- The independent LoRA loader exists as a separate custom node
-- The official ComfyUI-nunchaku plugin needs to reference the independent LoRA loader
-- Standard `from ... import ...` fails due to different package structures
-- `importlib.util` allows direct module loading from file paths
+**That's it!** The nodes will automatically appear in ComfyUI's node menu.
 
-### Automated Installation (Recommended)
+### Manual Installation (Alternative)
 
-**Both batch files automatically add the integration code to your ComfyUI-nunchaku `__init__.py` file:**
+If you prefer to install manually or are using macOS/Linux:
 
-#### What the installation scripts do:
-- **Path Detection**: Automatically detects your ComfyUI installation path using relative path calculation
-- **Backup Creation**: Backs up the original `__init__.py` file (creates `__init__.py.backup`)
-- **Code Integration**: Adds the exact import code shown above to the end of ComfyUI-nunchaku's `__init__.py`
-- **Error Checking**: Performs comprehensive error checking to ensure all required files exist
-- **User Feedback**: Provides detailed feedback throughout the installation process
+```bash
+cd /path/to/ComfyUI/custom_nodes
+git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
+cd ComfyUI-QwenImageLoraLoader
+pip install -r requirements.txt
+```
 
-#### Installation Script Details:
+Then restart ComfyUI.
 
-**`install_qwen_lora.bat` (Global Python Environment)**
-- **Python Command**: `py -3` (explicitly use the Python launcher)
-- **Requirements**: Python installed and the `py` launcher available
-- **Path Detection**: Uses relative path calculation from script location
-- **Error Handling**: Checks for Python availability and file existence
-- **When to use**: ComfyUI installations with global Python environment
+### Requirements
 
-**`install_qwen_lora_portable.bat` (Portable ComfyUI)**
-- **Python Command**: `[ComfyUIFolder]/python_embeded/python.exe` (uses embedded Python)
-- **Requirements**: ComfyUI installation with `python_embeded` folder
-- **Automatic Detection**: Searches for `python_embeded` in multiple possible locations:
-  - `[ComfyUIFolder]/ComfyUI/python_embeded/python.exe`
-  - `[ComfyUIFolder]/python_embeded/python.exe` (most common pattern)
-- **Folder Name Independence**: Works with any ComfyUI folder name (not limited to "ComfyUI")
-- **Error Handling**: Provides detailed error messages if embedded Python is not found
-- **When to use**: Portable ComfyUI installations with embedded Python
+- Python 3.11+
+- ComfyUI (latest version recommended)
+- ComfyUI-nunchaku plugin
+- CUDA-capable GPU (optional, but recommended for performance)
 
-#### Running the Installation:
-1. **Choose the appropriate script** based on your ComfyUI setup (see Installation section above)
-2. **Double-click the batch file** - no manual code editing required
-3. **Follow the on-screen instructions** - the script handles everything automatically
-4. **Restart ComfyUI** after successful installation
+## Integration with ComfyUI-nunchaku (No Longer Required in v1.60)
 
-#### Uninstall if needed:
-- Double-click `uninstall_qwen_lora.bat` to restore the original configuration
-- This will restore the backup and remove the integration code
+As of v1.60, **no modification to ComfyUI-nunchaku's `__init__.py` is required**.
+
+The LoRA loader operates as a completely independent custom node through ComfyUI's automatic node loading mechanism. When ComfyUI starts, it automatically scans the `custom_nodes/` directory and loads all available `__init__.py` files. Your LoRA loader will be discovered and registered automatically.
+
+For technical details about why integration is no longer necessary, see [WHY_NO_NUNCHAKU_INTEGRATION.md](WHY_NO_NUNCHAKU_INTEGRATION.md)
 
 ## Usage
 
@@ -176,7 +117,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 - ComfyUI
 - ComfyUI-nunchaku plugin (with required modification)
 - PyTorch
-- Python 3.10+
+- Python 3.11+
 
 ## Compatibility
 
@@ -321,7 +262,15 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.57 (Latest)
+### v1.60 (Latest)
+- **MAJOR UPDATE**: Removed ComfyUI-nunchaku integration requirement - now a fully independent custom node
+- **Simplified Installation**: No batch scripts or manual file editing needed - just `git clone` and restart
+- **Cleaner Architecture**: Node registration happens automatically via ComfyUI's built-in mechanism
+- **Backward Compatible**: All existing LoRA files and workflows continue to work
+- **Technical Details**: See [WHY_NO_NUNCHAKU_INTEGRATION.md](WHY_NO_NUNCHAKU_INTEGRATION.md) for complete explanation
+- **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60
+
+### v1.57 (Previous)
 - **Fixed Critical Bug**: Resolved duplicate integration blocks when running installer multiple times
 - **Reported by**: [@ussoewwin](https://github.com/ussoewwin)
 - **Issue #15 Fixed**: This node is now available on [ComfyUI Registry](https://registry.comfy.org/ja/publishers/ussoewwin/nodes/ComfyUI-QwenImageLoraLoader) for easy installation and management ([Issue #15](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/15))

@@ -24,7 +24,7 @@ license = { file = "LICENSE" }
 requires-python = ">=3.10, <3.13"
 
 [project.urls]
-Repository = "https://github.com/ComfyUI-QwenImageLoraLoader"
+Repository = "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader"
 
 [tool.comfy]
 PublisherId = "qwenimage-lora-loader"

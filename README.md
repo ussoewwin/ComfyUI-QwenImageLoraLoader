@@ -40,7 +40,7 @@ This LoRA loader was extracted and modified from GavChap's fork:
 ### Quick Installation (v1.60 - Simplified!)
 
 **Prerequisites:**
-- ComfyUI-nunchaku must be installed in your custom_nodes folder
+- ComfyUI-nunchaku must be installed
 
 1. Clone this repository to your ComfyUI custom_nodes directory:
 
@@ -49,14 +49,7 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 ```
 
-2. Ensure you have the official ComfyUI-nunchaku plugin installed:
-
-```bash
-cd ComfyUI/custom_nodes
-git clone https://github.com/Nunchaku-tech/ComfyUI-nunchaku.git
-```
-
-3. Restart ComfyUI
+2. Restart ComfyUI
 
 **That's it!** The nodes will automatically appear in ComfyUI's node menu.
 
@@ -75,7 +68,7 @@ Then restart ComfyUI.
 
 - Python 3.11+
 - ComfyUI (latest version recommended)
-- ComfyUI-nunchaku plugin (required)
+- ComfyUI-nunchaku (required)
 - CUDA-capable GPU (optional, but recommended for performance)
 
 ## Integration with ComfyUI-nunchaku (No Longer Required in v1.60)

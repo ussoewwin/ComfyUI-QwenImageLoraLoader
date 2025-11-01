@@ -85,6 +85,157 @@ The LoRA loader operates as a completely independent custom node through ComfyUI
 
 For technical details about why integration is no longer necessary, see [v1.60 Release Notes on GitHub](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
 
+## Upgrade Guide for v1.57 and Earlier Users
+
+If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku's `__init__.py`, **you have three options:**
+
+### Option 1: Keep Everything As-Is (Recommended for Most Users)
+
+**The integration code will continue to work without any issues.** You don't need to do anything:
+
+1. Update ComfyUI-QwenImageLoraLoader to v1.60:
+   ```bash
+   cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
+   git pull origin main
+   ```
+
+2. Restart ComfyUI
+
+**That's it!** The old integration code will be safely ignored, and the new standalone mechanism will take over. All your existing workflows and LoRA files continue to work exactly as before.
+
+### Option 2: Clean Up Old Integration Code (For Cleaner Repository)
+
+If you want to remove the old integration code from ComfyUI-nunchaku's `__init__.py`:
+
+1. Update to v1.60:
+   ```bash
+   cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
+   git pull origin main
+   ```
+
+2. Run the uninstaller to remove the old integration code:
+
+   **For Global Python Environment:**
+   ```bash
+   cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
+   ./uninstall_qwen_lora.bat
+   ```
+
+   **For Portable ComfyUI with Embedded Python:**
+   ```bash
+   cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
+   ./uninstall_qwen_lora_portable.bat
+   ```
+
+3. The uninstaller will restore your ComfyUI-nunchaku `__init__.py` to its original state
+
+4. Restart ComfyUI
+
+**After uninstalling the old integration code, the node will still work perfectly** because v1.60 uses the standalone loading mechanism.
+
+### Option 3: Manual Cleanup (For Advanced Users)
+
+If you prefer to manually edit files:
+
+1. Open `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
+
+2. Find the section with "ComfyUI-QwenImageLoraLoader Integration" marker
+
+3. Delete the entire `try/except` block that contains:
+   ```python
+   try:
+       # ComfyUI-QwenImageLoraLoader Integration
+       ... (integration code) ...
+   except ImportError:
+       logger.exception("...")
+   ```
+
+4. Save the file
+
+5. Restart ComfyUI
+
+**The integration code is marked with clear BEGIN/END markers, making it easy to identify and remove.**
+
+## Why the Integration Code is No Longer Needed
+
+Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely independent custom node**. Here's why integration is no longer necessary:
+
+1. **ComfyUI's Automatic Node Discovery**: ComfyUI automatically scans the `custom_nodes/` directory and loads all `__init__.py` files at startup
+
+2. **Automatic NODE_CLASS_MAPPINGS Merging**: All `NODE_CLASS_MAPPINGS` from different plugins are automatically merged into a single registry
+
+3. **Direct Type Imports**: The loader imports `NunchakuQwenImageTransformer2DModel` directly from the nunchaku package, without needing main body integration
+
+4. **Model-Agnostic LoRA Composition**: The `compose_loras_v2()` function works with any model that has `_lora_slots`, independent of the main body
+
+5. **Wrapper-Based Architecture**: All LoRA logic is handled by `ComfyQwenImageWrapper`, which is completely self-contained
+
+**For a complete technical explanation with 7 detailed chapters, see [v1.60 Release Notes on GitHub](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)**
+
+## Backward Compatibility
+
+✅ **All existing setups continue to work:**
+- Workflows created with v1.57 or earlier work without modification
+- LoRA files work without any changes
+- Old integration code in ComfyUI-nunchaku `__init__.py` is safely ignored
+- No breaking changes to node inputs/outputs
+
+## Emergency Recovery: Restore Official ComfyUI-nunchaku `__init__.py`
+
+**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository as a last resort:
+
+### Step 1: Download the Original File
+
+Download the official `__init__.py` from the Nunchaku repository:
+
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+curl -o __init__.py https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
+```
+
+Or on Windows without curl:
+
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+powershell -Command "(New-Object System.Net.WebClient).DownloadFile('https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py', '__init__.py')"
+```
+
+### Step 2: Verify the File
+
+After downloading, verify the file is correct:
+
+```bash
+# Check file size (should be reasonable, not empty)
+ls -la __init__.py
+
+# Or on Windows:
+dir __init__.py
+```
+
+### Step 3: Restart ComfyUI
+
+```bash
+# Restart ComfyUI completely
+```
+
+### Important Notes
+
+- **The official `__init__.py` will NOT have any ComfyUI-QwenImageLoraLoader integration code**, which is exactly what we want
+- **v1.60 will still work perfectly** because it uses the standalone loading mechanism
+- The restored file will be clean and up-to-date with the official Nunchaku repository
+- All your existing workflows and LoRA files will continue to work
+
+### Alternative: Manual Backup Restoration
+
+If you have a backup file from before the integration code was added:
+
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+cp __init__.py.backup __init__.py
+# Or if you used a different backup name:
+cp __init__.py.original __init__.py
+```
+
 ## Usage
 
 ### Available Nodes

@@ -1,9 +1,5 @@
 v1.60 — MAJOR UPDATE: Simplified Installation (No Integration Required!)
 
-Opening Statement
-
-So tired…anyway…Major update !! Why Integration with ComfyUI-nunchaku's __init__.py is Unnecessary - Complete Thorough Explanation. So…I deleted all bat files of installation, because of "Fundamental misunderstanding"….ha ! After all…it becomes more simply and safety. I can only say…"Every cloud has a silver lining".
-
 Summary
 
 As of v1.60, ComfyUI-QwenImageLoraLoader is now a fully independent custom node that requires no integration with ComfyUI-nunchaku's `__init__.py`.

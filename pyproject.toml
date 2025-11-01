@@ -22,6 +22,7 @@ description = "Standalone ComfyUI custom node for Nunchaku QwenImage LoRA loadin
 authors = [{ name = "ussoewwin" }]
 license = { file = "LICENSE" }
 requires-python = ">=3.10, <3.13"
+keywords = ["ComfyUI", "QwenImage", "LoRA"]
 
 [project.urls]
 Repository = "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader"

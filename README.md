@@ -204,9 +204,59 @@ Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely inde
 
 ## Emergency Recovery: Restore Official ComfyUI-nunchaku `__init__.py`
 
-**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, see the **Upgrade Guide for v1.57 and Earlier Users**, specifically **Option 3: Method B** ([Restore Official Nunchaku `__init__.py` from Repository](#method-b-restore-official-nunchaku-__init__py-from-repository)) for detailed recovery instructions.
+**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository:
 
-The recovery process downloads the official clean version from the Nunchaku repository, and v1.60 will continue to work perfectly because it uses the standalone loading mechanism.
+### Step 1: Download the Original File
+
+Download the official `__init__.py` from the Nunchaku repository:
+
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+curl -o __init__.py https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py
+```
+
+Or on Windows without curl:
+
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+powershell -Command "(New-Object System.Net.WebClient).DownloadFile('https://raw.githubusercontent.com/chflame163/ComfyUI-nunchaku/main/__init__.py', '__init__.py')"
+```
+
+### Step 2: Verify the File
+
+After downloading, verify the file is correct:
+
+```bash
+# Check file size (should be reasonable, not empty)
+ls -la __init__.py
+
+# Or on Windows:
+dir __init__.py
+```
+
+### Step 3: Restart ComfyUI
+
+```bash
+# Restart ComfyUI completely
+```
+
+### Important Notes
+
+- **The official `__init__.py` will NOT have any ComfyUI-QwenImageLoraLoader integration code**, which is exactly what we want
+- **v1.60 will still work perfectly** because it uses the standalone loading mechanism
+- The restored file will be clean and up-to-date with the official Nunchaku repository
+- All your existing workflows and LoRA files will continue to work
+
+### Alternative: Manual Backup Restoration
+
+If you have a backup file from before the integration code was added:
+
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-nunchaku
+cp __init__.py.backup __init__.py
+# Or if you used a different backup name:
+cp __init__.py.original __init__.py
+```
 
 ## Usage
 

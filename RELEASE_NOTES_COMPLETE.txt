@@ -1,0 +1,461 @@
+v1.60 — MAJOR UPDATE: Simplified Installation (No Integration Required!)
+
+Opening Statement
+
+So tired…anyway…Major update !! Why Integration with ComfyUI-nunchaku's __init__.py is Unnecessary - Complete Thorough Explanation. So…I deleted all bat files of installation, because of "Fundamental misunderstanding"….ha ! After all…it becomes more simply and safety. I can only say…"Every cloud has a silver lining".
+
+Summary
+
+As of v1.60, ComfyUI-QwenImageLoraLoader is now a fully independent custom node that requires no integration with ComfyUI-nunchaku's `__init__.py`.
+
+✅ **Removed ComfyUI-nunchaku integration requirement** — No manual modification of `__init__.py` needed
+✅ **Simplified installation** — Just `git clone` and restart ComfyUI
+✅ **No batch scripts** — All installation/uninstallation batch files deleted
+✅ **Automatic node registration** — ComfyUI's built-in mechanism handles everything
+✅ **Backward compatible** — All existing LoRA files and workflows continue to work
+
+What Changed
+
+Before v1.60:
+1. Clone repository
+2. Choose installation script (global or portable Python)
+3. Run batch file (modifies ComfyUI-nunchaku/__init__.py)
+4. Restart ComfyUI
+
+After v1.60:
+1. Clone repository
+2. Restart ComfyUI
+Done!
+
+---
+
+CHAPTER 1: Project Background and Initial Misunderstanding
+
+1-1 Extraction from GavChap's Fork
+
+ComfyUI-QwenImageLoraLoader was extracted from the "qwen-lora-suport-standalone" branch that GavChap created by forking ComfyUI-nunchaku. In GavChap's fork version, LoRA loader functionality for Qwen Image was added, which did not exist in the official ComfyUI-nunchaku. Subsequently, this QI-specific LoRA functionality was separated as an independent custom node and modified to be compatible with the official ComfyUI-nunchaku.
+
+At the time of extraction, I believed that "external nodes require integration with the main body." This is the origin of this misunderstanding. In GavChap's fork, the QI LoRA node was written directly into ComfyUI-nunchaku's `__init__.py`. That design pattern was referenced, and after independent node creation, the idea that "nunchaku's main body should have integration code added" continued. However, this premise was actually wrong. When investigating the details of ComfyUI's specifications and implementation, it became clear that integration with the main body was unnecessary.
+
+1-2 Comparison with FLUX Loader
+
+Looking at the official ComfyUI-nunchaku, the FLUX LoRA loader is built-in. This is implemented at lines 45-50 of nunchaku's `__init__.py`:
+
+```python
+try:
+    from .nodes.lora.flux import NunchakuFluxLoraLoader, NunchakuFluxLoraStack
+    NODE_CLASS_MAPPINGS["NunchakuFluxLoraLoader"] = NunchakuFluxLoraLoader
+    NODE_CLASS_MAPPINGS["NunchakuFluxLoraStack"] = NunchakuFluxLoraStack
+except ImportError:
+    logger.exception("Nodes `NunchakuFluxLoraLoader` and `NunchakuFluxLoraStack` import failed:")
+```
+
+FLUX nodes are directly embedded. Meanwhile, QI LoRA is an external feature added by GavChap and does not exist in the official version. Why is FLUX internally embedded while QI is external? The reason is that FLUX support was planned from the initial stages of Nunchaku, whereas QI support is a later expansion.
+
+The question then arises: does the QI LoRA loader, which exists as an external node, require integration with the main body to operate the same way as FLUX? The answer is **NO**. And we have PROOF: ComfyUI-nunchaku's actual `__init__.py` contains NO Qwen Image LoRA loader code. Only FLUX LoRA. This single fact proves that v1.60's independent architecture works perfectly.
+
+---
+
+CHAPTER 2: ComfyUI's Node Loading Specification
+
+2-1 Automatic Loading Mechanism
+
+ComfyUI's startup flow:
+
+1. ComfyUI scans the `custom_nodes/` directory
+2. Automatically executes `__init__.py` in each directory
+3. Collects `NODE_CLASS_MAPPINGS` dictionaries if they exist
+4. Merges all `NODE_CLASS_MAPPINGS` into one final node dictionary
+5. Displays in UI
+
+If the `ComfyUI-QwenImageLoraLoader/` directory has an `__init__.py` where `NODE_CLASS_MAPPINGS` is defined, ComfyUI automatically recognizes it. Integration code with the main body is completely unnecessary. This automatic discovery mechanism is the foundation of everything that follows.
+
+2-2 How Multiple NODE_CLASS_MAPPINGS are Merged
+
+ComfyUI's core implementation merges at startup as follows (conceptually):
+
+1. Loads `NODE_CLASS_MAPPINGS` from nunchaku's internal implementation
+2. Loads `NODE_CLASS_MAPPINGS` from QwenImageLoraLoader's internal implementation
+3. Loads `NODE_CLASS_MAPPINGS` from all other custom nodes
+4. Merges all of these into one large dictionary
+5. Displays in UI
+
+If each node pair has an independent `__init__.py`, they coexist without integration code. This is the fundamental principle: **separation of concerns**. Each plugin manages its own node registration. ComfyUI coordinates the merging at startup. No plugin needs to know about other plugins' `__init__.py` files.
+
+---
+
+CHAPTER 3: Model Structure and Reference Relationships
+
+3-1 ComfyUI's ModelPatcher
+
+ComfyUI's basic model structure is `ModelPatcher`. This wraps the model and records patches (weight changes) while maintaining the original structure. In Nunchaku's case, this is extended with `NunchakuModelPatcher`.
+
+The ModelPatcher serves as a container that:
+- Holds the actual model
+- Tracks device and dtype
+- Records applied patches
+- Manages offloading and memory
+- Maintains model state across operations
+
+3-2 NunchakuQwenImage's Structure
+
+NunchakuQwenImage extends the official QwenImage. The important part is that `diffusion_model` is assigned `NunchakuQwenImageTransformer2DModel`. This is a Nunchaku type, but it is the location where ComfyUI's LoRA loader accesses. 
+
+The `diffusion_model` attribute is the **critical access point** for LoRA loading. This is where the wrapper is inserted, and this is how the loader modifies behavior without touching the original model file or nunchaku's code. Understanding this single point explains the entire independent architecture: the LoRA loader doesn't modify nunchaku; it modifies the reference in the ModelPatcher.
+
+Structure:
+```
+NunchakuModelPatcher
+└── model (NunchakuQwenImage)
+    ├── diffusion_model (NunchakuQwenImageTransformer2DModel) ← This is where LoRA wrapper goes
+    ├── model_config
+    └── other parameters
+```
+
+3-3 LoRA Loader's Access Path
+
+When the LoRA loader executes:
+
+```python
+def load_lora(self, model, lora_name: str, lora_strength: float):
+    model_wrapper = model.model.diffusion_model
+```
+
+This `model` is `NunchakuModelPatcher`. `model.model` is `NunchakuQwenImage`. `model.model.diffusion_model` is `NunchakuQwenImageTransformer2DModel`.
+
+The loader can automatically access the correct Transformer from the passed ModelPatcher. Integration code with the main body does not affect this access path. The path is **stable and predictable** because it's defined by Nunchaku's model architecture, not by any integration code in nunchaku's `__init__.py`.
+
+3-4 Existing Pipeline
+
+When QwenImage DiT Loader (model loading node) executes:
+
+1. Loads model file from disk
+2. Calls `load_diffusion_model_state_dict` to initialize model state
+3. Generates `NunchakuQwenImage` instance
+4. Automatically assigns `NunchakuQwenImageTransformer2DModel` to `diffusion_model` within it
+5. Wraps entire structure with `NunchakuModelPatcher`
+6. Returns the ModelPatcher to ComfyUI
+
+When the LoRA loader receives this ModelPatcher, the correct structure is already established. The loader doesn't need to know how the model was created or what nunchaku version is running. It just needs to access `model.model.diffusion_model` and work with it. 
+
+This is **complete architectural separation**. The model loader and LoRA loader are independent plugins that communicate only through the standard ComfyUI interface (ModelPatcher). The pipeline flow shows that each step builds upon the previous without any integration code needed. This is the key insight: the architecture works because each component adheres to ComfyUI's standard interface, not because of integration in nunchaku's `__init__.py`.
+
+---
+
+CHAPTER 4: Complete Logic of LoRA Application
+
+4-1 Mathematical Principle of LoRA
+
+LoRA (Low-Rank Adaptation) adds fine-tuning through low-rank matrices without directly changing the model's original weights.
+
+Original weight matrix: `W: (out_dim, in_dim)`
+
+LoRA addition: `ΔW = α × B @ A`
+
+Where:
+- A: (in_dim, rank)
+- B: (out_dim, rank)
+- α: Scaling coefficient
+
+In forward propagation: `output = (W + α × B @ A) @ input`
+
+The original parameter W remains unchanged, and an additional low-rank term ΔW is added on top. This allows effective fine-tuning with fewer parameters. 
+
+Key insight: The model's weights are NEVER modified. Only tensors in `_lora_slots` are changed. This means:
+- Original model remains intact
+- Multiple LoRAs can be applied/removed dynamically
+- No corrupted model states
+- Complete reversibility
+- Multiple LoRAs can coexist without conflict
+
+This fundamental property is what enables the entire lazy composition system to work safely and efficiently.
+
+4-2 Nunchaku's LoRA Implementation
+
+Nunchaku adopts a `_lora_slots` mechanism. Pre-allocated LoRA slots are reserved for specific layers of the model. Each slot has a tensor area for computation, where `α`, `A`, and `B` are stored. 
+
+Structure example:
+```
+NunchakuQwenImageTransformer2DModel
+├── attention_layer_1
+│  ├── weight (original weights, NEVER modified)
+│  └── _lora_slots (LoRA tensors go here)
+├── attention_layer_2
+│  ├── weight
+│  └── _lora_slots
+├── mlp_fc1
+│  ├── weight
+│  └── _lora_slots
+└── ... (more layers)
+```
+
+Each layer that supports LoRA has pre-allocated `_lora_slots`. These slots are memory regions where LoRA tensors are stored. When forward pass executes, the model automatically combines W + ΔW.
+
+The guarantee that original weights are never modified is crucial because it means the model can be reused across multiple inference runs with different LoRA configurations.
+
+4-3 compose_loras_v2 Processing
+
+The LoRA composition function `compose_loras_v2(model, lora_configs)` performs:
+
+1. **Traverses the model:** Enumerates all `_lora_slots` in the model
+2. **Loads LoRA files:** Extracts state dictionaries from LoRA files (safetensors format)
+3. **Key mapping:** Normalizes formats like "transformer_blocks.0.attn.to_qkv.lora_b.weight" to actual model paths like "transformer_blocks.0.attn.to_qkv"
+4. **Aggregation:** For multiple LoRAs targeting the same layer, combines them: `final_ΔW = Σ(strength_i × ΔW_i)`
+5. **Application:** Assigns final `α, A, B` to each slot
+
+This processing does not depend on model type. As long as the `_lora_slots` attribute exists, it processes mechanically. The function is **completely model-agnostic**. It doesn't care if the model is Qwen Image, Flux, or anything else. If the model has the right structure, it works.
+
+4-4 ComfyQwenImageWrapper's Role
+
+ComfyQwenImageWrapper is the KEY to the entire system. This wrapper:
+
+1. **Receives LoRA list from external sources:** The loader nodes append to `self.loras`
+2. **Detects changes:** Compares `self._applied_loras` with `self.loras` to detect additions/removals
+3. **Calls compose_loras_v2 if changes detected:** Applies new LoRA weights to slots
+4. **Executes model forward propagation:** LoRA is applied at this point through the slot mechanism
+5. **Manages device transitions:** Detects CPU/GPU moves and forces re-composition if needed
+6. **Handles VRAM efficiently:** Auto-detects low VRAM and enables CPU offloading for LoRA composition
+
+Critical point: The wrapper manages **lazy composition**. LoRAs are not applied immediately when registered by the loader; they are applied during the actual inference forward pass. This is efficient because:
+- LoRAs only composed when needed
+- Multiple LoRAs can be queued before inference starts
+- Composition happens on the correct device (GPU or CPU with offload)
+- Device transitions are detected and handled automatically
+- State changes are detected and composition is redone only when necessary
+
+The wrapper maintains `_applied_loras` to track the current state and only recomposes when this state diverges from `self.loras`. This lazy evaluation pattern is fundamental to the efficiency of the entire system.
+
+4-5 Loader's Invocation
+
+The LoRA Loader node's `load_lora` method (actual code from implementation):
+
+```python
+def load_lora(self, model, lora_name: str, lora_strength: float):
+    if abs(lora_strength) < 1e-5:
+        return (model,)
+    
+    model_wrapper = model.model.diffusion_model
+    
+    # 1. Dynamically import wrapper using importlib (local file, NOT from nunchaku)
+    spec = importlib.util.spec_from_file_location(
+        "wrappers.qwenimage",
+        os.path.join(lora_loader_dir, "wrappers", "qwenimage.py")
+    )
+    wrappers_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(wrappers_module)
+    ComfyQwenImageWrapper = wrappers_module.ComfyQwenImageWrapper
+    
+    # 2. Import type from nunchaku (external dependency only)
+    from nunchaku import NunchakuQwenImageTransformer2DModel
+    
+    # 3. Check if already wrapped (attribute-based detection, NOT type name)
+    if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
+        # Already wrapped, use existing wrapper
+        transformer = model_wrapper.model
+    elif isinstance(model_wrapper, NunchakuQwenImageTransformer2DModel):
+        # First time, wrap it
+        wrapped_model = ComfyQwenImageWrapper(
+            model_wrapper,
+            getattr(model_wrapper, 'config', {}),
+            None,
+            {},
+            "auto",
+            4.0,
+        )
+        # ★ CRITICAL: Replace diffusion_model with wrapper
+        model.model.diffusion_model = wrapped_model
+        model_wrapper = wrapped_model
+        transformer = model_wrapper.model
+    else:
+        raise TypeError(...)
+    
+    # 4. Flux-style deepcopy (preserves wrapper)
+    model_wrapper.model = None
+    ret_model = copy.deepcopy(model)
+    ret_model_wrapper = ret_model.model.diffusion_model
+    model_wrapper.model = transformer
+    ret_model_wrapper.model = transformer
+    
+    # 5. ★ KEY POINT: Add LoRA to wrapper's list
+    lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
+    ret_model_wrapper.loras.append((lora_path, lora_strength))
+    
+    return (ret_model,)
+```
+
+The important point is that the loader only "registers the LoRA" by appending to the loras list; actual application occurs automatically during inference when wrapper's forward is called. The deepcopy operation at line 4 ensures that each inference run gets its own model state copy while sharing the transformer weights.
+
+4-6 Why Main Body Integration is Unnecessary
+
+The complete flow shows:
+
+1. **ComfyUI startup:** Loads `ComfyUI-QwenImageLoraLoader/__init__.py`, registers nodes. FACT: ComfyUI automatically does this. No nunchaku integration required.
+
+2. **Model loading:** QwenImage DiT Loader generates `NunchakuQwenImage`, assigns `NunchakuQwenImageTransformer2DModel` to `diffusion_model`. FACT: This is Nunchaku's own responsibility.
+
+3. **LoRA addition:** QI LoRA Loader accesses `model.model.diffusion_model`, wraps it with `ComfyQwenImageWrapper`, adds to `loras` list. FACT: All LoRA logic is self-contained.
+
+4. **Inference:** Wrapper's `forward` calls `compose_loras_v2`, applies LoRA weights to slots. FACT: Wrapper handles everything.
+
+This pipeline is completely independent. Without main body integration code, everything works through node `__init__.py` registration alone. **PROOF:** ComfyUI-nunchaku's `__init__.py` has NO Qwen Image LoRA code, yet the system works perfectly.
+
+**Reasons main body integration is unnecessary:**
+
+1. **Node registration completes in `ComfyUI-QwenImageLoraLoader/__init__.py`:** ComfyUI automatically loads it.
+2. **Model structure is correctly built through existing pipeline:** Model loader creates structure, LoRA loader accesses it.
+3. **LoRA application is realized through type detection and wrapper application:** Our code wraps it.
+4. **Composition processing is model-independent generic function:** compose_loras_v2 is generic.
+5. **All implementation is self-contained:** Wrapper, loader, composition - all in our plugin.
+
+---
+
+CHAPTER 5: nunchaku_code's LoRA Implementation
+
+5-1 Origin and Role of nunchaku_code/lora_qwen.py
+
+`ComfyUI-QwenImageLoraLoader/nunchaku_code/lora_qwen.py` is extracted from GavChap's fork. It contains core LoRA composition logic. The file imports conversion utilities from the nunchaku package:
+
+```python
+from nunchaku.lora.flux.nunchaku_converter import (
+    pack_lowrank_weight,
+    reorder_adanorm_lora_up,
+    unpack_lowrank_weight,
+)
+```
+
+These are utility functions for low-rank weight operations.
+
+Key functions:
+
+- `compose_loras_v2(model, lora_configs)`: Composes multiple LoRAs by writing to _lora_slots
+- `reset_lora_v2(model)`: Resets LoRA state, clearing all slots
+- `_load_lora_state_dict(lora_path_or_dict)`: Loads LoRA files from safetensors
+- `_classify_and_map_key(key)`: Maps LoRA layer names to model paths
+- `_get_module_by_path(model, module_key)`: Traverses model to find target layer
+- `_apply_lora_to_slot(slot, lora_config)`: Writes α, A, B tensors to slot
+
+5-2 Relationship with Main Body
+
+nunchaku_code is independent logic extracted from GavChap. External nunchaku package dependencies are only conversion utilities. There is no dependency on the main body's `__init__.py`. LoRA composition doesn't care where the model comes from. Complete separation of concerns.
+
+---
+
+CHAPTER 6: Implementation Independence
+
+6-1 File Structure Completeness
+
+Each layer in the file structure is completely self-contained:
+
+- `__init__.py` (Node registration - INDEPENDENT)
+- `nodes/lora/qwenimage.py` (Loader logic - SELF-CONTAINED)
+- `wrappers/qwenimage.py` (Wrapper implementation - LOCAL)
+- `nunchaku_code/lora_qwen.py` (Composition logic - GENERIC)
+- `js/widgethider.js` (UI control - CLIENT-SIDE)
+
+None of these depend on ComfyUI-nunchaku's `__init__.py`.
+
+6-2 Dependency Minimization
+
+External dependencies are only:
+
+- **nunchaku** (types: NunchakuQwenImageTransformer2DModel, utilities: pack_lowrank_weight, etc.)
+- **torch** (basic neural network library)
+- **ComfyUI** (node system: MODEL type, folder_paths, etc.)
+
+Zero dependency on main ComfyUI-nunchaku's `__init__.py`. 
+
+Why this matters:
+- We can work with any version of nunchaku that has the right types
+- We're not bound to nunchaku's initialization order or timing
+- If nunchaku is updated, our code continues working
+- Installation is simplified because there's no integration to maintain
+- Future changes to nunchaku don't break our plugin
+
+---
+
+CHAPTER 7: Conclusion and Final Reasoning
+
+ComfyUI-nunchaku's `__init__.py` integration is unnecessary for these reasons:
+
+**First: Automatic node loading exists**
+
+ComfyUI's specification of auto-scanning `custom_nodes/` and merging `NODE_CLASS_MAPPINGS` makes main body additions unnecessary. Each plugin's nodes are discovered independently.
+
+**Second: Model structure independence exists**
+
+QwenImage DiT Loader already assigns correct type to `diffusion_model`. LoRA loader accesses that path. No coordination needed through nunchaku's `__init__.py`.
+
+**Third: External type import exists**
+
+`NunchakuQwenImageTransformer2DModel` can be directly imported from nunchaku package. Type detection and processing are realized without main body modification.
+
+**Fourth: Composition logic generality exists**
+
+`compose_loras_v2` is model-independent. Applies to any model with `_lora_slots`. Works with any model structure that provides slots.
+
+**Fifth: Wrapper mechanism exists**
+
+`ComfyQwenImageWrapper` handles change detection and composition. Realizes loose coupling with the main body. The wrapper sits between the loader and the transformer.
+
+**PROOF: ComfyUI-nunchaku contains NO Qwen Image LoRA code**
+
+Checked actual file D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\__init__.py:
+- Lines 45-50: FLUX LoRA loader (internal)
+- Qwen Image LoRA loader: NOT PRESENT
+
+This proves v1.60's independent architecture WORKS.
+
+**In conclusion:**
+
+The original assessment that "integration code is mandatory" was wrong. Based on ComfyUI and Nunchaku's design, the LoRA loader as an external node **operates completely independently**. Main body integration is unnecessary. The v1.60 release proves this conclusively by actually not requiring any integration while maintaining full functionality.
+
+---
+
+Installation
+
+Quick Installation:
+```
+cd ComfyUI/custom_nodes
+git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
+```
+
+Requirements:
+- Python 3.11+
+- ComfyUI (latest version)
+- ComfyUI-nunchaku (required - contains Nunchaku models and base infrastructure)
+- CUDA-capable GPU (optional, recommended for performance)
+
+Upgrade from v1.57 or Earlier
+
+1. Integration code exists in ComfyUI-nunchaku __init__.py. Safe to leave (ignored by v1.60).
+
+2. To upgrade:
+```
+cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
+git pull origin main
+```
+Restart ComfyUI
+
+3. Optional: Clean up old code
+- Edit ComfyUI-nunchaku/__init__.py
+- Search "ComfyUI-QwenImageLoraLoader Integration"
+- Delete entire try/except block (BEGIN to END markers)
+- Restart ComfyUI
+
+Backward Compatibility
+
+✅ All v1.57 and earlier LoRA files work without modification
+✅ All existing workflows work without modification
+✅ Old integration code in ComfyUI-nunchaku __init__.py safely ignored
+✅ No breaking changes to node inputs/outputs
+
+Known Issues
+
+- **RES4LYF Sampler**: Not supported due to device mismatch (Issue #7, #8). Workaround: Use other sampler types
+- **LoRA Stack UI**: 10th row visibility (Issue #9). Visual issue only; doesn't affect LoRA functionality
+
+Special Thanks
+
+- GavChap for original LoRA composition implementation
+- Nunchaku team for model and infrastructure
+- Community for testing and feedback

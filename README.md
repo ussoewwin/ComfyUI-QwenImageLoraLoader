@@ -39,6 +39,9 @@ This LoRA loader was extracted and modified from GavChap's fork:
 
 ### Quick Installation (v1.60 - Simplified!)
 
+**Prerequisites:**
+- ComfyUI-nunchaku must be installed in your custom_nodes folder
+
 1. Clone this repository to your ComfyUI custom_nodes directory:
 
 ```bash
@@ -72,7 +75,7 @@ Then restart ComfyUI.
 
 - Python 3.11+
 - ComfyUI (latest version recommended)
-- ComfyUI-nunchaku plugin
+- ComfyUI-nunchaku plugin (required)
 - CUDA-capable GPU (optional, but recommended for performance)
 
 ## Integration with ComfyUI-nunchaku (No Longer Required in v1.60)

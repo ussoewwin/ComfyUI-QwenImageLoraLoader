@@ -327,7 +327,7 @@ This node is designed to work with:
 - **ComfyUI Registry**: This node is now available on [ComfyUI Registry](https://registry.comfy.org/ja/publishers/ussoewwin/nodes/ComfyUI-QwenImageLoraLoader) for easy installation and management ([Issue #15](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/15))
 - **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.57
 
-<img src="images/comfyui_registry_v1.57.png" alt="ComfyUI Registry v1.57" width="80%">
+<img src="images/comfyui_registry_v1.57.png" alt="ComfyUI Registry v1.57" width="40%">
 
 ### v1.56
 - **Fixed Critical Bug**: Resolved [Issue #13](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/13) – Applied LoRA compositions to 0 module after crash/offload

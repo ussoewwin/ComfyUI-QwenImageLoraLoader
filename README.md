@@ -18,7 +18,7 @@ The node now operates as a fully independent custom node that works out-of-the-b
 - ✅ **Cleaner architecture** - Node registration happens automatically
 - ✅ **Backward compatible** - All existing LoRA files and workflows continue to work
 
-For a detailed technical explanation of why integration is no longer needed, see [WHY_NO_NUNCHAKU_INTEGRATION.md](WHY_NO_NUNCHAKU_INTEGRATION.md)
+For a detailed technical explanation of why integration is no longer needed, see [v1.60 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
 
 ## Source
 
@@ -83,7 +83,7 @@ As of v1.60, **no modification to ComfyUI-nunchaku's `__init__.py` is required**
 
 The LoRA loader operates as a completely independent custom node through ComfyUI's automatic node loading mechanism. When ComfyUI starts, it automatically scans the `custom_nodes/` directory and loads all available `__init__.py` files. Your LoRA loader will be discovered and registered automatically.
 
-For technical details about why integration is no longer necessary, see [WHY_NO_NUNCHAKU_INTEGRATION.md](WHY_NO_NUNCHAKU_INTEGRATION.md)
+For technical details about why integration is no longer necessary, see [v1.60 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60) (includes comprehensive technical explanation in Chapter 1-7)
 
 ## Usage
 

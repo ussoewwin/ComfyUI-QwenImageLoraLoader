@@ -27,7 +27,7 @@ function toggleWidget(node, widget, show = false, suffix = "") {
     const newType = show ? origProps[widget.name].origType : HIDDEN_TAG + suffix;
     
     widget.type = newType;
-    widget.computeSize = show ? origProps[widget.name].origComputeSize : () => [0, -4];
+    widget.computeSize = show ? origProps[widget.name].origComputeSize : () => [0, 0];
 
     widget.linkedWidgets?.forEach(w => toggleWidget(node, w, show, ":" + widget.name));
 

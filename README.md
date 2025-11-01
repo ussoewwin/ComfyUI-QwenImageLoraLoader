@@ -139,22 +139,42 @@ If you prefer to manually edit files:
 
 1. Open `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
 
-2. Find the section with "ComfyUI-QwenImageLoraLoader Integration" marker
+2. Find and delete the entire following block (it will be at the end of the file):
 
-3. Delete the entire `try/except` block that contains:
-   ```python
-   try:
-       # ComfyUI-QwenImageLoraLoader Integration
-       ... (integration code) ...
-   except ImportError:
-       logger.exception("...")
-   ```
+```python
+# BEGIN ComfyUI-QwenImageLoraLoader Integration
+try:
+    # Import from the independent ComfyUI-QwenImageLoraLoader
+    import sys
+    import os
+    qwen_lora_path = os.path.join(os.path.dirname(__file__), "..", "ComfyUI-QwenImageLoraLoader")
+    if qwen_lora_path not in sys.path:
+        sys.path.insert(0, qwen_lora_path)
+    
+    # Import directly from the file path
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("qwenimage", os.path.join(qwen_lora_path, "nodes", "lora", "qwenimage.py"))
+    qwenimage_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qwenimage_module)
+    
+    NunchakuQwenImageLoraLoader = qwenimage_module.NunchakuQwenImageLoraLoader
+    NunchakuQwenImageLoraStack = qwenimage_module.NunchakuQwenImageLoraStack
+
+    NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
+    NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
+    logger.info("Successfully imported Qwen Image LoRA loaders from ComfyUI-QwenImageLoraLoader")
+except ImportError:
+    logger.exception("Nodes `NunchakuQwenImageLoraLoader` and `NunchakuQwenImageLoraStack` import failed:")
+# END ComfyUI-QwenImageLoraLoader Integration
+```
+
+3. Delete this entire block from the file
 
 4. Save the file
 
 5. Restart ComfyUI
 
-**The integration code is marked with clear BEGIN/END markers, making it easy to identify and remove.**
+**Important:** Look for the BEGIN and END markers. Delete everything from `# BEGIN ComfyUI-QwenImageLoraLoader Integration` to `# END ComfyUI-QwenImageLoraLoader Integration` (inclusive).
 
 ## Why the Integration Code is No Longer Needed
 

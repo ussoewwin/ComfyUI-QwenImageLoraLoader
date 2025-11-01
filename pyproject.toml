@@ -17,7 +17,7 @@ line-length = 120
 
 [project]
 name = "ComfyUI-QwenImageLoraLoader"
-version = "1.6.1"
+version = "1.61"
 description = "Standalone ComfyUI custom node for Nunchaku QwenImage LoRA loading functionality."
 authors = [{ name = "ussoewwin" }]
 license = { file = "LICENSE" }

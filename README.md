@@ -231,10 +231,9 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 
 ## Features
 
-- **Easy Installation**: Automated installation script included
-- **Automatic Integration**: No manual code editing required
-- **Backup & Restore**: Automatic backup of original files
-- **Cross-Platform**: Works on Windows with batch files
+- **Easy Installation**: Simple git clone installation
+- **Independent Operation**: No integration code required (v1.60+)
+- **Automatic Node Discovery**: ComfyUI automatically loads the custom node
 - **Error Handling**: Comprehensive error checking and user feedback
 - **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
 - **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using dedicated Python script for proper UTF-8 encoding (thanks to @AHEKOT's bug report)
@@ -244,14 +243,14 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 ## Requirements
 
 - ComfyUI
-- ComfyUI-nunchaku plugin (with required modification)
+- ComfyUI-nunchaku plugin (official version, no modification required)
 - PyTorch
 - Python 3.11+
 
 ## Compatibility
 
 This node is designed to work with:
-- ComfyUI-nunchaku plugin (modified)
+- ComfyUI-nunchaku plugin (official version)
 - Nunchaku Qwen Image models
 - Standard ComfyUI workflows
 
@@ -269,25 +268,12 @@ This node is designed to work with:
 - **Before**: `from ...wrappers.qwenimage import ComfyQwenImageWrapper`
 - **After**: `from wrappers.qwenimage import ComfyQwenImageWrapper`
 
-**How to Fix**:
-1. Make sure you have the latest version of ComfyUI-QwenImageLoraLoader
-2. Run `install_qwen_lora.bat` to ensure proper integration
-3. Restart ComfyUI
+**How to Fix**: **This error has been fixed in v1.5.0. Simply update to the latest version and restart ComfyUI.**
 
 **Technical Details**:
 - The installation script adds `ComfyUI-QwenImageLoraLoader` to `sys.path`
 - This allows absolute imports to work correctly
 - The absolute import `from wrappers.qwenimage import` resolves to `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`
-
-### Error: Installation Script Not Running
-
-**Problem**: The batch file doesn't execute or shows errors.
-
-**Solution**:
-1. Right-click `install_qwen_lora.bat` and select "Run as Administrator"
-2. Check that both `ComfyUI-nunchaku` and `ComfyUI-QwenImageLoraLoader` are in your `ComfyUI/custom_nodes` directory
-3. Verify Python is installed and accessible from the command line
-4. Check the console output for specific error messages
 
 ### Error: Nodes Not Appearing in ComfyUI
 
@@ -296,9 +282,8 @@ This node is designed to work with:
 **Solution**:
 1. Restart ComfyUI completely (close all instances)
 2. Check the ComfyUI console for error messages
-3. Verify that the integration code was added to `ComfyUI-nunchaku/__init__.py` (search for "ComfyUI-QwenImageLoraLoader Integration")
-4. If the integration code is missing, re-run `install_qwen_lora.bat`
-5. Check that your ComfyUI-nunchaku version is compatible
+3. Make sure both `ComfyUI-nunchaku` and `ComfyUI-QwenImageLoraLoader` are in your `ComfyUI/custom_nodes` directory
+4. Check that your ComfyUI-nunchaku version is compatible
 
 ### Error: "ModuleNotFoundError: No module named 'nunchaku'"
 

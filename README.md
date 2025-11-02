@@ -178,6 +178,18 @@ except ImportError:
 
 **Important:** Look for the BEGIN and END markers. Delete everything from `# BEGIN ComfyUI-QwenImageLoraLoader Integration` to `# END ComfyUI-QwenImageLoraLoader Integration` (inclusive).
 
+### Option 4: Restore Official ComfyUI-nunchaku `__init__.py` (Emergency Recovery)
+
+**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository:
+
+1. Download the official `__init__.py` from the [ComfyUI-nunchaku repository](https://github.com/nunchaku-tech/ComfyUI-nunchaku/blob/main/__init__.py)
+
+2. Copy the downloaded file to: `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
+
+3. Restart ComfyUI
+
+The official `__init__.py` will not have any ComfyUI-QwenImageLoraLoader integration code. v1.60 will still work perfectly because it uses the standalone loading mechanism.
+
 ## Why the Integration Code is No Longer Needed
 
 Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely independent custom node**. Here's why integration is no longer necessary:
@@ -201,18 +213,6 @@ Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely inde
 - LoRA files work without any changes
 - Old integration code in ComfyUI-nunchaku `__init__.py` is safely ignored
 - No breaking changes to node inputs/outputs
-
-## Emergency Recovery: Restore Official ComfyUI-nunchaku `__init__.py`
-
-**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository:
-
-1. Download the official `__init__.py` from the [ComfyUI-nunchaku repository](https://github.com/nunchaku-tech/ComfyUI-nunchaku/blob/main/__init__.py)
-
-2. Copy the downloaded file to: `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
-
-3. Restart ComfyUI
-
-The official `__init__.py` will not have any ComfyUI-QwenImageLoraLoader integration code. v1.60 will still work perfectly because it uses the standalone loading mechanism.
 
 ## Usage
 

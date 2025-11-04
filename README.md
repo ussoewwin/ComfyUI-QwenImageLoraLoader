@@ -297,11 +297,13 @@ This node is designed to work with:
 ## Known Limitations
 
 ### RES4LYF Sampler Compatibility Issue
-- **Status**: Currently Not Supported
-- **Issue**: Device mismatch errors occur when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
-- **Workaround**: Use other sampler types (e.g., res_samplers, standard samplers) with LoRA
-- **Technical Note**: The device mismatch occurs in `ComfyUI-nunchaku\models\qwenimage.py` at `self.time_text_embed(timestep, hidden_states)` due to RES4LYF sampler's specific tensor device handling requirements. This LoRA loader cannot fix this issue.
-- **Related Issues**: [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8)
+- **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2
+- **Issue**: Device mismatch errors occurred when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
+- **Fix**: The issue was fixed in [ComfyUI-nunchaku v1.0.2](https://github.com/nunchaku-tech/ComfyUI-nunchaku/releases/tag/v1.0.2) by @devgdovg in PR #600. This fix was implemented in ComfyUI-nunchaku's codebase, not in this LoRA loader.
+- **Requirement**: Update to ComfyUI-nunchaku v1.0.2 or later to use RES4LYF sampler with LoRA
+- **Related Issues**: 
+  - [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7) - RES4LYF sampler device mismatch error
+  - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ### LoRA Stack Node UI Issue
 - **Status**: Currently Not Fixed

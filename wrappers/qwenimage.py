@@ -122,6 +122,14 @@ class ComfyQwenImageWrapper(nn.Module):
             # The compose function handles resetting before applying the new stack
             reset_lora_v2(self.model)
             self._applied_loras = self.loras.copy()
+            
+            # Reset cache when LoRAs change to prevent stale cache in multi-stage workflows
+            # This ensures that when switching between different LoRA sets in different stages,
+            # the cache is invalidated and recreated with the new LoRA composition
+            if loras_changed:
+                self._cache_context = None
+                self._prev_timestep = None
+                logger.debug("Cache reset due to LoRA change")
 
             # --- NEW DYNAMIC VRAM CHECK (conditionally applied) ---
 

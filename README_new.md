@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.62 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62)
+> Latest release: [v1.60 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
 
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
@@ -178,18 +178,6 @@ except ImportError:
 
 **Important:** Look for the BEGIN and END markers. Delete everything from `# BEGIN ComfyUI-QwenImageLoraLoader Integration` to `# END ComfyUI-QwenImageLoraLoader Integration` (inclusive).
 
-### Option 4: Restore Official ComfyUI-nunchaku `__init__.py` (Emergency Recovery)
-
-**If your ComfyUI-nunchaku `__init__.py` becomes corrupted, broken, or unrecoverable**, you can restore it from the official Nunchaku repository:
-
-1. Download the official `__init__.py` from the [ComfyUI-nunchaku repository](https://github.com/nunchaku-tech/ComfyUI-nunchaku/blob/main/__init__.py)
-
-2. Copy the downloaded file to: `ComfyUI/custom_nodes/ComfyUI-nunchaku/__init__.py`
-
-3. Restart ComfyUI
-
-The official `__init__.py` will not have any ComfyUI-QwenImageLoraLoader integration code. v1.60 will still work perfectly because it uses the standalone loading mechanism.
-
 ## Why the Integration Code is No Longer Needed
 
 Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely independent custom node**. Here's why integration is no longer necessary:
@@ -231,9 +219,10 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 
 ## Features
 
-- **Easy Installation**: Simple git clone installation
-- **Independent Operation**: No integration code required (v1.60+)
-- **Automatic Node Discovery**: ComfyUI automatically loads the custom node
+- **Easy Installation**: Automated installation script included
+- **Automatic Integration**: No manual code editing required
+- **Backup & Restore**: Automatic backup of original files
+- **Cross-Platform**: Works on Windows with batch files
 - **Error Handling**: Comprehensive error checking and user feedback
 - **Issue #1 Fixed**: Resolved [ComfyUI\custom_nodes not found error](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/1) with improved path detection (thanks to @mcv1234's solution)
 - **Issue #2 Fixed**: Fixed UTF-8 encoding error causing `SyntaxError: (unicode error)` by using dedicated Python script for proper UTF-8 encoding (thanks to @AHEKOT's bug report)
@@ -243,14 +232,14 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 ## Requirements
 
 - ComfyUI
-- ComfyUI-nunchaku plugin (official version, no modification required)
+- ComfyUI-nunchaku plugin (with required modification)
 - PyTorch
 - Python 3.11+
 
 ## Compatibility
 
 This node is designed to work with:
-- ComfyUI-nunchaku plugin (official version)
+- ComfyUI-nunchaku plugin (modified)
 - Nunchaku Qwen Image models
 - Standard ComfyUI workflows
 
@@ -268,12 +257,25 @@ This node is designed to work with:
 - **Before**: `from ...wrappers.qwenimage import ComfyQwenImageWrapper`
 - **After**: `from wrappers.qwenimage import ComfyQwenImageWrapper`
 
-**How to Fix**: **This error has been fixed in v1.5.0. Simply update to the latest version and restart ComfyUI.**
+**How to Fix**:
+1. Make sure you have the latest version of ComfyUI-QwenImageLoraLoader
+2. Run `install_qwen_lora.bat` to ensure proper integration
+3. Restart ComfyUI
 
 **Technical Details**:
 - The installation script adds `ComfyUI-QwenImageLoraLoader` to `sys.path`
 - This allows absolute imports to work correctly
 - The absolute import `from wrappers.qwenimage import` resolves to `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`
+
+### Error: Installation Script Not Running
+
+**Problem**: The batch file doesn't execute or shows errors.
+
+**Solution**:
+1. Right-click `install_qwen_lora.bat` and select "Run as Administrator"
+2. Check that both `ComfyUI-nunchaku` and `ComfyUI-QwenImageLoraLoader` are in your `ComfyUI/custom_nodes` directory
+3. Verify Python is installed and accessible from the command line
+4. Check the console output for specific error messages
 
 ### Error: Nodes Not Appearing in ComfyUI
 
@@ -282,8 +284,9 @@ This node is designed to work with:
 **Solution**:
 1. Restart ComfyUI completely (close all instances)
 2. Check the ComfyUI console for error messages
-3. Make sure both `ComfyUI-nunchaku` and `ComfyUI-QwenImageLoraLoader` are in your `ComfyUI/custom_nodes` directory
-4. Check that your ComfyUI-nunchaku version is compatible
+3. Verify that the integration code was added to `ComfyUI-nunchaku/__init__.py` (search for "ComfyUI-QwenImageLoraLoader Integration")
+4. If the integration code is missing, re-run `install_qwen_lora.bat`
+5. Check that your ComfyUI-nunchaku version is compatible
 
 ### Error: "ModuleNotFoundError: No module named 'nunchaku'"
 
@@ -297,13 +300,11 @@ This node is designed to work with:
 ## Known Limitations
 
 ### RES4LYF Sampler Compatibility Issue
-- **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2
-- **Issue**: Device mismatch errors occurred when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
-- **Fix**: The issue was fixed in [ComfyUI-nunchaku v1.0.2](https://github.com/nunchaku-tech/ComfyUI-nunchaku/releases/tag/v1.0.2) by @devgdovg in PR #600. This fix was implemented in ComfyUI-nunchaku's codebase, not in this LoRA loader.
-- **Requirement**: Update to ComfyUI-nunchaku v1.0.2 or later to use RES4LYF sampler with LoRA
-- **Related Issues**: 
-  - [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7) - RES4LYF sampler device mismatch error
-  - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
+- **Status**: Currently Not Supported
+- **Issue**: Device mismatch errors occur when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
+- **Workaround**: Use other sampler types (e.g., res_samplers, standard samplers) with LoRA
+- **Technical Note**: The device mismatch occurs in `ComfyUI-nunchaku\models\qwenimage.py` at `self.time_text_embed(timestep, hidden_states)` due to RES4LYF sampler's specific tensor device handling requirements. This LoRA loader cannot fix this issue.
+- **Related Issues**: [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8)
 
 ### LoRA Stack Node UI Issue
 - **Status**: Currently Not Fixed
@@ -324,14 +325,7 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.62 (Latest)
-- **Fixed Critical Bug**: Resolved [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14) – Multi-stage workflow cache not resetting when LoRAs change
-- **Problem**: Cache was not being reset when switching between different LoRA sets in multi-stage workflows, causing incorrect results
-- **Solution**: Cache is now properly invalidated when LoRAs change, ensuring correct LoRA usage in each stage
-- **Technical Details**: See [v1.62 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62) for complete explanation
-- **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62
-
-### v1.60
+### v1.60 (Latest)
 - **MAJOR UPDATE**: Removed ComfyUI-nunchaku integration requirement - now a fully independent custom node
 - **Simplified Installation**: No batch scripts or manual file editing needed - just `git clone` and restart
 - **Cleaner Architecture**: Node registration happens automatically via ComfyUI's built-in mechanism

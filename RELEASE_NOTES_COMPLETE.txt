@@ -1,3 +1,70 @@
+v1.62 — Fixed Multi-Stage Workflow Cache Issue (#14)
+
+Summary
+
+Fixed a critical bug where cache was not being reset when LoRAs changed in multi-stage workflows, causing incorrect results when switching between different LoRA sets across stages.
+
+✅ **Fixed cache reset on LoRA change** — Cache is now properly invalidated when LoRAs change
+✅ **Multi-stage workflow support** — Correct LoRA usage in workflows with multiple sampler stages
+✅ **No performance impact** — Cache reset only occurs when LoRAs actually change
+
+Technical Details
+
+**File Modified**: `wrappers/qwenimage.py`  
+**Lines Added**: 126-132  
+**Class**: `ComfyQwenImageWrapper`  
+**Method**: `forward`
+
+**Problem**
+
+In multi-stage workflows where different LoRAs are used in different stages, the cache context was not being reset when LoRAs changed. This caused stale cache from previous LoRA compositions to be reused, leading to incorrect results.
+
+**Solution**
+
+Added cache reset logic that executes when LoRAs change:
+
+```python
+# Reset cache when LoRAs change to prevent stale cache in multi-stage workflows
+# This ensures that when switching between different LoRA sets in different stages,
+# the cache is invalidated and recreated with the new LoRA composition
+if loras_changed:
+    self._cache_context = None
+    self._prev_timestep = None
+    logger.debug("Cache reset due to LoRA change")
+```
+
+**How It Works**
+
+1. **LoRA Change Detection** (lines 104-111): Deep comparison detects when LoRA stack changes
+2. **Cache Reset** (lines 129-132): When `loras_changed == True`, both `_cache_context` and `_prev_timestep` are reset to `None`
+3. **Cache Recreation** (lines 215-222): The existing cache logic detects `_prev_timestep is None` and creates a new cache context with the new LoRA composition
+4. **Model Execution** (lines 224-225): Model executes with the new LoRA state and fresh cache
+
+**Technical Specification**
+
+- **Cache Context**: `nunchaku.caching.fbcache.CacheContext` - Stores intermediate computation results
+- **Timestep Tracking**: `self._prev_timestep` - Records previous timestep for cache invalidation
+- **Cache Invalidation Condition**: `cache_invalid = self._prev_timestep is None or self._prev_timestep < timestep_float + 1e-5`
+- **Execution Timing**: Cache reset occurs before LoRA composition (before `compose_loras_v2()` at line 169)
+
+**Why This Matters**
+
+Nunchaku's cache mechanism stores intermediate layer computation results that are LoRA-dependent. When LoRAs change, the cache must be invalidated to ensure correct results. The fix ensures:
+
+- **Correct LoRA Application**: Each stage uses the correct LoRA set
+- **Workflow Consistency**: Re-running workflows produces consistent results
+- **No Side Effects**: Cache reset only occurs when LoRAs change, maintaining performance
+
+**Impact**
+
+- **Before Fix**: Cache from previous LoRA composition could be reused, causing incorrect results
+- **After Fix**: Cache is properly reset on LoRA change, ensuring correct results in multi-stage workflows
+- **Performance**: No impact on normal inference; cache reset only occurs when LoRAs change
+
+**Related Issue**: [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14)
+
+---
+
 v1.60 — MAJOR UPDATE: Simplified Installation (No Integration Required!)
 
 Summary

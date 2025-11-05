@@ -8,20 +8,41 @@ Fixed a critical bug where cache was not being reset when LoRAs changed in multi
 ✅ **Multi-stage workflow support** — Correct LoRA usage in workflows with multiple sampler stages
 ✅ **No performance impact** — Cache reset only occurs when LoRAs actually change
 
-Technical Details
+# Technical Explanation of the Fix
 
-**File Modified**: `wrappers/qwenimage.py`  
-**Lines Added**: 126-132  
+## 1. File Information
+
+**File Path**: `ComfyUI-QwenImageLoraLoader/wrappers/qwenimage.py`  
+
+**Modified Lines**: 126-132  
+
 **Class**: `ComfyQwenImageWrapper`  
+
 **Method**: `forward`
 
-**Problem**
+---
 
-In multi-stage workflows where different LoRAs are used in different stages, the cache context was not being reset when LoRAs changed. This caused stale cache from previous LoRA compositions to be reused, leading to incorrect results.
+## 2. Code Structure Before the Fix
 
-**Solution**
+### 2.1 Original Code (around lines 121-124)
 
-Added cache reset logic that executes when LoRAs change:
+```python
+# Check if the LoRA stack has been changed by a loader node
+if loras_changed or model_is_dirty or device_changed:
+    # The compose function handles resetting before applying the new stack
+    reset_lora_v2(self.model)
+    self._applied_loras = self.loras.copy()
+
+    # --- NEW DYNAMIC VRAM CHECK (conditionally applied) ---
+```
+
+Before the fix, the cache was not reset when LoRAs changed.
+
+---
+
+## 3. Added Code
+
+### 3.1 Added Code (lines 126-132)
 
 ```python
 # Reset cache when LoRAs change to prevent stale cache in multi-stage workflows
@@ -33,33 +54,226 @@ if loras_changed:
     logger.debug("Cache reset due to LoRA change")
 ```
 
-**How It Works**
+---
 
-1. **LoRA Change Detection** (lines 104-111): Deep comparison detects when LoRA stack changes
-2. **Cache Reset** (lines 129-132): When `loras_changed == True`, both `_cache_context` and `_prev_timestep` are reset to `None`
-3. **Cache Recreation** (lines 215-222): The existing cache logic detects `_prev_timestep is None` and creates a new cache context with the new LoRA composition
-4. **Model Execution** (lines 224-225): Model executes with the new LoRA state and fresh cache
+## 4. Detailed Code Explanation
 
-**Technical Specification**
+### 4.1 Location and Execution Timing
 
-- **Cache Context**: `nunchaku.caching.fbcache.CacheContext` - Stores intermediate computation results
-- **Timestep Tracking**: `self._prev_timestep` - Records previous timestep for cache invalidation
-- **Cache Invalidation Condition**: `cache_invalid = self._prev_timestep is None or self._prev_timestep < timestep_float + 1e-5`
-- **Execution Timing**: Cache reset occurs before LoRA composition (before `compose_loras_v2()` at line 169)
+**Location**: Inside the `if loras_changed or model_is_dirty or device_changed:` block (line 121)  
 
-**Why This Matters**
+**Execution condition**: Only when `loras_changed == True`
 
-Nunchaku's cache mechanism stores intermediate layer computation results that are LoRA-dependent. When LoRAs change, the cache must be invalidated to ensure correct results. The fix ensures:
+**Execution order**:
 
-- **Correct LoRA Application**: Each stage uses the correct LoRA set
-- **Workflow Consistency**: Re-running workflows produces consistent results
-- **No Side Effects**: Cache reset only occurs when LoRAs change, maintaining performance
+1. Line 121: LoRA change detection
 
-**Impact**
+2. Line 123: `reset_lora_v2(self.model)` resets LoRA weights
 
-- **Before Fix**: Cache from previous LoRA composition could be reused, causing incorrect results
-- **After Fix**: Cache is properly reset on LoRA change, ensuring correct results in multi-stage workflows
-- **Performance**: No impact on normal inference; cache reset only occurs when LoRAs change
+3. Line 124: `self._applied_loras = self.loras.copy()` updates state
+
+4. Lines 129-132: Cache reset (added)
+
+5. Line 169: Compose new LoRAs
+
+6. Lines 215-222: Cache logic (creates new cache)
+
+### 4.2 Variable Roles
+
+#### `self._cache_context`
+
+- **Type**: `nunchaku.caching.fbcache.CacheContext` or `None`
+
+- **Purpose**: Cache context for intermediate computation results
+
+- **Initialization**: Set to `None` at line 49
+
+- **Creation**: Created by `create_cache_context()` at line 221
+
+#### `self._prev_timestep`
+
+- **Type**: `float` or `None`
+
+- **Purpose**: Records the previous timestep
+
+- **Initialization**: Set to `None` at line 49
+
+- **Update**: Updated to `self._prev_timestep = timestep_float` at line 222
+
+### 4.3 Behavior of the Added Code
+
+#### Line 129: `if loras_changed:`
+
+- **Condition**: Executes only when LoRAs change
+
+- **Reason**: Not needed for `model_is_dirty` or `device_changed`
+
+#### Line 130: `self._cache_context = None`
+
+- **Effect**: Discards the cache context
+
+- **Impact**: The condition at lines 219-221 creates a new cache
+
+```python
+cache_invalid = self._prev_timestep is None or self._prev_timestep < timestep_float + 1e-5
+if cache_invalid:
+    self._cache_context = create_cache_context()
+```
+
+#### Line 131: `self._prev_timestep = None`
+
+- **Effect**: Resets timestep tracking
+
+- **Impact**: Makes `self._prev_timestep is None` `True` at line 219, invalidating the cache
+
+#### Line 132: `logger.debug("Cache reset due to LoRA change")`
+
+- **Purpose**: Debug logging (DEBUG level)
+
+---
+
+## 5. Integration with Cache Logic
+
+### 5.1 Cache Invalidation Condition (line 219)
+
+```python
+cache_invalid = self._prev_timestep is None or self._prev_timestep < timestep_float + 1e-5
+```
+
+- `self._prev_timestep is None`: First run or after reset
+
+- `self._prev_timestep < timestep_float + 1e-5`: When timestep increases
+
+### 5.2 Execution Flow After the Fix
+
+```
+1. LoRA change detection (lines 104-111)
+   ↓
+2. loras_changed = True
+   ↓
+3. Execute reset_lora_v2() (line 123)
+   ↓
+4. Update self._applied_loras (line 124)
+   ↓
+5. 【Fix Added】Cache reset (lines 129-132)
+   - self._cache_context = None
+   - self._prev_timestep = None
+   ↓
+6. Execute compose_loras_v2() (line 169)
+   ↓
+7. Cache logic (lines 215-222)
+   - cache_invalid = True (because _prev_timestep is None)
+   - Create new cache with create_cache_context()
+   ↓
+8. Model execution (lines 224-225)
+   - Cache is used with new LoRA state
+```
+
+---
+
+## 6. Technical Importance
+
+### 6.1 Nunchaku Cache Mechanism
+
+- **Purpose**: Reuses intermediate layer results for speed
+
+- **Implementation**: Uses `nunchaku.caching.fbcache.cache_context`
+
+- **Issue**: Cache depends on LoRA state, so it must be invalidated when LoRAs change
+
+### 6.2 Problem in Multi-Stage Workflows
+
+**Problem Structure**:
+
+```
+Stage 1: Apply LoRA A → Create cache (state with LoRA A)
+Stage 2: Apply LoRA B → LoRA change detected
+         → Cache not reset (before fix)
+         → Old cache (state with LoRA A) reused
+         → Incorrect result
+```
+
+**Behavior After Fix**:
+
+```
+Stage 1: Apply LoRA A → Create cache (state with LoRA A)
+Stage 2: Apply LoRA B → LoRA change detected
+         → Cache reset (after fix)
+         → Create new cache (state with LoRA B)
+         → Correct result
+```
+
+---
+
+## 7. Implementation Details
+
+### 7.1 Conditional Branch Design
+
+```python
+if loras_changed or model_is_dirty or device_changed:
+    # Common processing
+    reset_lora_v2(self.model)
+    self._applied_loras = self.loras.copy()
+    
+    # Cache reset only when LoRAs change
+    if loras_changed:
+        self._cache_context = None
+        self._prev_timestep = None
+```
+
+- The `if loras_changed:` guard avoids resetting cache for `model_is_dirty` or `device_changed`
+
+### 7.2 Timing
+
+- Cache reset runs before LoRA composition (before `compose_loras_v2()` at line 169)
+
+- This ensures the cache is created with the new LoRA state
+
+### 7.3 Avoiding Side Effects
+
+- `self._cache_context = None` only discards the existing cache
+
+- A new cache is created by the subsequent cache logic (lines 215-222)
+
+- No changes to existing cache logic
+
+---
+
+## 8. Technical Validity of the Fix
+
+### 8.1 Consistency
+
+- Cache invalidation is synchronized with LoRA changes
+
+- Integrated with existing cache logic (lines 215-222)
+
+### 8.2 Performance
+
+- Cache reset runs only when LoRAs change (conditional)
+
+- No impact on normal inference
+
+### 8.3 Robustness
+
+- Debug logging enables verification
+
+- Maintains compatibility with existing cache logic
+
+---
+
+## 9. Summary
+
+- **Modification**: Added 6 lines at 126-132
+
+- **Purpose**: Reset cache when LoRAs change
+
+- **Method**: Reset via `self._cache_context = None` and `self._prev_timestep = None`
+
+- **Effect**: Correct LoRA usage in multi-stage workflows
+
+- **Impact**: No changes to existing behavior; runs only when LoRAs change
+
+This fix resolves Issue #14 (cache not resetting in multi-stage workflows).
 
 **Related Issue**: [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14)
 

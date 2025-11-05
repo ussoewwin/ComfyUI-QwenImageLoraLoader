@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.60 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
+> Latest release: [v1.62 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62)
 
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
@@ -324,7 +324,14 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.60 (Latest)
+### v1.62 (Latest)
+- **Fixed Critical Bug**: Resolved [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14) – Multi-stage workflow cache not resetting when LoRAs change
+- **Problem**: Cache was not being reset when switching between different LoRA sets in multi-stage workflows, causing incorrect results
+- **Solution**: Cache is now properly invalidated when LoRAs change, ensuring correct LoRA usage in each stage
+- **Technical Details**: See [v1.62 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62) for complete explanation
+- **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62
+
+### v1.60
 - **MAJOR UPDATE**: Removed ComfyUI-nunchaku integration requirement - now a fully independent custom node
 - **Simplified Installation**: No batch scripts or manual file editing needed - just `git clone` and restart
 - **Cleaner Architecture**: Node registration happens automatically via ComfyUI's built-in mechanism

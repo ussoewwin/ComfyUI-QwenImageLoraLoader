@@ -1,12 +1,16 @@
-v1.62 — Fixed Multi-Stage Workflow Cache Issue (#14)
+v1.62 — Attempted Fix for Multi-Stage Workflow Cache Issue (#14)
 
 Summary
 
-Fixed a critical bug where cache was not being reset when LoRAs changed in multi-stage workflows, causing incorrect results when switching between different LoRA sets across stages.
+⚠️ **Current Status: Issue is still not fully resolved**
 
-✅ **Fixed cache reset on LoRA change** — Cache is now properly invalidated when LoRAs change
-✅ **Multi-stage workflow support** — Correct LoRA usage in workflows with multiple sampler stages
-✅ **No performance impact** — Cache reset only occurs when LoRAs actually change
+Attempted to fix a critical bug where cache was not being reset when LoRAs changed in multi-stage workflows, causing incorrect results when switching between different LoRA sets across stages. Cache invalidation logic was implemented, but the problem persists in some multi-stage workflow scenarios.
+
+⚠️ **Issue #14 remains open** — The fix was implemented but the problem still occurs in certain multi-stage workflow configurations
+
+⚠️ **Workaround**: Manually unload/purge the model between stages if incorrect LoRA application is observed
+
+⚠️ **Investigation ongoing** — Further analysis is needed to identify the root cause in all scenarios
 
 # Technical Explanation of the Fix
 

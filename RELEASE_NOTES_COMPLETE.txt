@@ -197,15 +197,18 @@ Stage 2: Apply LoRA B → LoRA change detected
          → Incorrect result
 ```
 
-**Behavior After Fix**:
+**Expected Behavior After Fix** (⚠️ **Note: Issue still persists in some scenarios**):
 
 ```
 Stage 1: Apply LoRA A → Create cache (state with LoRA A)
 Stage 2: Apply LoRA B → LoRA change detected
-         → Cache reset (after fix)
+         → Cache reset (fix implemented)
          → Create new cache (state with LoRA B)
-         → Correct result
+         → Expected: Correct result
+         → ⚠️ Actual: Problem still occurs in some multi-stage workflows
 ```
+
+⚠️ **Current Status**: The fix was implemented, but Issue #14 remains open. The cache reset logic is in place, but the problem persists in certain multi-stage workflow configurations. Further investigation is needed.
 
 ---
 
@@ -273,13 +276,13 @@ if loras_changed or model_is_dirty or device_changed:
 
 - **Method**: Reset via `self._cache_context = None` and `self._prev_timestep = None`
 
-- **Effect**: Correct LoRA usage in multi-stage workflows
+- **Effect**: Attempted to ensure correct LoRA usage in multi-stage workflows
 
 - **Impact**: No changes to existing behavior; runs only when LoRAs change
 
-This fix resolves Issue #14 (cache not resetting in multi-stage workflows).
+⚠️ **IMPORTANT: This fix was implemented but Issue #14 is still not fully resolved.** The cache invalidation logic was added, but the problem persists in some multi-stage workflow scenarios. Further investigation is needed to identify the root cause.
 
-**Related Issue**: [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14)
+**Related Issue**: [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14) - **Status: Still Open**
 
 ---
 

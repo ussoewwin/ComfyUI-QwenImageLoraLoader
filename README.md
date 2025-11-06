@@ -325,11 +325,11 @@ This node is designed to work with:
 ## Changelog
 
 ### v1.62 (Latest)
-- **Fixed Critical Bug**: Resolved [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14) – Multi-stage workflow cache not resetting when LoRAs change
+- **Attempted Fix**: Addressed [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14) – Multi-stage workflow cache not resetting when LoRAs change
 - **Problem**: Cache was not being reset when switching between different LoRA sets in multi-stage workflows, causing incorrect results
-- **Solution**: Cache is now properly invalidated when LoRAs change, ensuring correct LoRA usage in each stage
+- **Solution Attempted**: Cache invalidation logic was added to reset cache when LoRAs change
+- **Current Status**: ⚠️ **Issue is still not fully resolved** - The fix was implemented but the problem persists in some multi-stage workflow scenarios
 - **Technical Details**: See [v1.62 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62) for complete explanation
-- **Full release notes**: https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.62
 
 ### v1.60
 - **MAJOR UPDATE**: Removed ComfyUI-nunchaku integration requirement - now a fully independent custom node

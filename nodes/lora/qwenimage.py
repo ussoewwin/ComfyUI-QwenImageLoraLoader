@@ -33,7 +33,7 @@ class NunchakuQwenImageLoraLoader:
     Node for loading and applying a LoRA to a Nunchaku Qwen Image model.
     """
     @classmethod
-    def IS_CHANGED(s, model, lora_name, lora_strength, *args, **kwargs):
+    def IS_CHANGED(s, model, lora_name, lora_strength, cpu_offload, *args, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
@@ -43,6 +43,7 @@ class NunchakuQwenImageLoraLoader:
         m.update(lora_name.encode())
         m.update(str(lora_strength).encode())
         m.update(str(model).encode())
+        m.update(cpu_offload.encode())
         return m.digest().hex()
 
     @classmethod
@@ -70,6 +71,13 @@ class NunchakuQwenImageLoraLoader:
                         "tooltip": "How strongly to modify the diffusion model. This value can be negative.",
                     },
                 ),
+                "cpu_offload": (
+                    ["auto", "enable", "disable"],
+                    {
+                        "default": "disable",
+                        "tooltip": "CPU offload setting. 'auto' enables offload when VRAM is low, 'enable' forces offload, 'disable' disables offload.",
+                    },
+                ),
             }
         }
 
@@ -80,7 +88,7 @@ class NunchakuQwenImageLoraLoader:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "LoRAs are used to modify the diffusion model, altering the way in which latents are denoised."
 
-    def load_lora(self, model, lora_name: str, lora_strength: float):
+    def load_lora(self, model, lora_name: str, lora_strength: float, cpu_offload: str):
         if abs(lora_strength) < 1e-5:
             return (model,)
 
@@ -118,18 +126,24 @@ class NunchakuQwenImageLoraLoader:
         if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
             # Already wrapped, proceed normally
             logger.info("✅ Model is already wrapped (detected via attributes)")
+            logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
+            # Update CPU offload setting if different
+            if model_wrapper.cpu_offload_setting != cpu_offload:
+                logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
+                model_wrapper.cpu_offload_setting = cpu_offload
             transformer = model_wrapper.model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuQwenImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first
             logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
             
             # Create wrapper
+            logger.info(f"📦 Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}'")
             wrapped_model = ComfyQwenImageWrapper(
                 model_wrapper,
                 getattr(model_wrapper, 'config', {}),
                 None,  # customized_forward
                 {},    # forward_kwargs
-                "auto", # cpu_offload_setting
+                cpu_offload,  # cpu_offload_setting
                 4.0,   # vram_margin_gb
             )
             
@@ -163,7 +177,7 @@ class NunchakuQwenImageLoraStack:
     Node for loading and applying multiple LoRAs to a Nunchaku Qwen Image model with dynamic UI.
     """
     @classmethod
-    def IS_CHANGED(cls, model, lora_count, **kwargs):
+    def IS_CHANGED(cls, model, lora_count, cpu_offload, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
@@ -172,6 +186,7 @@ class NunchakuQwenImageLoraStack:
         m = hashlib.sha256()
         m.update(str(model).encode())
         m.update(str(lora_count).encode())
+        m.update(cpu_offload.encode())
         # Hash all LoRA parameters
         for i in range(1, 11):
             m.update(kwargs.get(f"lora_name_{i}", "").encode())
@@ -200,6 +215,13 @@ class NunchakuQwenImageLoraStack:
                         "max": 10,
                         "step": 1,
                         "tooltip": "Number of LoRA slots to process.",
+                    },
+                ),
+                "cpu_offload": (
+                    ["auto", "enable", "disable"],
+                    {
+                        "default": "disable",
+                        "tooltip": "CPU offload setting. 'auto' enables offload when VRAM is low, 'enable' forces offload, 'disable' disables offload.",
                     },
                 ),
             },
@@ -231,7 +253,7 @@ class NunchakuQwenImageLoraStack:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. v1.0.3"
 
-    def load_lora_stack(self, model, lora_count, **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload, **kwargs):
         loras_to_apply = []
         
         # Process only the number of LoRAs specified by lora_count
@@ -280,18 +302,24 @@ class NunchakuQwenImageLoraStack:
         if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
             # Already wrapped, proceed normally
             logger.info("✅ Model is already wrapped (detected via attributes)")
+            logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
+            # Update CPU offload setting if different
+            if model_wrapper.cpu_offload_setting != cpu_offload:
+                logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
+                model_wrapper.cpu_offload_setting = cpu_offload
             transformer = model_wrapper.model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuQwenImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first
             logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
             
             # Create wrapper
+            logger.info(f"📦 Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}'")
             wrapped_model = ComfyQwenImageWrapper(
                 model_wrapper,
                 getattr(model_wrapper, 'config', {}),
                 None,  # customized_forward
                 {},    # forward_kwargs
-                "auto", # cpu_offload_setting
+                cpu_offload,  # cpu_offload_setting
                 4.0,   # vram_margin_gb
             )
             

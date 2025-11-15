@@ -324,7 +324,14 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.62 (Latest)
+### v1.63 (Latest)
+- **Fixed**: Addressed [Issue #21](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/21) – User-configurable CPU offload setting
+- **Problem**: CPU offload setting was hardcoded to `"auto"`, causing unnecessary slowdowns when VRAM was sufficient
+- **Solution**: Added `cpu_offload` parameter to `INPUT_TYPES` allowing users to select from `["auto", "enable", "disable"]` with default `"disable"` for performance
+- **Current Status**: ✅ **Fully resolved** - Users can now control CPU offload settings through the node UI
+- **Technical Details**: See [v1.63 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.63) for complete explanation
+
+### v1.62
 - **Attempted Fix**: Addressed [Issue #14](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/14) – Multi-stage workflow cache not resetting when LoRAs change
 - **Problem**: Cache was not being reset when switching between different LoRA sets in multi-stage workflows, causing incorrect results
 - **Solution Attempted**: Cache invalidation logic was added to reset cache when LoRAs change

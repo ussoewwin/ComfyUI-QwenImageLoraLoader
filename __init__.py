@@ -2,7 +2,7 @@ import logging
 import os
 
 # Version information - must be at module level for ComfyUI Manager
-__version__ = "1.63"
+__version__ = "1.70"
 
 # Get log level from environment variable (default to INFO)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 logger.info("=" * 40 + " ComfyUI-QwenImageLoraLoader Initialization " + "=" * 40)
 
 NODE_CLASS_MAPPINGS = {}
+QWEN_V2_NODES = {}
+QWEN_V2_NAMES = {}
 
 try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack

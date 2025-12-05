@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.63 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.63)
+> Latest release: [v1.70 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.70)
 
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
@@ -218,7 +218,8 @@ Starting with v1.60, ComfyUI-QwenImageLoraLoader operates as a **completely inde
 
 ### Available Nodes
 - **NunchakuQwenImageLoraLoader**: Single LoRA loader
-- **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI
+- **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
+- **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 
 ### Basic Usage
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
@@ -305,26 +306,24 @@ This node is designed to work with:
   - [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7) - RES4LYF sampler device mismatch error
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
-### LoRA Stack Node UI Issue
-- **Status**: Currently Not Fixed
-- **Issue**: The 10th LoRA control row always displays in the LoRA Stack node, regardless of the selected `lora_count` value ([Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9))
-- **Impact**: Minor visual issue - does not affect functionality. Users will see one extra empty LoRA row even when `lora_count` is set to less than 10
-
-<img src="images/issue9_extra_lora_row.png" alt="Issue #9 - Extra LoRA Row" width="50%">
-
-- **Attempted Solutions**: Multiple approaches were attempted including:
-  - Modifying `widget.type` to hide widgets
-  - Using `widget.visible` property
-  - Direct DOM manipulation with `display: none`
-  - Various widget hiding mechanisms from `efficiency-nodes-comfyui`
-- **Technical Challenge**: ComfyUI's widget system and DOM rendering mechanism make this difficult to resolve without affecting node height calculations or causing other UI issues
-- **Current Status**: Despite extensive efforts to fix this issue, a reliable solution that works across all ComfyUI versions has not been found. The development team acknowledges this limitation and will continue monitoring for potential solutions
-- **Workaround**: None required - this is purely a cosmetic issue and does not impact LoRA functionality
-- **Related Issues**: [Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9)
-
 ## Changelog
 
-### v1.63 (Latest)
+### v1.70 (latest)
+- **Added**: V2 loader with ComfyUI Nodes 2.0 (Beta) support
+- **New Node**: `NunchakuQwenImageLoraStackV2` - V2 loader node added
+- **Fixed**: Resolved [Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9) – The 10th LoRA control row no longer displays when `lora_count` is set to less than 10. Dynamic UI now correctly hides unused LoRA slots and adjusts node height automatically
+- **Features**:
+  - Full compatibility with ComfyUI Nodes 2.0 (Beta)
+  - Complete feature parity with V1 implementation
+  - V1's `lora_count` widget is hidden, only V2's `🔢 LoRA Count` combo box is displayed
+  - Dynamic UI for adjusting slot count
+  - Automatic node height adjustment
+- **Technical Details**: 
+  - Flexible widget management using `optional` inputs
+  - Clean implementation using Flux V2-style widget array reconstruction
+  - Complete feature reproduction in both Python backend and JavaScript frontend
+
+### v1.63
 - **Fixed**: Addressed [Issue #21](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/21) – User-configurable CPU offload setting
 - **Problem**: CPU offload setting was hardcoded to `"auto"`, causing unnecessary slowdowns when VRAM was sufficient
 - **Solution**: Added `cpu_offload` parameter to `INPUT_TYPES` allowing users to select from `["auto", "enable", "disable"]` with default `"disable"` for performance

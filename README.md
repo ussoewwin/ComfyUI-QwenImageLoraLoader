@@ -315,7 +315,6 @@ This node is designed to work with:
 - **Features**:
   - Full compatibility with ComfyUI Nodes 2.0 (Beta)
   - Complete feature parity with V1 implementation
-  - V1's `lora_count` widget is hidden, only V2's `🔢 LoRA Count` combo box is displayed
   - Dynamic UI for adjusting slot count
   - Automatic node height adjustment
 - **Technical Details**: 

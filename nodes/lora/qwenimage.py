@@ -157,10 +157,25 @@ class NunchakuQwenImageLoraLoader:
             raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {model_wrapper_type_name}.")
 
         # Flux-style deepcopy
+        # Save config before deepcopy to avoid __setstate__ errors
+        saved_config = None
+        if hasattr(model, 'model') and hasattr(model.model, 'model_config'):
+            saved_config = model.model.model_config
+            model.model.model_config = None
+        
         model_wrapper.model = None
-        ret_model = copy.deepcopy(model)
+        try:
+            ret_model = copy.deepcopy(model)
+        finally:
+            # Restore config and model
+            if saved_config is not None:
+                model.model.model_config = saved_config
+            model_wrapper.model = transformer
+        
         ret_model_wrapper = ret_model.model.diffusion_model
-        model_wrapper.model = transformer
+        # Restore config in copied model if it was saved
+        if saved_config is not None:
+            ret_model.model.model_config = saved_config
         ret_model_wrapper.model = transformer
 
         lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
@@ -333,10 +348,25 @@ class NunchakuQwenImageLoraStack:
             raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {model_wrapper_type_name}.")
 
         # Flux-style deepcopy
+        # Save config before deepcopy to avoid __setstate__ errors
+        saved_config = None
+        if hasattr(model, 'model') and hasattr(model.model, 'model_config'):
+            saved_config = model.model.model_config
+            model.model.model_config = None
+        
         model_wrapper.model = None
-        ret_model = copy.deepcopy(model)
+        try:
+            ret_model = copy.deepcopy(model)
+        finally:
+            # Restore config and model
+            if saved_config is not None:
+                model.model.model_config = saved_config
+            model_wrapper.model = transformer
+        
         ret_model_wrapper = ret_model.model.diffusion_model
-        model_wrapper.model = transformer
+        # Restore config in copied model if it was saved
+        if saved_config is not None:
+            ret_model.model.model_config = saved_config
         ret_model_wrapper.model = transformer
 
         ret_model_wrapper.loras = model_wrapper.loras.copy()

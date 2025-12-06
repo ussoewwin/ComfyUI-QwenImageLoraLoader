@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.70 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.70)
+> Latest release: [v1.71 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.71)
 
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
@@ -308,7 +308,12 @@ This node is designed to work with:
 
 ## Changelog
 
-### v1.70 (latest)
+### v1.71 (latest)
+- **Attempted Fix**: Addressed [Issue #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25) – `AttributeError: 'NunchakuModelPatcher' object has no attribute 'pinned'` and deepcopy errors with `model_config`
+- **Reported by**: [@LacklusterOpsec](https://github.com/LacklusterOpsec) ([Issue #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25))
+- **Current Status**: ⚠️ **This error does not occur in stable ComfyUI builds** - The fix was implemented based on reports from Nightly build users, but we cannot guarantee it will completely resolve the issue as we cannot reproduce it in stable environments. If you encounter this error, please report with your ComfyUI version and environment details.
+
+### v1.70
 - **Added**: V2 loader with ComfyUI Nodes 2.0 (Beta) support
 - **New Node**: `NunchakuQwenImageLoraStackV2` - V2 loader node added
 - **Fixed**: Resolved [Issue #9](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/9) – The 10th LoRA control row no longer displays when `lora_count` is set to less than 10. Dynamic UI now correctly hides unused LoRA slots and adjusts node height automatically

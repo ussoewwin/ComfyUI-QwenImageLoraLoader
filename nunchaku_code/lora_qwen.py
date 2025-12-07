@@ -879,7 +879,7 @@ def compose_loras_v2(
                 if ab in ("lokr_w1", "lokr_w2"):
                     lora_grouped[base_key][f"{comp}_{ab}"] = value
                 else:
-                lora_grouped[base_key][f"{comp}_{ab}"] = value
+                    lora_grouped[base_key][f"{comp}_{ab}"] = value
             else:
                 lora_grouped[base_key][ab] = value
 

@@ -299,8 +299,8 @@ This node is designed to work with:
 
 ### LoKR (Lycoris) LoRA Support
 - **Status**: ❌ **Not Supported**
-- **Issue**: LoRAs in LoKR format (created by Lycoris, including SNOFs series) are **not supported**.
-  - Direct loading results in noise.
+- **Issue**: LoRAs in LoKR format (created by Lycoris) are **not supported**.
+  - LoKR weights are automatically skipped when detected (experimental conversion code is disabled).
   - Converting to Standard LoRA using SVD approximation (via external tools or scripts) has also been tested and **found to result in noise/artifacts** when applied to Nunchaku quantization models.
 - **Conclusion**: At this time, we have not found a way to successfully apply LoKR weights to Nunchaku models. Please use Standard LoRA formats.
 - **Supported Formats**:
@@ -312,7 +312,6 @@ This node is designed to work with:
       - `lora.A.weight` / `lora.B.weight`
     - These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.
   - ❌ **LoKR (Lycoris)**: Not supported (Keys like `lokr_w1`, `lokr_w2`)
-    - Note: SNOFs series LoRAs use LoKR format internally, so they are also not supported.
   - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
   - ❌ **IA3**: Not supported
 

@@ -297,6 +297,24 @@ This node is designed to work with:
 
 ## Known Limitations
 
+### LoKR (Lycoris/SNOFs) LoRA Support
+- **Status**: ❌ **Not Supported**
+- **Issue**: LoRAs in LoKR format (often created by Lycoris/SNOFs) are **not supported**.
+  - Direct loading results in noise.
+  - Converting to Standard LoRA using SVD approximation (via external tools or scripts) has also been tested and **found to result in noise/artifacts** when applied to Nunchaku quantization models.
+- **Conclusion**: At this time, we have not found a way to successfully apply LoKR weights to Nunchaku models. Please use Standard LoRA formats.
+- **Supported Formats**:
+  - ✅ **Standard LoRA (Rank-Decomposed)**:
+    - Supported weight keys:
+      - `lora_up.weight` / `lora_down.weight`
+      - `lora.up.weight` / `lora.down.weight`
+      - `lora_A.weight` / `lora_B.weight`
+      - `lora.A.weight` / `lora.B.weight`
+    - These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.
+  - ❌ **LoKR (Lycoris/SNOFs)**: Not supported (Keys like `lokr_w1`, `lokr_w2`)
+  - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
+  - ❌ **IA3**: Not supported
+
 ### RES4LYF Sampler Compatibility Issue
 - **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2
 - **Issue**: Device mismatch errors occurred when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))

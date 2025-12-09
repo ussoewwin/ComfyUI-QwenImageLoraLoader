@@ -88,7 +88,7 @@ class NunchakuQwenImageLoraLoader:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "LoRAs are used to modify the diffusion model, altering the way in which latents are denoised."
 
-    def load_lora(self, model, lora_name: str, lora_strength: float, cpu_offload: str):
+    def load_lora(self, model, lora_name: str, lora_strength: float, cpu_offload: str = "disable"):
         if abs(lora_strength) < 1e-5:
             return (model,)
 
@@ -268,7 +268,7 @@ class NunchakuQwenImageLoraStack:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. v1.0.3"
 
-    def load_lora_stack(self, model, lora_count, cpu_offload, **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload="disable", **kwargs):
         loras_to_apply = []
         
         # Process only the number of LoRAs specified by lora_count

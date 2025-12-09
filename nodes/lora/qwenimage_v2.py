@@ -110,7 +110,7 @@ class NunchakuQwenImageLoraStackV2:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. v1.0.3"
 
-    def load_lora_stack(self, model, lora_count, cpu_offload, **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload="disable", **kwargs):
         loras_to_apply = []
         
         # Process only the number of LoRAs specified by lora_count

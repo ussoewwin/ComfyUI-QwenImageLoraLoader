@@ -324,7 +324,7 @@ This node is designed to work with:
   - [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7) - RES4LYF sampler device mismatch error
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
-### [Issue #25: ComfyUI 0.4.0 Model Management Errors](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25)
+### Issue #25: ComfyUI 0.4.0 Model Management Errors
 - **Status**: ⚠️ **Environment Dependent** - May require ComfyUI core fixes
 - **Issue**: After the ComfyUI 0.4.0 update, multiple nodes (including this one in some environments) experienced errors such as `TypeError: 'NoneType' object is not callable` and `AttributeError: 'NoneType' object has no attribute`. In our environment, these errors did not occur with this node (ComfyUI-QwenImageLoraLoader), but we resolved similar errors by modifying ComfyUI's core `model_management.py`.
 - **Root Cause**: In ComfyUI 0.4.0, ComfyUI's core `model_management.py` lacks sufficient None checks, causing `TypeError` and `AttributeError` when accessing methods or attributes on objects that became `None` after models were unloaded or garbage collected. This problem is not a bug in individual nodes, but rather a structural issue in ComfyUI 0.4.0's model management (`model_management.py`).

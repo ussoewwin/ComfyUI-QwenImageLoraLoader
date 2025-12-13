@@ -164,35 +164,6 @@ This node is designed to work with:
 2. Follow the nunchaku installation instructions to install the nunchaku wheel
 3. Restart ComfyUI
 
-## Known Limitations
-
-### LoKR (Lycoris) LoRA Support
-- **Status**: ❌ **Not Supported**
-- **Issue**: LoRAs in LoKR format (created by Lycoris) are **not supported**.
-  - LoKR weights are automatically skipped when detected (experimental conversion code is disabled).
-  - Converting to Standard LoRA using SVD approximation (via external tools or scripts) has also been tested and **found to result in noise/artifacts** when applied to Nunchaku quantization models.
-- **Conclusion**: At this time, we have not found a way to successfully apply LoKR weights to Nunchaku models. Please use Standard LoRA formats.
-- **Supported Formats**:
-  - ✅ **Standard LoRA (Rank-Decomposed)**:
-    - Supported weight keys:
-      - `lora_up.weight` / `lora_down.weight`
-      - `lora.up.weight` / `lora.down.weight`
-      - `lora_A.weight` / `lora_B.weight`
-      - `lora.A.weight` / `lora.B.weight`
-    - These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.
-  - ❌ **LoKR (Lycoris)**: Not supported (Keys like `lokr_w1`, `lokr_w2`)
-  - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
-  - ❌ **IA3**: Not supported
-
-### RES4LYF Sampler Compatibility Issue
-- **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2
-- **Issue**: Device mismatch errors occurred when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
-- **Fix**: The issue was fixed in [ComfyUI-nunchaku v1.0.2](https://github.com/nunchaku-tech/ComfyUI-nunchaku/releases/tag/v1.0.2) by @devgdovg in PR #600. This fix was implemented in ComfyUI-nunchaku's codebase, not in this LoRA loader.
-- **Requirement**: Update to ComfyUI-nunchaku v1.0.2 or later to use RES4LYF sampler with LoRA
-- **Related Issues**: 
-  - [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7) - RES4LYF sampler device mismatch error
-  - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
-
 ### Issue #25: ComfyUI 0.4.0 Model Management Errors
 - **Status**: ⚠️ **Environment Dependent** - May require ComfyUI core fixes
 - **Issue**: After the ComfyUI 0.4.0 update, multiple nodes (including this one in some environments) experienced errors such as `TypeError: 'NoneType' object is not callable` and `AttributeError: 'NoneType' object has no attribute`. In our environment, we resolved these errors by modifying ComfyUI's core `model_management.py`. Note that in our environment, these errors did not occur with this node (ComfyUI-QwenImageLoraLoader). Nunchaku library and ComfyUI-Nunchaku nodes should use the latest versions. If errors persist even after applying the latest version of this node (ComfyUI-QwenImageLoraLoader), modification of ComfyUI's core `model_management.py` may be necessary.
@@ -229,6 +200,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
     # ...
     self.pinned = set()  # Line 237: Initialized
 ```
+
   - **Fact 3: Fix Content in ComfyUI Core's model_management.py** - The fix in ComfyUI's core `model_management.py` now skips `LoadedModel` instances where `model` is `None`: In `load_models_gpu()`, skips `LoadedModel` instances where `model` is `None` (lines 712, 727, 743); In `free_memory()`, excludes `LoadedModel` instances where `model` is `None` (line 646).
   - **Fact 4: Problem Before Fix** - `LoadedModel` holds a weak reference to `ModelPatcher`. When garbage collected, `LoadedModel.model` returns `None`. Before the fix, methods were called on `LoadedModel` instances where `model` was `None`, causing errors.
   - **Fact 5: Behavior After Fix** - By skipping `LoadedModel` instances where `model` is `None`, errors do not occur. Because errors do not occur, processing continues normally.
@@ -245,6 +217,35 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
   - [ComfyUI Issue #6590](https://github.com/comfyanonymous/ComfyUI/issues/6590): `'NoneType' object has no attribute 'shape'`
   - [ComfyUI Issue #6600](https://github.com/comfyanonymous/ComfyUI/issues/6600): `'NoneType' object is not callable` (Loader-related)
   - [ComfyUI Issue #6532](https://github.com/comfyanonymous/ComfyUI/issues/6532): Crash after referencing models after model unload
+
+## Known Limitations
+
+### LoKR (Lycoris) LoRA Support
+- **Status**: ❌ **Not Supported**
+- **Issue**: LoRAs in LoKR format (created by Lycoris) are **not supported**.
+  - LoKR weights are automatically skipped when detected (experimental conversion code is disabled).
+  - Converting to Standard LoRA using SVD approximation (via external tools or scripts) has also been tested and **found to result in noise/artifacts** when applied to Nunchaku quantization models.
+- **Conclusion**: At this time, we have not found a way to successfully apply LoKR weights to Nunchaku models. Please use Standard LoRA formats.
+- **Supported Formats**:
+  - ✅ **Standard LoRA (Rank-Decomposed)**:
+    - Supported weight keys:
+      - `lora_up.weight` / `lora_down.weight`
+      - `lora.up.weight` / `lora.down.weight`
+      - `lora_A.weight` / `lora_B.weight`
+      - `lora.A.weight` / `lora.B.weight`
+    - These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.
+  - ❌ **LoKR (Lycoris)**: Not supported (Keys like `lokr_w1`, `lokr_w2`)
+  - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
+  - ❌ **IA3**: Not supported
+
+### RES4LYF Sampler Compatibility Issue
+- **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2
+- **Issue**: Device mismatch errors occurred when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
+- **Fix**: The issue was fixed in [ComfyUI-nunchaku v1.0.2](https://github.com/nunchaku-tech/ComfyUI-nunchaku/releases/tag/v1.0.2) by @devgdovg in PR #600. This fix was implemented in ComfyUI-nunchaku's codebase, not in this LoRA loader.
+- **Requirement**: Update to ComfyUI-nunchaku v1.0.2 or later to use RES4LYF sampler with LoRA
+- **Related Issues**: 
+  - [Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7) - RES4LYF sampler device mismatch error
+  - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ## Changelog
 

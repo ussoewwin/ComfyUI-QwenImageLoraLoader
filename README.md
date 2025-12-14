@@ -239,7 +239,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
   - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
   - ❌ **IA3**: Not supported
 - **Related Issues**: 
-  - [Issue #29](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/29) - LyCORIS / LoKr Qwen Image LoRA not recognized by ComfyUI – clarification on "Standard LoRA" format?
+  - [Issue #29](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/29) - LyCORIS / LoKr Qwen Image LoRA not recognized by ComfyUI
 
 ### RES4LYF Sampler Compatibility Issue
 - **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2

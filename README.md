@@ -10,10 +10,10 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **As of v2.0, diffsynth ControlNet is now fully supported for Nunchaku Qwen Image models.**
 
-A new dedicated node `NunchakuQwenImageDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized models.
+A new dedicated node `NunchakuQwenImageDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized Qwen Image models.
 
 ### What's New in v2.0
-- ✅ **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku models
+- ✅ **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku Qwen Image models
 - ✅ **Full ControlNet Support**: Works with standard diffsynth ControlNet models
 - ✅ **Seamless Integration**: Automatically applies ControlNet patches during model forward pass
 - ✅ **Backward Compatible**: All existing LoRA functionality remains unchanged
@@ -104,7 +104,7 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageLoraLoader**: Single LoRA loader
 - **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
-- **NunchakuQwenImageDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku models (v2.0)
+- **NunchakuQwenImageDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models (v2.0)
 
 ### Basic Usage
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
@@ -279,10 +279,10 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 ## Changelog
 
 ### v2.0 (latest)
-- **MAJOR UPDATE**: Added diffsynth ControlNet support for Nunchaku models
+- **MAJOR UPDATE**: Added diffsynth ControlNet support for Nunchaku Qwen Image models
 - **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Enables diffsynth ControlNet to work with Nunchaku quantized Qwen Image models
 - **Features**: 
-  - Full diffsynth ControlNet functionality for Nunchaku models
+  - Full diffsynth ControlNet functionality for Nunchaku Qwen Image models
   - Automatic patch registration and application
 - **Technical Details**: See [v2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0) for complete explanation
 

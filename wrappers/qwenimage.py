@@ -254,6 +254,10 @@ class ComfyQwenImageWrapper(nn.Module):
 
         if self.customized_forward:
             with torch.inference_mode():
+                # Remove guidance from forward_kwargs and kwargs to avoid duplicate argument error
+                forward_kwargs_without_guidance = {k: v for k, v in self.forward_kwargs.items() if k != "guidance"}
+                kwargs_without_guidance = {k: v for k, v in kwargs.items() if k != "guidance"}
+                
                 return self.customized_forward(
                     self.model,
                     hidden_states=x,
@@ -262,8 +266,8 @@ class ComfyQwenImageWrapper(nn.Module):
                     guidance=guidance if self.config.get("guidance_embed", False) else None,
                     control=control,
                     transformer_options=transformer_options,
-                    **self.forward_kwargs,
-                    **kwargs,
+                    **forward_kwargs_without_guidance,
+                    **kwargs_without_guidance,
                 )
         else:
             with torch.inference_mode():
@@ -272,6 +276,9 @@ class ComfyQwenImageWrapper(nn.Module):
                     # Add time dimension for 5D tensor (bs, c, t, h, w)
                     x = x.unsqueeze(2)
                 
+                # Remove guidance from kwargs to avoid duplicate argument error
+                kwargs_without_guidance = {k: v for k, v in kwargs.items() if k != "guidance"}
+                
                 return self.model(
                     x,
                     timestep,
@@ -279,5 +286,5 @@ class ComfyQwenImageWrapper(nn.Module):
                     guidance=guidance if self.config.get("guidance_embed", False) else None,
                     control=control,
                     transformer_options=transformer_options,
-                    **kwargs,
+                    **kwargs_without_guidance,
                 )

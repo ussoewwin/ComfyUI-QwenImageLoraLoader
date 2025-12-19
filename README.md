@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v2.0.3 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.3)
+> Latest release: [v2.0.4 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.4)
 
 ## 🎉 MAJOR UPDATE: v2.0 - Diffsynth ControlNet Support Added!
 
@@ -278,7 +278,14 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 
 ## Changelog
 
-### v2.0.3 (latest)
+### v2.0.4 (latest)
+- **Fixed**: Resolved [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error by removing guidance from transformer_options
+- **Problem**: v2.0.2 fixed guidance duplication from kwargs, but transformer_options could still contain guidance, causing duplicate argument error in some environments
+- **Solution**: Modified `_execute_model` method to remove guidance from transformer_options before passing to model, in addition to removing from kwargs
+- **Impact**: Prevents guidance argument duplication regardless of environment; maintains backward compatibility and does not affect Diffsynth ControlNet
+- **Technical Details**: See [v2.0.4 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.4) for complete explanation
+
+### v2.0.3
 - **Fixed**: Resolved [Issue #31](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/31) – Fixed nodes not appearing when `comfy.ldm.lumina.controlnet` module is unavailable
 - **Problem**: ControlNet node import failure caused all nodes (including LoRA nodes) to fail registration when lumina module was not available
 - **Solution**: Separated ControlNet node import into separate try-except block, allowing LoRA nodes to load successfully even if ControlNet node fails

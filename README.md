@@ -285,6 +285,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 - **Solution**: Modified `_execute_model` method to remove guidance from transformer_options before passing to model, in addition to removing from kwargs
 - **Impact**: Prevents guidance argument duplication regardless of environment; maintains backward compatibility and does not affect Diffsynth ControlNet
 - **Technical Details**: See [v2.0.4 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.4) for complete explanation
+- **Root Cause Analysis**: See [V2.0_ROOT_CAUSE_ANALYSIS.md](V2.0_ROOT_CAUSE_ANALYSIS.md) for detailed code-by-code explanation of problems caused by v2.0
 
 ### v2.0.3
 - **Fixed**: Resolved [Issue #31](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/31) – Fixed nodes not appearing when `comfy.ldm.lumina.controlnet` module is unavailable

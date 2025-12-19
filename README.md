@@ -283,12 +283,14 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 - **Problem**: ControlNet node import failure caused all nodes (including LoRA nodes) to fail registration when lumina module was not available
 - **Solution**: Separated ControlNet node import into separate try-except block, allowing LoRA nodes to load successfully even if ControlNet node fails
 - **Impact**: LoRA nodes now work in all environments; ControlNet node only available when lumina module is present (logs warning otherwise)
+- **Technical Details**: See [v2.0.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.3) for complete explanation
 
 ### v2.0.2
 - **Fixed**: Resolved [Issue #30](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/30) and [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error when using LoRA with KSampler
 - **Problem**: `guidance` argument was explicitly passed while also being present in `**kwargs`, causing a duplicate argument error
 - **Solution**: Modified `_execute_model` method to exclude `guidance` from `**kwargs` before unpacking, prioritizing explicitly passed value
 - **Impact**: No impact on Diffsynth ControlNet feature (v2.0); maintains backward compatibility
+- **Technical Details**: See [v2.0.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.2) for complete explanation
 
 ### v2.0
 - **MAJOR UPDATE**: Added diffsynth ControlNet support for Nunchaku Qwen Image models

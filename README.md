@@ -4,7 +4,21 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v1.72 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.72)
+> Latest release: [v2.0 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0)
+
+## 🎉 MAJOR UPDATE: v2.0 - Diffsynth ControlNet Support Added!
+
+**As of v2.0, diffsynth ControlNet is now fully supported for Nunchaku Qwen Image models.**
+
+A new dedicated node `NunchakuQwenImageDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized models, supporting both standard ControlNet and ZImage ControlNet models.
+
+### What's New in v2.0
+- ✅ **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku models
+- ✅ **Full ControlNet Support**: Works with standard diffsynth ControlNet and ZImage ControlNet models
+- ✅ **Seamless Integration**: Automatically applies ControlNet patches during model forward pass
+- ✅ **Backward Compatible**: All existing LoRA functionality remains unchanged
+
+For detailed technical explanation, see [v2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0)
 
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
@@ -31,6 +45,7 @@ This LoRA loader was extracted and modified from GavChap's fork:
 
 - **NunchakuQwenImageLoraLoader**: Load and apply single LoRA to Qwen Image models
 - **NunchakuQwenImageLoraStack**: Apply multiple LoRAs with dynamic UI control
+- **NunchakuQwenImageDiffsynthControlnet**: Apply diffsynth ControlNet to Nunchaku Qwen Image models (v2.0)
 - **Dynamic VRAM Management**: Automatic CPU offloading based on available VRAM
 - **LoRA Composition**: Efficient LoRA stacking and composition
 - **ComfyUI Integration**: Seamless integration with ComfyUI workflows
@@ -89,6 +104,7 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageLoraLoader**: Single LoRA loader
 - **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
+- **NunchakuQwenImageDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku models (v2.0)
 
 ### Basic Usage
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
@@ -252,7 +268,16 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 
 ## Changelog
 
-### v1.72 (latest)
+### v2.0 (latest)
+- **MAJOR UPDATE**: Added diffsynth ControlNet support for Nunchaku models
+- **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Enables diffsynth ControlNet to work with Nunchaku quantized Qwen Image models
+- **Features**: 
+  - Full diffsynth ControlNet functionality for Nunchaku models
+  - Supports both standard ControlNet and ZImage ControlNet models
+  - Automatic patch registration and application
+- **Technical Details**: See [v2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0) for complete explanation
+
+### v1.72
 - **Fixed**: Resolved compatibility issue with kjai node updates – Added default value `"disable"` for `cpu_offload` parameter in LoRA loader methods ([PR #28](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/28))
 - **Reported by**: [@enternalsaga](https://github.com/enternalsaga) ([PR #28](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/28))
 - **Technical Details**: See [v1.72 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.72) for complete explanation

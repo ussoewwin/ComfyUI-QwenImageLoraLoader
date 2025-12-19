@@ -280,6 +280,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 
 ### v2.0.4 (latest)
 - **Fixed**: Resolved [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error by removing guidance from transformer_options
+- **Note**: This error was not reproducible in author's environment (ComfyUI 0.4.0), but was reported by users. This is a preventative fix based on the issue report.
 - **Problem**: v2.0.2 fixed guidance duplication from kwargs, but transformer_options could still contain guidance, causing duplicate argument error in some environments
 - **Solution**: Modified `_execute_model` method to remove guidance from transformer_options before passing to model, in addition to removing from kwargs
 - **Impact**: Prevents guidance argument duplication regardless of environment; maintains backward compatibility and does not affect Diffsynth ControlNet

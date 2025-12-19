@@ -279,7 +279,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 ## Changelog
 
 ### v2.0.2 (latest)
-- **Fixed**: Resolved [Issue #30](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/30) – Fixed `TypeError: got multiple values for argument 'guidance'` error when using LoRA with KSampler
+- **Fixed**: Resolved [Issue #30](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/30) and [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error when using LoRA with KSampler
 - **Problem**: `guidance` argument was explicitly passed while also being present in `**kwargs`, causing a duplicate argument error
 - **Solution**: Modified `_execute_model` method to exclude `guidance` from `**kwargs` before unpacking, prioritizing explicitly passed value
 - **Impact**: No impact on Diffsynth ControlNet feature (v2.0); maintains backward compatibility

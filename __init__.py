@@ -20,28 +20,39 @@ QWEN_V2_NAMES = {}
 try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack
     from .nodes.lora.qwenimage_v2 import GENERATED_NODES as QWEN_V2_NODES, GENERATED_DISPLAY_NAMES as QWEN_V2_NAMES
-    from .nodes.controlnet import NunchakuQwenImageDiffsynthControlnet
 
     # Add version to classes before creating NODE_CLASS_MAPPINGS
     NunchakuQwenImageLoraLoader.__version__ = __version__
     NunchakuQwenImageLoraStack.__version__ = __version__
-    NunchakuQwenImageDiffsynthControlnet.__version__ = __version__
     for node_class in QWEN_V2_NODES.values():
         node_class.__version__ = __version__
 
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
-    NODE_CLASS_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = NunchakuQwenImageDiffsynthControlnet
     NODE_CLASS_MAPPINGS.update(QWEN_V2_NODES)
 except ImportError:
-    logger.exception("Nodes import failed:")
+    logger.exception("LoRA nodes import failed:")
+
+# Try to import ControlNet node separately - it may fail if comfy.ldm.lumina.controlnet is not available
+try:
+    from .nodes.controlnet import NunchakuQwenImageDiffsynthControlnet
+    NunchakuQwenImageDiffsynthControlnet.__version__ = __version__
+    NODE_CLASS_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = NunchakuQwenImageDiffsynthControlnet
+    logger.info("✅ ControlNet node loaded successfully")
+except ImportError:
+    logger.warning("⚠️ ControlNet node not available (comfy.ldm.lumina.controlnet not found). LoRA nodes will still work.")
+except Exception as e:
+    logger.warning(f"⚠️ ControlNet node failed to load: {e}. LoRA nodes will still work.")
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
     "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
-    "NunchakuQwenImageDiffsynthControlnet": "Nunchaku Qwen Image Diffsynth Controlnet",
     **QWEN_V2_NAMES
 }
+
+# Add ControlNet display name only if the node was successfully loaded
+if "NunchakuQwenImageDiffsynthControlnet" in NODE_CLASS_MAPPINGS:
+    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "Nunchaku Qwen Image Diffsynth Controlnet"
 
 # Register JavaScript extensions
 WEB_DIRECTORY = "js"

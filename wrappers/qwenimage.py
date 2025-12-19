@@ -254,9 +254,12 @@ class ComfyQwenImageWrapper(nn.Module):
 
         if self.customized_forward:
             with torch.inference_mode():
-                # Remove guidance from forward_kwargs and kwargs to avoid duplicate argument error
+                # Remove guidance from forward_kwargs, kwargs, and transformer_options to avoid duplicate argument error
                 forward_kwargs_without_guidance = {k: v for k, v in self.forward_kwargs.items() if k != "guidance"}
                 kwargs_without_guidance = {k: v for k, v in kwargs.items() if k != "guidance"}
+                # Create a copy of transformer_options and remove guidance if present
+                transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
+                transformer_options_cleaned.pop("guidance", None)
                 
                 return self.customized_forward(
                     self.model,
@@ -265,7 +268,7 @@ class ComfyQwenImageWrapper(nn.Module):
                     timestep=timestep,
                     guidance=guidance if self.config.get("guidance_embed", False) else None,
                     control=control,
-                    transformer_options=transformer_options,
+                    transformer_options=transformer_options_cleaned,
                     **forward_kwargs_without_guidance,
                     **kwargs_without_guidance,
                 )
@@ -276,8 +279,11 @@ class ComfyQwenImageWrapper(nn.Module):
                     # Add time dimension for 5D tensor (bs, c, t, h, w)
                     x = x.unsqueeze(2)
                 
-                # Remove guidance from kwargs to avoid duplicate argument error
+                # Remove guidance from kwargs and transformer_options to avoid duplicate argument error
                 kwargs_without_guidance = {k: v for k, v in kwargs.items() if k != "guidance"}
+                # Create a copy of transformer_options and remove guidance if present
+                transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
+                transformer_options_cleaned.pop("guidance", None)
                 
                 return self.model(
                     x,
@@ -285,6 +291,6 @@ class ComfyQwenImageWrapper(nn.Module):
                     context,
                     guidance=guidance if self.config.get("guidance_embed", False) else None,
                     control=control,
-                    transformer_options=transformer_options,
+                    transformer_options=transformer_options_cleaned,
                     **kwargs_without_guidance,
                 )

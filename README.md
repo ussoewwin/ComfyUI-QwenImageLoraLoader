@@ -279,7 +279,10 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 ## Changelog
 
 ### v2.0.5 (latest)
-- **Fixed**: Resolved [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error by passing guidance as positional argument to match QwenImageTransformer2DModel.forward signature
+- **Fixed**: Resolved [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error by passing guidance as positional argument to match QwenImageTransformer2DModel.forward signature ([v2.0.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.5))
+- **Problem**: v2.0.4 removed guidance from transformer_options and kwargs, but guidance was still being passed as a keyword argument, which conflicted with WrapperExecutor.execute() that passes guidance as a positional argument
+- **Solution**: Modified `_execute_model` method to pass guidance as a positional argument (after attention_mask) to match the original forward signature
+- **Impact**: Prevents guidance argument duplication regardless of environment; maintains compatibility with ComfyUI's patching system and WrapperExecutor; does not affect Diffsynth ControlNet
 - **Technical Details**: See [v2.0.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.5) for complete explanation
 
 ### v2.0.4

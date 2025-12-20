@@ -285,12 +285,22 @@ class ComfyQwenImageWrapper(nn.Module):
                 transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
                 transformer_options_cleaned.pop("guidance", None)
                 
+                # Pass guidance as positional argument to match QwenImageTransformer2DModel.forward signature
+                # Signature: forward(self, x, timestep, context, attention_mask=None, guidance=None, ref_latents=None, transformer_options={}, **kwargs)
+                guidance_value = guidance if self.config.get("guidance_embed", False) else None
+                
+                # Include control in kwargs if provided
+                final_kwargs = dict(kwargs_without_guidance)
+                if control is not None:
+                    final_kwargs["control"] = control
+                
                 return self.model(
                     x,
                     timestep,
                     context,
-                    guidance=guidance if self.config.get("guidance_embed", False) else None,
-                    control=control,
-                    transformer_options=transformer_options_cleaned,
-                    **kwargs_without_guidance,
+                    None,  # attention_mask
+                    guidance_value,  # guidance as positional argument
+                    None,  # ref_latents
+                    transformer_options_cleaned,  # transformer_options
+                    **final_kwargs,
                 )

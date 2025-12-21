@@ -2,7 +2,7 @@ import logging
 import os
 
 # Version information - must be at module level for ComfyUI Manager
-__version__ = "2.0.6"
+__version__ = "2.0.7"
 
 # Get log level from environment variable (default to INFO)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()

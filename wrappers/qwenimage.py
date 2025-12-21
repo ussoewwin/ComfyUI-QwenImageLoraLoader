@@ -88,6 +88,23 @@ class ComfyQwenImageWrapper(nn.Module):
         Detects changes to the `self.loras` list and recomposes the model
         on-the-fly before inference.
         """
+        # Remove guidance, transformer_options, and attention_mask from kwargs
+        # These may be added by ComfyUI-EulerDiscreteScheduler or other patches
+        # Even though guidance is a parameter of forward(), kwargs may also contain it
+        # which could cause issues when passing to _execute_model
+        # Note: ref_latents is NOT a parameter of forward(), so we keep it in kwargs for _execute_model to use
+        if "guidance" in kwargs:
+            # If guidance is in kwargs, use the explicit parameter value (which takes precedence)
+            # and remove it from kwargs to avoid duplication
+            kwargs.pop("guidance")
+        if "transformer_options" in kwargs:
+            # Merge transformer_options from kwargs into the parameter if needed
+            if isinstance(transformer_options, dict) and isinstance(kwargs["transformer_options"], dict):
+                transformer_options = {**transformer_options, **kwargs.pop("transformer_options")}
+            else:
+                kwargs.pop("transformer_options")
+        if "attention_mask" in kwargs:
+            kwargs.pop("attention_mask")
         if isinstance(timestep, torch.Tensor):
             if timestep.numel() == 1:
                 timestep_float = timestep.item()
@@ -239,6 +256,16 @@ class ComfyQwenImageWrapper(nn.Module):
 
     def _execute_model(self, x, timestep, context, guidance, control, transformer_options, **kwargs):
         """Helper function to run the model's forward pass."""
+        # Get ref_latents from kwargs before removing it (it's not a parameter of forward())
+        ref_latents_value = kwargs.pop("ref_latents", None)
+        
+        # Double-check: Remove guidance, transformer_options, and attention_mask from kwargs
+        # This is a defensive measure in case any code path adds these to kwargs after forward() method
+        # Even though forward() already removes them, this ensures _execute_model is always safe
+        kwargs.pop("guidance", None)
+        kwargs.pop("transformer_options", None)
+        kwargs.pop("attention_mask", None)
+        
         model_device = next(self.model.parameters()).device
 
         # Move input tensors to the model's device
@@ -254,10 +281,10 @@ class ComfyQwenImageWrapper(nn.Module):
 
         if self.customized_forward:
             with torch.inference_mode():
-                # Remove guidance, ref_latents, transformer_options, and attention_mask from forward_kwargs, kwargs to avoid duplicate argument error
+                # Remove guidance, ref_latents, transformer_options, and attention_mask from forward_kwargs to avoid duplicate argument error
                 # These are passed explicitly to customized_forward
+                # Note: kwargs is already cleaned above, so we only need to clean forward_kwargs
                 forward_kwargs_cleaned = {k: v for k, v in self.forward_kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask")}
-                kwargs_cleaned = {k: v for k, v in kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask")}
                 # Create a copy of transformer_options and remove guidance and ref_latents if present
                 transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
                 transformer_options_cleaned.pop("guidance", None)
@@ -269,11 +296,11 @@ class ComfyQwenImageWrapper(nn.Module):
                     encoder_hidden_states=context,
                     timestep=timestep,
                     guidance=guidance if self.config.get("guidance_embed", False) else None,
-                    ref_latents=kwargs.get("ref_latents", None),  # Get ref_latents from kwargs if present
+                    ref_latents=ref_latents_value,  # ref_latents from kwargs (already extracted above)
                     control=control,
                     transformer_options=transformer_options_cleaned,
                     **forward_kwargs_cleaned,
-                    **kwargs_cleaned,
+                    **kwargs,  # kwargs is already cleaned above (guidance, ref_latents, transformer_options, attention_mask removed)
                 )
         else:
             with torch.inference_mode():
@@ -282,14 +309,15 @@ class ComfyQwenImageWrapper(nn.Module):
                     # Add time dimension for 5D tensor (bs, c, t, h, w)
                     x = x.unsqueeze(2)
                 
-                # Prepare values to pass as positional arguments (retrieve before exclusion)
+                # Prepare values to pass as positional arguments
+                # Note: ref_latents_value was already extracted from kwargs at the start of _execute_model
                 guidance_value = guidance if self.config.get("guidance_embed", False) else None
-                ref_latents_value = kwargs.get("ref_latents", None)  # Retrieve before exclusion
                 
-                # Remove guidance, ref_latents, transformer_options, and attention_mask from kwargs to avoid duplicate argument error
+                # Remove guidance, transformer_options, and attention_mask from kwargs to avoid duplicate argument error
                 # These are passed as positional arguments to match QwenImageTransformer2DModel.forward signature
                 # Signature: forward(self, x, timestep, context, attention_mask=None, guidance=None, ref_latents=None, transformer_options={}, **kwargs)
-                kwargs_cleaned = {k: v for k, v in kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask")}
+                # Note: ref_latents was already removed from kwargs at the start of _execute_model
+                kwargs_cleaned = {k: v for k, v in kwargs.items() if k not in ("guidance", "transformer_options", "attention_mask")}
                 # Create a copy of transformer_options and remove guidance and ref_latents if present
                 transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
                 transformer_options_cleaned.pop("guidance", None)

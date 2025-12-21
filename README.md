@@ -4,7 +4,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **This project is based on the fork version of ComfyUI-nunchaku-qwen-lora-suport-standalone.**
 
-> Latest release: [v2.0.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.6)
+> Latest release: [v2.0.7 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.7)
 
 ## 🎉 MAJOR UPDATE: v2.0 - Diffsynth ControlNet Support Added!
 
@@ -278,40 +278,28 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 
 ## Changelog
 
-### v2.0.6 (latest)
-- **Fixed**: Excluded `ref_latents`, `transformer_options`, and `attention_mask` from kwargs to prevent duplicate argument errors (`TypeError: got multiple values for argument 'ref_latents'`, etc.)
-- **Solution**: Modified `_execute_model` method to exclude all positional arguments (`guidance`, `ref_latents`, `transformer_options`, `attention_mask`) from kwargs and pass them explicitly as positional arguments
-- **Impact**: Prevents duplicate argument errors for all positional arguments, improving compatibility with various ComfyUI workflows and custom nodes
+### v2.0.7 (latest)
+- **Fixed**: Enhanced [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) fix by adding exclusion processing in `forward` method in addition to `_execute_model` method to prevent duplicate argument errors
+- **Technical Details**: See [v2.0.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.7) for complete explanation
+
+### v2.0.6
+- **Fixed**: Excluded `ref_latents`, `transformer_options`, and `attention_mask` from kwargs to prevent duplicate argument errors
 - **Technical Details**: See [v2.0.6 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.6) for complete explanation
 
 ### v2.0.5
 - **Fixed**: Resolved [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error by passing guidance as positional argument to match QwenImageTransformer2DModel.forward signature
-- **Problem**: v2.0.4 removed guidance from transformer_options and kwargs, but guidance was still being passed as a keyword argument, which conflicted with WrapperExecutor.execute() that passes guidance as a positional argument
-- **Solution**: Modified `_execute_model` method to pass guidance as a positional argument (after attention_mask) to match the original forward signature
-- **Impact**: Prevents guidance argument duplication regardless of environment; maintains compatibility with ComfyUI's patching system and WrapperExecutor; does not affect Diffsynth ControlNet
 - **Technical Details**: See [v2.0.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.5) for complete explanation
 
 ### v2.0.4
 - **Fixed**: Resolved [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error by removing guidance from transformer_options
-- **Note**: This error was not reproducible in author's environment (ComfyUI 0.4.0), but was reported by users. This is a preventative fix based on the issue report.
-- **Problem**: v2.0.2 fixed guidance duplication from kwargs, but transformer_options could still contain guidance, causing duplicate argument error in some environments
-- **Solution**: Modified `_execute_model` method to remove guidance from transformer_options before passing to model, in addition to removing from kwargs
-- **Impact**: Prevents guidance argument duplication regardless of environment; maintains backward compatibility and does not affect Diffsynth ControlNet
 - **Technical Details**: See [v2.0.4 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.4) for complete explanation
-- **Root Cause Analysis**: See [V2.0_ROOT_CAUSE_ANALYSIS.md](V2.0_ROOT_CAUSE_ANALYSIS.md) for detailed code-by-code explanation of problems caused by v2.0
 
 ### v2.0.3
 - **Fixed**: Resolved [Issue #31](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/31) – Fixed nodes not appearing when `comfy.ldm.lumina.controlnet` module is unavailable
-- **Problem**: ControlNet node import failure caused all nodes (including LoRA nodes) to fail registration when lumina module was not available
-- **Solution**: Separated ControlNet node import into separate try-except block, allowing LoRA nodes to load successfully even if ControlNet node fails
-- **Impact**: LoRA nodes now work in all environments; ControlNet node only available when lumina module is present (logs warning otherwise)
 - **Technical Details**: See [v2.0.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.3) for complete explanation
 
 ### v2.0.2
 - **Fixed**: Resolved [Issue #30](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/30) and [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) – Fixed `TypeError: got multiple values for argument 'guidance'` error when using LoRA with KSampler
-- **Problem**: `guidance` argument was explicitly passed while also being present in `**kwargs`, causing a duplicate argument error
-- **Solution**: Modified `_execute_model` method to exclude `guidance` from `**kwargs` before unpacking, prioritizing explicitly passed value
-- **Impact**: No impact on Diffsynth ControlNet feature (v2.0); maintains backward compatibility
 - **Technical Details**: See [v2.0.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.2) for complete explanation
 
 ### v2.0

@@ -244,7 +244,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
   - [ComfyUI Issue #6600](https://github.com/comfyanonymous/ComfyUI/issues/6600): `'NoneType' object is not callable` (Loader-related)
   - [ComfyUI Issue #6532](https://github.com/comfyanonymous/ComfyUI/issues/6532): Crash after referencing models after model unload
 
-### Issue #32: TypeError: got multiple values for argument 'guidance' (v2.0+)
+### Issue #30: TypeError: got multiple values for argument 'guidance' (v2.0+)
 
 - **Status**: ⚠️ **May Still Occur in Some Environments** - Even with v2.0.7 fixes
 - **Issue**: `TypeError: got multiple values for argument 'guidance'` error may still occur in some user environments when using v2.0+ versions with diffsynth ControlNet support, despite multiple fixes applied from v2.0.2 to v2.0.7.

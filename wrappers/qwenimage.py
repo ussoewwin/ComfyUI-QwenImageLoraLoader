@@ -330,6 +330,12 @@ class ComfyQwenImageWrapper(nn.Module):
                     final_kwargs["control"] = control
                 # Note: control is not in the forward signature, so it should be in **kwargs
                 
+                # Final cleanup: Remove guidance, ref_latents, transformer_options, and attention_mask from final_kwargs
+                # This is necessary because comfy/ldm/qwen_image/model.py's forward() passes these as positional arguments
+                # to WrapperExecutor.execute(), and if they are also in **kwargs, _forward() will receive them twice
+                # This prevents the error: TypeError: got multiple values for argument 'guidance'
+                final_kwargs_cleaned = {k: v for k, v in final_kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask")}
+                
                 return self.model(
                     x,
                     timestep,
@@ -338,5 +344,5 @@ class ComfyQwenImageWrapper(nn.Module):
                     guidance_value,  # guidance as positional argument
                     ref_latents_value,  # ref_latents as positional argument
                     transformer_options_cleaned,  # transformer_options
-                    **final_kwargs,
+                    **final_kwargs_cleaned,
                 )

@@ -1,6 +1,6 @@
 # ComfyUI-QwenImageLoraLoader
 
-A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image models.
+A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image models. ComfyUI Nodes 2.0 compatible.
 
 > Latest release: [v2.0.8 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.8)
 > 

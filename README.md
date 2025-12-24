@@ -86,14 +86,6 @@ Then restart ComfyUI.
 - ComfyUI-nunchaku (required)
 - CUDA-capable GPU (optional, but recommended for performance)
 
-## Integration with ComfyUI-nunchaku (No Longer Required in v1.60)
-
-As of v1.60, **no modification to ComfyUI-nunchaku's `__init__.py` is required**.
-
-The LoRA loader operates as a completely independent custom node through ComfyUI's automatic node loading mechanism. When ComfyUI starts, it automatically scans the `custom_nodes/` directory and loads all available `__init__.py` files. Your LoRA loader will be discovered and registered automatically.
-
-For technical details about why integration is no longer necessary, see [v1.60 Release Notes on GitHub](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
-
 ## Upgrade Guide for v1.57 and Earlier Users
 
 If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku's `__init__.py`, see [UPGRADE_GUIDE_V1.57.md](UPGRADE_GUIDE_V1.57.md) for detailed upgrade instructions.

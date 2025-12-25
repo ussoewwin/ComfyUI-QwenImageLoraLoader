@@ -232,6 +232,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 - **Note**: This is the first support measure. I have published the technical details of the fixes I applied to ComfyUI's core `model_management.py` in my environment. See [COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md](COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md) for details. Note that these fixes were applied in my specific environment and may not work universally in all environments. This may also resolve `copy.deepcopy` and `pinned` attribute errors.
 - **Related Issues**: 
   - [Issue #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25) - `AttributeError: 'NunchakuModelPatcher' object has no attribute 'pinned'` and deepcopy errors with `model_config`
+  - [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33) - `AttributeError: 'NoneType' object has no attribute 'to'` in `to_safely` method (Fixed in v2.1.0)
   - [ComfyUI Issue #6590](https://github.com/comfyanonymous/ComfyUI/issues/6590): `'NoneType' object has no attribute 'shape'`
   - [ComfyUI Issue #6600](https://github.com/comfyanonymous/ComfyUI/issues/6600): `'NoneType' object is not callable` (Loader-related)
   - [ComfyUI Issue #6532](https://github.com/comfyanonymous/ComfyUI/issues/6532): Crash after referencing models after model unload

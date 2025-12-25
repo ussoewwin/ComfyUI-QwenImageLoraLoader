@@ -65,6 +65,8 @@ class ComfyQwenImageWrapper(nn.Module):
 
     def to_safely(self, device):
         """Safely move the model to the specified device."""
+        if self.model is None:
+            return self
         if hasattr(self.model, "to_safely"):
             self.model.to_safely(device)
         else:
@@ -113,6 +115,9 @@ class ComfyQwenImageWrapper(nn.Module):
         else:
             timestep_float = float(timestep)
 
+        # Guard against None model (can happen during GC/unload)
+        if self.model is None:
+            raise RuntimeError("Model has been unloaded or garbage collected. Cannot perform forward pass.")
 
         model_is_dirty = (
             not self.loras and # We expect no LoRA

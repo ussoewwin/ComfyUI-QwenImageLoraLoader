@@ -342,10 +342,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
   - Complete feature parity with V1 implementation
   - Dynamic UI for adjusting slot count
   - Automatic node height adjustment
-- **Technical Details**: 
-  - Flexible widget management using `optional` inputs
-  - Clean implementation using Flux V2-style widget array reconstruction
-  - Complete feature reproduction in both Python backend and JavaScript frontend
+- **Technical Details**: See [v1.70 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.70) for complete explanation
 
 ### v1.63
 - **Fixed**: Addressed [Issue #21](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/21) – User-configurable CPU offload setting

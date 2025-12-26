@@ -25,7 +25,22 @@ logger = logging.getLogger(__name__)
 # --- Centralized & Optimized Key Mapping ---
 # This version correctly tokenizes all module paths.
 KEY_MAPPING = [
+    # Z-Image QKV Fusion
+    # Matches: layers.X.attention.to_q/k/v -> layers.X.attention.to_qkv
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]([qkv])$"), r"\1.\2.attention.to_qkv", "qkv", lambda m: m.group(3).upper()),
+
+    # Z-Image MLP Fusion (GLU: w1=gate, w3=up -> fused into ff.net.0.proj)
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._](w1|w3)$"), r"\1.\2.feed_forward.net.0.proj", "glu", lambda m: m.group(3)),
+    # Z-Image MLP Output (w2 -> ff.net.2)
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._]w2$"), r"\1.\2.feed_forward.net.2", "regular", None),
+
+    # Z-Image (ZXIT) Generic Mapping
+    # Matches: layers.0.xxx -> layers.0.xxx
+    # This covers other layers.
+    (re.compile(r"^(layers)[._](\d+)[._](.*)$"), r"\1.\2.\3", "regular", None),
+
     # Fused QKV (Double Block)
+    # ... existing mappings ...
     (re.compile(r"^(transformer_blocks)[._](\d+)[._]attn[._]to[._]qkv$"), r"\1.\2.attn.to_qkv", "qkv", None),
     # Decomposed QKV (Double Block)
     (re.compile(r"^(transformer_blocks)[._](\d+)[._]attn[._]to[._](q|k|v)$"), r"\1.\2.attn.to_qkv", "qkv",
@@ -622,6 +637,64 @@ def _convert_lokr_to_lora(lokr_weights: Dict[str, torch.Tensor], module_in_featu
     return A, B, alpha
 
 
+def _fuse_glu_lora(glu_weights: Dict[str, torch.Tensor]) -> Tuple[
+    Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
+    """Fuse GLU LoRA weights (gate/w1 and up/w3) into a single tensor for SwiGLU projection.
+    
+    Args:
+        glu_weights: 'w1' (gate) and 'w3' (up) LoRA weights
+        
+    Returns:
+        Fused A, B, alpha
+    """
+    # w1 is usually gate, w3 is value (up) in LLaMA-like SwiGLU
+    # Target module (ff.net[0].proj) has out_features = w1.out + w3.out
+    
+    if "w1_A" not in glu_weights or "w3_A" not in glu_weights:
+        # If one is missing, we could theoretically support partial application,
+        # but for now let's require both for simplicity or return None
+        return None, None, None
+
+    A_w1, B_w1 = glu_weights["w1_A"], glu_weights["w1_B"]
+    A_w3, B_w3 = glu_weights["w3_A"], glu_weights["w3_B"]
+    
+    alpha_w1 = glu_weights.get("w1_alpha")
+    alpha_w3 = glu_weights.get("w3_alpha") # w3 is 'up' or 'value'
+
+    # Check consistency
+    if A_w1.shape[0] != A_w3.shape[0]: # in_features should match
+         logger.warning(f"GLU LoRA in_features mismatch: {A_w1.shape} vs {A_w3.shape}")
+         return None, None, None
+
+    r1 = B_w1.shape[1]
+    r3 = B_w3.shape[1]
+    
+    # Fused A: Concatenate A_w1 and A_w3 (Rank becomes r1 + r3)
+    # A shape: (rank, in_features) -> (r1+r3, in)
+    A_fused = torch.cat([A_w1, A_w3], dim=0)
+    
+    # Fused B: Block diagonal
+    # B shape: (out_features, rank)
+    # Target out_features = out_w1 + out_w3
+    out1 = B_w1.shape[0]
+    out3 = B_w3.shape[0]
+    
+    B_fused = torch.zeros(out1 + out3, r1 + r3, dtype=B_w1.dtype, device=B_w1.device)
+    B_fused[:out1, :r1] = B_w1
+    B_fused[out1:, r1:] = B_w3
+    
+    # Alpha: If different, we might need to verify logic.
+    # Usually they are same. If not, we rely on the fact that scaling is done BEFORE fusion if we were being careful,
+    # but here 'compose_loras' applies scale later.
+    # If alphas differ, we technically can't use a single scalar alpha for the whole fused layer if rank is used for scaling.
+    # But usually alpha is constant.
+    alpha_fused = alpha_w1
+    if alpha_w1 is not None and alpha_w3 is not None and alpha_w1.item() != alpha_w3.item():
+         logger.warning("GLU LoRA alphas differ. Using w1 alpha.")
+    
+    return A_fused, B_fused, alpha_fused
+
+
 def _fuse_qkv_lora(qkv_weights: Dict[str, torch.Tensor], model: Optional[nn.Module] = None, base_key: Optional[str] = None) -> Tuple[
     Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
     """Fuse Q/K/V LoRA weights into a single QKV tensor.
@@ -808,29 +881,57 @@ def _apply_lora_to_module(module: nn.Module, A: torch.Tensor, B: torch.Tensor, m
     if B.shape[0] != module.out_features:
         raise ValueError(f"{module_name}: B shape {B.shape} mismatch with out_features={module.out_features}")
 
-    pd, pu = module.proj_down.data, module.proj_up.data
-    pd = unpack_lowrank_weight(pd, down=True)
-    pu = unpack_lowrank_weight(pu, down=False)
+    # Handle Nunchaku LoRA-ready modules
+    if hasattr(module, "proj_down") and hasattr(module, "proj_up"):
+        pd, pu = module.proj_down.data, module.proj_up.data
+        pd = unpack_lowrank_weight(pd, down=True)
+        pu = unpack_lowrank_weight(pu, down=False)
 
-    base_rank = pd.shape[0] if pd.shape[1] == module.in_features else pd.shape[1]
+        base_rank = pd.shape[0] if pd.shape[1] == module.in_features else pd.shape[1]
 
-    if pd.shape[1] == module.in_features:  # [rank, in]
-        new_proj_down = torch.cat([pd, A], dim=0)
-        axis_down = 0
-    else:  # [in, rank]
-        new_proj_down = torch.cat([pd, A.T], dim=1)
-        axis_down = 1
+        if pd.shape[1] == module.in_features:  # [rank, in]
+            new_proj_down = torch.cat([pd, A], dim=0)
+            axis_down = 0
+        else:  # [in, rank]
+            new_proj_down = torch.cat([pd, A.T], dim=1)
+            axis_down = 1
 
-    new_proj_up = torch.cat([pu, B], dim=1)
+        new_proj_up = torch.cat([pu, B], dim=1)
 
-    module.proj_down.data = pack_lowrank_weight(new_proj_down, down=True)
-    module.proj_up.data = pack_lowrank_weight(new_proj_up, down=False)
-    module.rank = base_rank + A.shape[0]
+        module.proj_down.data = pack_lowrank_weight(new_proj_down, down=True)
+        module.proj_up.data = pack_lowrank_weight(new_proj_up, down=False)
+        module.rank = base_rank + A.shape[0]
 
-    if not hasattr(model, "_lora_slots"):
-        model._lora_slots = {}
-    slot = model._lora_slots.setdefault(module_name, {"base_rank": base_rank, "appended": 0, "axis_down": axis_down})
-    slot["appended"] += A.shape[0]
+        if not hasattr(model, "_lora_slots"):
+            model._lora_slots = {}
+        slot = model._lora_slots.setdefault(module_name, {"base_rank": base_rank, "appended": 0, "axis_down": axis_down, "type": "nunchaku"})
+        slot["appended"] += A.shape[0]
+
+    # Handle Standard nn.Linear (Fallback)
+    elif isinstance(module, nn.Linear):
+        if not hasattr(model, "_lora_slots"):
+            model._lora_slots = {}
+        
+        # Initialize slot and backup original weight if not exists
+        if module_name not in model._lora_slots:
+            # Backup original weight to CPU to save VRAM
+            model._lora_slots[module_name] = {
+                "type": "linear",
+                "original_weight": module.weight.detach().cpu().clone()
+            }
+        
+        # Calculate Delta: B @ A
+        # B: [out, rank], A: [rank, in] -> Delta: [out, in]
+        delta = B @ A
+        if delta.shape != module.weight.shape:
+             raise ValueError(f"{module_name}: LoRA delta shape {delta.shape} mismatch with linear weight {module.weight.shape}")
+        
+        # Apply to weight
+        module.weight.data.add_(delta.to(dtype=module.weight.dtype, device=module.weight.device))
+    
+    else:
+        # Should be caught by caller, but safety check
+        raise ValueError(f"{module_name}: Unsupported module type {type(module)}")
 
 
 # --- Main Public API ---
@@ -844,6 +945,21 @@ def compose_loras_v2(
     """
     logger.info(f"Composing {len(lora_configs)} LoRAs...")
     reset_lora_v2(model)
+
+    # DEBUG: Inspect all keys in the first LoRA to help debug missing layers
+    if lora_configs:
+        first_lora_path_or_dict, first_lora_strength = lora_configs[0]
+        first_lora_state_dict = _load_lora_state_dict(first_lora_path_or_dict)
+        logger.info(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {first_lora_strength}) ---")
+        for key in first_lora_state_dict.keys():
+             parsed_res = _classify_and_map_key(key)
+             if parsed_res:
+                 group, base_key, comp, ab = parsed_res
+                 mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
+                 logger.info(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
+             else:
+                 logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
+        logger.info("--- DEBUG: End key inspection ---")
 
     aggregated_weights: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
 
@@ -874,7 +990,7 @@ def compose_loras_v2(
             elif ab in ("A", "B"):
                 standard_keys_count += 1
                 
-            if group in ("qkv", "add_qkv") and comp is not None:
+            if group in ("qkv", "add_qkv", "glu") and comp is not None:
                 # Handle both standard LoRA (A/B) and LoKR (lokr_w1/lokr_w2) formats
                 if ab in ("lokr_w1", "lokr_w2"):
                     lora_grouped[base_key][f"{comp}_{ab}"] = value
@@ -959,6 +1075,8 @@ def compose_loras_v2(
             if "qkv" in base_key:
                 # Pass model and base_key to _fuse_qkv_lora for actual module inspection
                 A, B, alpha = (lw.get("A"), lw.get("B"), lw.get("alpha")) if "A" in lw else _fuse_qkv_lora(lw, model=model, base_key=base_key)
+            elif "w1_A" in lw or "w3_A" in lw: # GLU Fusion detection
+                A, B, alpha = _fuse_glu_lora(lw)
             elif ".proj_out" in base_key and "single_transformer_blocks" in base_key:
                 split_map, consumed_keys = _handle_proj_out_split(lora_grouped, base_key, model)
                 processed_groups.update(split_map)
@@ -998,8 +1116,8 @@ def compose_loras_v2(
         if module is None:
             logger.debug(f"[MISS] Module not found: {module_name} (resolved: {resolved_name})")
             continue
-        if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")):
-            logger.debug(f"[MISS] Module found but missing proj_down/proj_up: {resolved_name}")
+        if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")) and not isinstance(module, nn.Linear):
+            logger.info(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
             continue
 
         all_A = []
@@ -1015,8 +1133,15 @@ def compose_loras_v2(
             elif ".single_transformer_blocks." in resolved_name and ".norm.linear" in resolved_name:
                 B = reorder_adanorm_lora_up(B, splits=3)
 
-            all_A.append(A.to(dtype=module.proj_down.dtype, device=module.proj_down.device))
-            all_B_scaled.append((B * scale).to(dtype=module.proj_up.dtype, device=module.proj_up.device))
+            if hasattr(module, "proj_down"):
+                target_dtype = module.proj_down.dtype
+                target_device = module.proj_down.device
+            else:
+                target_dtype = module.weight.dtype
+                target_device = module.weight.device
+
+            all_A.append(A.to(dtype=target_dtype, device=target_device))
+            all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
 
         if not all_A:
             continue
@@ -1025,6 +1150,7 @@ def compose_loras_v2(
         final_B = torch.cat(all_B_scaled, dim=1)
 
         _apply_lora_to_module(module, final_A, final_B, resolved_name, model)
+        logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
         applied_modules_count += 1
 
     total_loras = len(lora_configs)
@@ -1081,21 +1207,35 @@ def reset_lora_v2(model: nn.Module) -> None:
         if module is None:
             continue
 
-        base_rank = info["base_rank"]
-        with torch.no_grad():
-            pd = unpack_lowrank_weight(module.proj_down.data, down=True)
-            pu = unpack_lowrank_weight(module.proj_up.data, down=False)
+    for name, info in model._lora_slots.items():
+        module = _get_module_by_name(model, name)
+        if module is None:
+            continue
 
-            if info.get("axis_down", 0) == 0:  # [rank, in]
-                pd_reset = pd[:base_rank, :].clone()
-            else:  # [in, rank]
-                pd_reset = pd[:, :base_rank].clone()
-            pu_reset = pu[:, :base_rank].clone()
+        module_type = info.get("type", "nunchaku") # Default to nunchaku for backward compatibility logic
 
-            module.proj_down.data = pack_lowrank_weight(pd_reset, down=True)
-            module.proj_up.data = pack_lowrank_weight(pu_reset, down=False)
-            module.rank = base_rank
+        if module_type == "nunchaku":
+             base_rank = info["base_rank"]
+             with torch.no_grad():
+                 pd = unpack_lowrank_weight(module.proj_down.data, down=True)
+                 pu = unpack_lowrank_weight(module.proj_up.data, down=False)
+ 
+                 if info.get("axis_down", 0) == 0:  # [rank, in]
+                     pd_reset = pd[:base_rank, :].clone()
+                 else:  # [in, rank]
+                     pd_reset = pd[:, :base_rank].clone()
+                 pu_reset = pu[:, :base_rank].clone()
+ 
+                 module.proj_down.data = pack_lowrank_weight(pd_reset, down=True)
+                 module.proj_up.data = pack_lowrank_weight(pu_reset, down=False)
+                 module.rank = base_rank
 
+        elif module_type == "linear":
+            if "original_weight" in info:
+                # Restore original weight
+                with torch.no_grad():
+                    module.weight.data.copy_(info["original_weight"].to(module.weight.device))
+            
     model._lora_slots.clear()
     model._lora_strength = 1.0
     logger.info("All LoRA weights have been reset from the model.")

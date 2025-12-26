@@ -20,16 +20,20 @@ QWEN_V2_NAMES = {}
 try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack
     from .nodes.lora.qwenimage_v2 import GENERATED_NODES as QWEN_V2_NODES, GENERATED_DISPLAY_NAMES as QWEN_V2_NAMES
+    from .nodes.lora.zimageturbo_v2 import GENERATED_NODES as ZIMAGETURBO_V2_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V2_NAMES
 
     # Add version to classes before creating NODE_CLASS_MAPPINGS
     NunchakuQwenImageLoraLoader.__version__ = __version__
     NunchakuQwenImageLoraStack.__version__ = __version__
     for node_class in QWEN_V2_NODES.values():
         node_class.__version__ = __version__
+    for node_class in ZIMAGETURBO_V2_NODES.values():
+        node_class.__version__ = __version__
 
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
     NODE_CLASS_MAPPINGS.update(QWEN_V2_NODES)
+    NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V2_NODES)
 except ImportError:
     logger.exception("LoRA nodes import failed:")
 
@@ -47,7 +51,8 @@ except Exception as e:
 NODE_DISPLAY_NAME_MAPPINGS = {
     "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
     "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
-    **QWEN_V2_NAMES
+    **QWEN_V2_NAMES,
+    **ZIMAGETURBO_V2_NAMES
 }
 
 # Add ControlNet display name only if the node was successfully loaded

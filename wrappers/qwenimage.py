@@ -264,6 +264,10 @@ class ComfyQwenImageWrapper(nn.Module):
         # Get ref_latents from kwargs before removing it (it's not a parameter of forward())
         ref_latents_value = kwargs.pop("ref_latents", None)
         
+        # Extract additional_t_cond from kwargs before removing it (needed for both customized_forward and direct model call)
+        # ComfyUI v0.6.0+ uses additional_t_cond instead of guidance
+        additional_t_cond_value = kwargs.pop("additional_t_cond", None)
+        
         # Double-check: Remove guidance, transformer_options, and attention_mask from kwargs
         # This is a defensive measure in case any code path adds these to kwargs after forward() method
         # Even though forward() already removes them, this ensures _execute_model is always safe
@@ -286,10 +290,16 @@ class ComfyQwenImageWrapper(nn.Module):
 
         if self.customized_forward:
             with torch.inference_mode():
-                # Remove guidance, ref_latents, transformer_options, and attention_mask from forward_kwargs to avoid duplicate argument error
+                # IMPORTANT: ComfyUI v0.6.0+ uses additional_t_cond instead of guidance
+                # Use additional_t_cond_value extracted above, or fallback to guidance if available
+                customized_additional_t_cond = additional_t_cond_value
+                if customized_additional_t_cond is None and guidance is not None and self.config.get("guidance_embed", False):
+                    customized_additional_t_cond = guidance
+                
+                # Remove guidance, additional_t_cond, ref_latents, transformer_options, and attention_mask from forward_kwargs to avoid duplicate argument error
                 # These are passed explicitly to customized_forward
                 # Note: kwargs is already cleaned above, so we only need to clean forward_kwargs
-                forward_kwargs_cleaned = {k: v for k, v in self.forward_kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask")}
+                forward_kwargs_cleaned = {k: v for k, v in self.forward_kwargs.items() if k not in ("guidance", "additional_t_cond", "ref_latents", "transformer_options", "attention_mask")}
                 # Create a copy of transformer_options and remove guidance and ref_latents if present
                 transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
                 transformer_options_cleaned.pop("guidance", None)
@@ -300,12 +310,12 @@ class ComfyQwenImageWrapper(nn.Module):
                     hidden_states=x,
                     encoder_hidden_states=context,
                     timestep=timestep,
-                    guidance=guidance if self.config.get("guidance_embed", False) else None,
+                    additional_t_cond=customized_additional_t_cond,  # additional_t_cond (ComfyUI v0.6.0+)
                     ref_latents=ref_latents_value,  # ref_latents from kwargs (already extracted above)
                     control=control,
                     transformer_options=transformer_options_cleaned,
                     **forward_kwargs_cleaned,
-                    **kwargs,  # kwargs is already cleaned above (guidance, ref_latents, transformer_options, attention_mask removed)
+                    **kwargs,  # kwargs is already cleaned above (guidance, additional_t_cond, ref_latents, transformer_options, attention_mask removed)
                 )
         else:
             with torch.inference_mode():
@@ -315,39 +325,40 @@ class ComfyQwenImageWrapper(nn.Module):
                     x = x.unsqueeze(2)
                 
                 # Prepare values to pass as positional arguments
-                # Note: ref_latents_value was already extracted from kwargs at the start of _execute_model
-                guidance_value = guidance if self.config.get("guidance_embed", False) else None
-                
+                # Note: ref_latents_value and additional_t_cond_value were already extracted from kwargs at the start of _execute_model
+                # IMPORTANT: ComfyUI v0.6.0+ QwenImageTransformer2DModel.forward signature is:
+                # forward(self, x, timestep, context, attention_mask=None, ref_latents=None, additional_t_cond=None, transformer_options={}, **kwargs)
+                # Note: There is NO 'guidance' parameter in the forward signature!
+                # guidance is handled internally via additional_t_cond
+
+                # Use additional_t_cond_value extracted above, or fallback to guidance if available
+                model_additional_t_cond = additional_t_cond_value
+                if model_additional_t_cond is None and guidance is not None and self.config.get("guidance_embed", False):
+                    model_additional_t_cond = guidance
+
                 # Remove guidance, transformer_options, and attention_mask from kwargs to avoid duplicate argument error
-                # These are passed as positional arguments to match QwenImageTransformer2DModel.forward signature
-                # Signature: forward(self, x, timestep, context, attention_mask=None, guidance=None, ref_latents=None, transformer_options={}, **kwargs)
-                # Note: ref_latents was already removed from kwargs at the start of _execute_model
                 kwargs_cleaned = {k: v for k, v in kwargs.items() if k not in ("guidance", "transformer_options", "attention_mask")}
+
                 # Create a copy of transformer_options and remove guidance and ref_latents if present
                 transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
                 transformer_options_cleaned.pop("guidance", None)
                 transformer_options_cleaned.pop("ref_latents", None)
-                
+
                 # Include control in kwargs if provided
-                # If control is in kwargs, use it; otherwise use the control parameter
                 final_kwargs = dict(kwargs_cleaned)
                 if control is not None:
                     final_kwargs["control"] = control
-                # Note: control is not in the forward signature, so it should be in **kwargs
-                
-                # Final cleanup: Remove guidance, ref_latents, transformer_options, and attention_mask from final_kwargs
-                # This is necessary because comfy/ldm/qwen_image/model.py's forward() passes these as positional arguments
-                # to WrapperExecutor.execute(), and if they are also in **kwargs, _forward() will receive them twice
-                # This prevents the error: TypeError: got multiple values for argument 'guidance'
-                final_kwargs_cleaned = {k: v for k, v in final_kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask")}
-                
+
+                # Final cleanup: Remove any remaining problematic keys
+                final_kwargs_cleaned = {k: v for k, v in final_kwargs.items() if k not in ("guidance", "ref_latents", "transformer_options", "attention_mask", "additional_t_cond")}
+
                 return self.model(
                     x,
                     timestep,
                     context,
                     None,  # attention_mask
-                    guidance_value,  # guidance as positional argument
                     ref_latents_value,  # ref_latents as positional argument
+                    model_additional_t_cond,  # additional_t_cond as positional argument
                     transformer_options_cleaned,  # transformer_options
                     **final_kwargs_cleaned,
                 )

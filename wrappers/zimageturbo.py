@@ -386,7 +386,27 @@ class ComfyZImageTurboWrapper(nn.Module):
                              raise ValueError("cap_feats is empty! Model requires caption features (y/c_crossattn).")
 
                 # Call Z-Image-Turbo forward with correct signature
-                model_output = self.model(x_list, t_zimage, cap_feats=cap_feats, **zimage_kwargs)
+                # Pass control and transformer_options to allow Model Patcher (double_block patches) to work
+                # Check if the model's forward method accepts control parameter
+                import inspect
+                forward_sig = inspect.signature(self.model.forward)
+                forward_params = set(forward_sig.parameters.keys())
+                
+                zimage_kwargs_clean = {k: v for k, v in zimage_kwargs.items() if k not in ('control', 'transformer_options')}
+                
+                # Build kwargs based on what the forward method accepts
+                forward_kwargs = zimage_kwargs_clean.copy()
+                if 'control' in forward_params:
+                    forward_kwargs['control'] = control
+                if 'transformer_options' in forward_params:
+                    forward_kwargs['transformer_options'] = transformer_options
+                
+                model_output = self.model(
+                    x_list,
+                    t_zimage,
+                    cap_feats=cap_feats,
+                    **forward_kwargs
+                )
                 
                 # Extract list from tuple: (x,) -> x
                 if isinstance(model_output, tuple):

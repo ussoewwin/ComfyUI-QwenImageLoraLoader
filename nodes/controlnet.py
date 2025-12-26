@@ -3,6 +3,9 @@ import comfy.utils
 import comfy.model_management
 import comfy.latent_formats
 import comfy.ldm.lumina.controlnet
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DiffSynthCnetPatch:
@@ -171,11 +174,52 @@ class NunchakuQwenImageDiffsynthControlnet:
                 mask = mask.unsqueeze(2)
             mask = 1.0 - mask
 
-        if isinstance(model_patch.model, comfy.ldm.lumina.controlnet.ZImage_Control):
+        # Debug logging - log all available information
+        logger.info("=" * 80)
+        logger.info("[NunchakuQwenImageDiffsynthControlnet] Starting ControlNet patch detection")
+        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model type: {type(model).__name__}")
+        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model_patch type: {type(model_patch).__name__}")
+        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model_patch.model type: {type(model_patch.model).__name__}")
+        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model_patch.model.__class__: {model_patch.model.__class__}")
+        
+        # Check model.model structure
+        if hasattr(model, 'model'):
+            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model exists, type: {type(model.model).__name__}")
+            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.__class__.__name__: {model.model.__class__.__name__}")
+            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.__class__.__module__: {model.model.__class__.__module__}")
+            
+            # Check diffusion_model if available
+            if hasattr(model.model, 'diffusion_model'):
+                logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.diffusion_model type: {type(model.model.diffusion_model).__name__}")
+                logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.diffusion_model.__class__.__name__: {model.model.diffusion_model.__class__.__name__}")
+        else:
+            logger.warning("[NunchakuQwenImageDiffsynthControlnet] model has no 'model' attribute")
+        
+        # Check if this is a Z-Image ControlNet model
+        # model_patch.model is ZImage_Control for both standard Z-Image and Nunchaku Z-Image-Turbo
+        is_zimage_control = isinstance(model_patch.model, comfy.ldm.lumina.controlnet.ZImage_Control)
+        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] is_zimage_control (ZImage_Control check): {is_zimage_control}")
+        
+        # Check if model.model is NunchakuZImage (for Nunchaku Z-Image-Turbo)
+        is_nunchaku_zimage = False
+        if hasattr(model, 'model'):
+            model_model_class_name = model.model.__class__.__name__
+            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] Checking if model.model is NunchakuZImage: {model_model_class_name}")
+            if model_model_class_name == "NunchakuZImage":
+                is_nunchaku_zimage = True
+                logger.info("[NunchakuQwenImageDiffsynthControlnet] ✓ Detected NunchakuZImage model base")
+        
+        # Use ZImageControlPatch for Z-Image ControlNet (works for both standard and Nunchaku Z-Image-Turbo)
+        if is_zimage_control:
+            logger.info("[NunchakuQwenImageDiffsynthControlnet] ✓ Using ZImageControlPatch for Z-Image ControlNet")
             patch = ZImageControlPatch(model_patch, vae, image, strength, mask=mask)
             model_patched.set_model_noise_refiner_patch(patch)
             model_patched.set_model_double_block_patch(patch)
+            logger.info("[NunchakuQwenImageDiffsynthControlnet] ✓ Patches registered successfully")
         else:
+            logger.info("[NunchakuQwenImageDiffsynthControlnet] Using DiffSynthCnetPatch for standard diffsynth ControlNet")
             model_patched.set_model_double_block_patch(DiffSynthCnetPatch(model_patch, vae, image, strength, mask))
+        
+        logger.info("=" * 80)
         return (model_patched,)
 

@@ -135,4 +135,3 @@ Changes in generated images are now distinct and accurate to the requested LoRA 
 *   **New Architectures**: If Nunchaku adds new model types, check if they use `SwiGLU`. If so, ensure the regex targets `.proj`.
 *   **Updates to Diffusers**: If `diffusers` changes the `SwiGLU` internal name (unlikely, but possible) from `.proj` to `.linear`, `KEY_MAPPING` must be updated.
 
-*Author: Antigravity (Google DeepMind) for User ussoewwin*

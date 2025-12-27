@@ -21,10 +21,10 @@ This LoRA loader was extracted and modified from GavChap's fork:
 
 **As of v2.0, diffsynth ControlNet is now fully supported for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.**
 
-A new dedicated node `NunchakuQwenImageDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.
+A new dedicated node `NunchakuQI&ZITDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.
 
 ### What's New in v2.0
-- ✅ **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models
+- ✅ **New Node**: `NunchakuQI&ZITDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models
 - ✅ **Full ControlNet Support**: Works with standard diffsynth ControlNet models
 - ✅ **Seamless Integration**: Automatically applies ControlNet patches during model forward pass
 - ✅ **Backward Compatible**: All existing LoRA functionality remains unchanged
@@ -46,7 +46,7 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuZImageTurboLoraStackV3**: Z-Image-Turbo LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
-- **NunchakuQwenImageDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models (v2.0)
+- **NunchakuQI&ZITDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models (v2.0)
 
 ### Basic Usage
 
@@ -75,7 +75,7 @@ The `NunchakuQwenImageLoraStack` and `NunchakuZImageTurboLoraStackV3` nodes auto
 
 1. Load your diffsynth ControlNet model patch using `Model Patch Loader` from [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)
 2. The `Model Patch Loader` (`ModelPatchLoaderCustom`) supports CPU offload, allowing you to load ControlNet patches to CPU memory to save VRAM
-3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQwenImageDiffsynthControlnet` node
+3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
 
@@ -232,7 +232,7 @@ For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMF
 
 ### v2.0
 - **MAJOR UPDATE**: Added diffsynth ControlNet support for Nunchaku Qwen Image models
-- **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Enables diffsynth ControlNet to work with Nunchaku quantized Qwen Image models
+- **New Node**: `NunchakuQI&ZITDiffsynthControlnet` - Enables diffsynth ControlNet to work with Nunchaku quantized Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models
 - **Features**: 
   - Full diffsynth ControlNet functionality for Nunchaku Qwen Image models
   - Automatic patch registration and application

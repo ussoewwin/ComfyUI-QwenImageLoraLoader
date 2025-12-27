@@ -62,7 +62,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
 # Add ControlNet display name only if the node was successfully loaded
 if "NunchakuQwenImageDiffsynthControlnet" in NODE_CLASS_MAPPINGS:
-    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "Nunchaku Qwen Image Diffsynth Controlnet"
+    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "NunchakuQI&ZITDiffsynthControlnet"
 
 # Register JavaScript extensions
 WEB_DIRECTORY = "js"

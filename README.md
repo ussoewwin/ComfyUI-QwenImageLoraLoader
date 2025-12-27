@@ -1,4 +1,4 @@
-# ComfyUI-QwenImageLoraLoader
+# ComfyUI-Nunchaku QwenImageLoraLoader and Diffsynth ControlNet Loader
 
 A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image models. ComfyUI Nodes 2.0 compatible.
 

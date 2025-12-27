@@ -57,6 +57,8 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 
 <img src="images/qilorastacker.png" alt="Dynamic UI Control" width="400" align="left">
 
+<br style="clear: left;" />
+
 The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visible LoRA slots based on the `lora_count` parameter (1-10).
 
 ### Diffsynth ControlNet Usage

@@ -19,6 +19,40 @@ from nunchaku.lora.flux.nunchaku_converter import (
 
 logger = logging.getLogger(__name__)
 
+# --- Active mapping (selected per-model at runtime in compose_loras_v2) ---
+_ACTIVE_KEY_MAPPING: Optional[List[Tuple[re.Pattern, str, str, Optional[Any]]]] = None
+
+# Z-Image (ComfyUI Lumina2 / NextDiT) mapping overrides:
+# - Attention uses `attention.qkv` / `attention.out`
+# - FeedForward differs depending on whether ComfyUI-nunchaku patched the model:
+#   - Unpatched: `feed_forward.w1/w2/w3`
+#   - Patched: `feed_forward.w13` (fused w1+w3) and `feed_forward.w2`
+ZIMAGE_NEXTDIT_UNPATCHED_KEY_MAPPING = [
+    # Attention: to_q/k/v -> qkv (fusion later)
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]([qkv])$"), r"\1.\2.attention.qkv", "qkv",
+     lambda m: m.group(3).upper()),
+    # Attention out: to_out(.0) -> out
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]out(?:[._]0)?$"), r"\1.\2.attention.out", "regular", None),
+    # FeedForward: w1/w2/w3 stay separate (no GLU fusion)
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._]w1$"), r"\1.\2.feed_forward.w1", "regular", None),
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._]w2$"), r"\1.\2.feed_forward.w2", "regular", None),
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._]w3$"), r"\1.\2.feed_forward.w3", "regular", None),
+]
+
+# ComfyUI-nunchaku patched NextDiT:
+# - feed_forward is replaced with ComfyNunchakuZImageFeedForward which exposes:
+#   - w13 (fused w1+w3) and w2
+ZIMAGE_NEXTDIT_NUNCHAKU_PATCHED_KEY_MAPPING = [
+    # Attention: same as unpatched NextDiT
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]([qkv])$"), r"\1.\2.attention.qkv", "qkv",
+     lambda m: m.group(3).upper()),
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]out(?:[._]0)?$"), r"\1.\2.attention.out", "regular", None),
+    # FeedForward: map w1/w3 into fused w13 and use GLU fusion
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._](w1|w3)$"), r"\1.\2.feed_forward.w13", "glu", lambda m: m.group(3)),
+    # FeedForward: w2 remains w2
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._]w2$"), r"\1.\2.feed_forward.w2", "regular", None),
+]
+
 # --- Centralized & Optimized Key Mapping ---
 # This structure is faster to process and easier to maintain than a long if/elif chain.
 # --- CORRECTED Centralized & Optimized Key Mapping ---
@@ -212,7 +246,8 @@ def _classify_and_map_key(key: str) -> Optional[Tuple[str, str, Optional[str], s
     if base is None or ab is None:
         return None  # Not a recognized LoRA key format
 
-    for pattern, template, group, comp_fn in KEY_MAPPING:
+    mapping_to_use = _ACTIVE_KEY_MAPPING if _ACTIVE_KEY_MAPPING is not None else KEY_MAPPING
+    for pattern, template, group, comp_fn in mapping_to_use:
         match = pattern.match(base)
         if match:
             final_key = match.expand(template)
@@ -946,6 +981,38 @@ def compose_loras_v2(
     logger.info(f"Composing {len(lora_configs)} LoRAs...")
     reset_lora_v2(model)
 
+    # Select mapping based on model structure (NextDiT vs fused Nunchaku-style)
+    # IMPORTANT: This must not change existing log messages; it only affects internal mapping.
+    global _ACTIVE_KEY_MAPPING
+    prev_mapping = _ACTIVE_KEY_MAPPING
+    try:
+        # NextDiT/Lumina2 (ComfyUI) module names:
+        # - layers.N.attention.qkv / layers.N.attention.out
+        # - layers.N.feed_forward.w1/w2/w3   (unpatched)
+        # - layers.N.feed_forward.w13 + w2   (ComfyUI-nunchaku patched: w13 = fused w1+w3)
+        #
+        # Be permissive: if we can see any of these, enable NextDiT mapping.
+        nextdit_markers = (
+            "layers.0.attention.qkv",
+            "layers.0.attention.out",
+            "layers.0.feed_forward.w1",
+            "layers.0.feed_forward.w2",
+            "layers.0.feed_forward.w3",
+            "layers.0.feed_forward.w13",
+        )
+        is_nextdit_style = any(_get_module_by_name(model, p) is not None for p in nextdit_markers)
+        if is_nextdit_style:
+            # Prefer patched mapping if w13 exists (w1/w3 are fused)
+            has_w13 = _get_module_by_name(model, "layers.0.feed_forward.w13") is not None
+            if has_w13:
+                _ACTIVE_KEY_MAPPING = ZIMAGE_NEXTDIT_NUNCHAKU_PATCHED_KEY_MAPPING + KEY_MAPPING
+            else:
+                _ACTIVE_KEY_MAPPING = ZIMAGE_NEXTDIT_UNPATCHED_KEY_MAPPING + KEY_MAPPING
+        else:
+            _ACTIVE_KEY_MAPPING = None
+    except Exception:
+        _ACTIVE_KEY_MAPPING = None
+
     # DEBUG: Inspect all keys in the first LoRA to help debug missing layers
     if lora_configs:
         first_lora_path_or_dict, first_lora_strength = lora_configs[0]
@@ -1110,14 +1177,23 @@ def compose_loras_v2(
 
     # 2. Apply aggregated weights to the model
     applied_modules_count = 0
+    # Collect misses for visualization (ADDITIVE; does not change legacy logs)
+    miss_not_found = []
+    miss_unsupported = []
 
     for module_name, parts in aggregated_weights.items():
         resolved_name, module = _resolve_module_name(model, module_name)
         if module is None:
+            # Legacy log (do not change)
             logger.debug(f"[MISS] Module not found: {module_name} (resolved: {resolved_name})")
+            # Additive collection for visualization
+            miss_not_found.append(f"[MISS] Module not found: {module_name} (resolved: {resolved_name})")
             continue
         if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")) and not isinstance(module, nn.Linear):
+            # Legacy log (do not change)
             logger.info(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
+            # Additive collection for visualization
+            miss_unsupported.append(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
             continue
 
         all_A = []
@@ -1156,6 +1232,25 @@ def compose_loras_v2(
     total_loras = len(lora_configs)
     # Always output the existing log message
     logger.info(f"Applied LoRA compositions to {applied_modules_count} modules.")
+
+    # Additive "full visualization":
+    # - Do NOT change existing logs.
+    # - If there were misses, print a complete list at WARNING so it's always visible.
+    total_targets = len(aggregated_weights)
+    total_miss = len(miss_not_found) + len(miss_unsupported)
+    if total_miss > 0:
+        logger.warning(
+            f"[VIS] LoRA targets={total_targets}, applied={applied_modules_count}, "
+            f"miss_not_found={len(miss_not_found)}, miss_unsupported={len(miss_unsupported)}, miss_total={total_miss}"
+        )
+        if miss_not_found:
+            logger.warning("[VIS] Full list of missing modules (not found):")
+            for msg in miss_not_found:
+                logger.warning(msg)
+        if miss_unsupported:
+            logger.warning("[VIS] Full list of missing modules (unsupported type):")
+            for msg in miss_unsupported:
+                logger.warning(msg)
     
     # Add additional error message if needed (but keep existing log)
     if total_loras > 0 and applied_modules_count == 0:
@@ -1164,6 +1259,9 @@ def compose_loras_v2(
         logger.error("   - Unsupported LoRA format (check format warnings above)")
         logger.error("   - LoRA for a different model architecture")
         logger.error("   - Corrupted or incompatible LoRA file(s)")
+
+    # Restore mapping for safety (in case caller composes on different model instances)
+    _ACTIVE_KEY_MAPPING = prev_mapping
 
 def update_lora_params_v2(
         model: torch.nn.Module,

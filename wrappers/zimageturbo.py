@@ -90,7 +90,7 @@ class ComfyZImageTurboWrapper(nn.Module):
         Detects changes to the `self.loras` list and recomposes the model
         on-the-fly before inference.
         """
-        # Remove guidance, transformer_options, and attention_mask from kwargs
+        # Remove guidance and merge transformer_options from kwargs
         if "guidance" in kwargs:
             kwargs.pop("guidance")
         if "transformer_options" in kwargs:
@@ -98,8 +98,6 @@ class ComfyZImageTurboWrapper(nn.Module):
                 transformer_options = {**transformer_options, **kwargs.pop("transformer_options")}
             else:
                 kwargs.pop("transformer_options")
-        if "attention_mask" in kwargs:
-            kwargs.pop("attention_mask")
         if isinstance(timestep, torch.Tensor):
             if timestep.numel() == 1:
                 timestep_float = timestep.item()
@@ -240,11 +238,12 @@ class ComfyZImageTurboWrapper(nn.Module):
         """Helper function to run the Z-Image-Turbo model's forward pass."""
         # Get ref_latents from kwargs before removing it
         ref_latents_value = kwargs.pop("ref_latents", None)
+        num_tokens_value = kwargs.pop("num_tokens", None)
+        attention_mask_value = kwargs.pop("attention_mask", None)
         
         # Remove guidance, transformer_options, and attention_mask from kwargs
         kwargs.pop("guidance", None)
         kwargs.pop("transformer_options", None)
-        kwargs.pop("attention_mask", None)
         
         model_device = next(self.model.parameters()).device
 
@@ -300,125 +299,166 @@ class ComfyZImageTurboWrapper(nn.Module):
                 )
         else:
             with torch.inference_mode():
-                # Z-Image-Turbo forward signature: forward(x, t, cap_feats, patch_size=2, f_patch_size=1, return_dict=True)
-                # x: List[torch.Tensor] with shape (C, F, H, W) for each image
-                # t: normalized timestep in [0, 1]
-                # cap_feats: List[torch.Tensor] or None
-                
-                # x is already in list format from model base or converted above
-                if isinstance(x, list):
-                    x_list_raw = x
-                    x_list = []
-                    for img in x_list_raw:
-                        if img is not None and img.numel() > 0:
-                            # Handle standard ComfyUI latent batch size 1: (1, C, H, W) -> remove batch dim -> (C, H, W)
-                            if img.dim() == 4 and img.shape[0] == 1:
-                                img = img.squeeze(0)
-
-                            # Ensure frame dimension: (C, H, W) -> (C, 1, H, W)
-                            if img.dim() == 3:
-                                img = img.unsqueeze(1)
-
-                            x_list.append(img)
-                else:
-                    # Convert x to list format if it's still a tensor
-                    x_list = []
-                    if x.shape[0] > 0:  # Check batch size
-                        for i in range(x.shape[0]):
-                            img = x[i]  # (C, H, W) or (C, F, H, W)
-                            if img.numel() > 0:  # Check if tensor is not empty
-                                if img.dim() == 3:
-                                    # Add frame dimension: (C, H, W) -> (C, 1, H, W)
-                                    img = img.unsqueeze(1)
-                                x_list.append(img)
-                
-                # Check if x_list is empty (should not happen, but handle gracefully)
-                if len(x_list) == 0:
-                    raise ValueError("x_list is empty - cannot process empty batch. x type: {}, x shape: {}".format(type(x), getattr(x, 'shape', 'N/A')))
-                
-                # Normalize timestep: ComfyUI passes sigma [1 -> 0], Z-Image-Turbo expects [0 -> 1]
-                # For now, assume timestep is already in the correct format from model base
-                # If not, we may need to convert: t_zimage = 1.0 - t_normalized
-                t_zimage = timestep
-                
-                # Convert cap_feats (context) to list format if needed
-                # ComfyUI passes c_concat as context (arg 3) and c_crossattn as y (arg 4)
-                # Z-Image needs caption features. If context (c_concat) is empty, try y (c_crossattn).
-                # Also check kwargs for explicit 'cap_feats' passed by some wrappers (e.g. zimage.py)
-                cap_feats = kwargs.pop("cap_feats", None)
-                
-                if cap_feats is None:
-                    cap_feats = context
-                    if cap_feats is None and y is not None:
-                        cap_feats = y
-                
-                if cap_feats is not None:
-                    if not isinstance(cap_feats, list):
-                        # Split batch into list of tensors
-                        if cap_feats.shape[0] > 0:  # Check batch size
-                            cap_feats = [cap_feats[i] for i in range(cap_feats.shape[0])]
-                        else:
-                            cap_feats = []
-                else:
-                    cap_feats = []
-                
-                # Prepare kwargs for Z-Image-Turbo
-                zimage_kwargs = {}
-                if "patch_size" in kwargs:
-                    zimage_kwargs["patch_size"] = kwargs["patch_size"]
-                if "f_patch_size" in kwargs:
-                    zimage_kwargs["f_patch_size"] = kwargs["f_patch_size"]
-                zimage_kwargs["return_dict"] = False
-                
-                # DEBUG: Log shapes to diagnose empty iterable error
-                logger.info(f"DEBUG: x_list len={len(x_list) if isinstance(x_list, list) else 'Not List'}")
-                if isinstance(x_list, list) and len(x_list) > 0:
-                     logger.info(f"DEBUG: x_list[0] shape={x_list[0].shape}")
-                logger.info(f"DEBUG: cap_feats len={len(cap_feats) if isinstance(cap_feats, list) else 'Not List'}")
-                if isinstance(cap_feats, list) and len(cap_feats) > 0:
-                    logger.info(f"DEBUG: cap_feats[0] shape={cap_feats[0].shape}")
-                
-                # Check for mismatch which causes zip to truncate
-                if isinstance(x_list, list) and isinstance(cap_feats, list):
-                    if len(x_list) != len(cap_feats):
-                        logger.warning(f"WARNING: Mismatch in lengths! x_list={len(x_list)}, cap_feats={len(cap_feats)}. This will cause truncation in zip()!")
-                        if len(cap_feats) == 0:
-                             raise ValueError("cap_feats is empty! Model requires caption features (y/c_crossattn).")
-
-                # Call Z-Image-Turbo forward with correct signature
-                # Pass control and transformer_options to allow Model Patcher (double_block patches) to work
-                # Check if the model's forward method accepts control parameter
                 import inspect
                 forward_sig = inspect.signature(self.model.forward)
                 forward_params = set(forward_sig.parameters.keys())
+
+                # Branch 1: Diffusers-style Z-Image-Turbo signature
+                # forward(x, t, cap_feats=..., patch_size=..., f_patch_size=..., return_dict=...)
+                if "cap_feats" in forward_params:
+                    # Z-Image-Turbo forward signature: forward(x, t, cap_feats, patch_size=2, f_patch_size=1, return_dict=True)
+                    # x: List[torch.Tensor] with shape (C, F, H, W) for each image
+                    # t: normalized timestep in [0, 1]
+                    # cap_feats: List[torch.Tensor] or None
                 
-                zimage_kwargs_clean = {k: v for k, v in zimage_kwargs.items() if k not in ('control', 'transformer_options')}
-                
-                # Build kwargs based on what the forward method accepts
-                forward_kwargs = zimage_kwargs_clean.copy()
-                if 'control' in forward_params:
-                    forward_kwargs['control'] = control
-                if 'transformer_options' in forward_params:
-                    forward_kwargs['transformer_options'] = transformer_options
-                
-                model_output = self.model(
-                    x_list,
-                    t_zimage,
-                    cap_feats=cap_feats,
-                    **forward_kwargs
+                    # x is already in list format from model base or converted above
+                    if isinstance(x, list):
+                        x_list_raw = x
+                        x_list = []
+                        for img in x_list_raw:
+                            if img is not None and img.numel() > 0:
+                                # Handle standard ComfyUI latent batch size 1: (1, C, H, W) -> remove batch dim -> (C, H, W)
+                                if img.dim() == 4 and img.shape[0] == 1:
+                                    img = img.squeeze(0)
+
+                                # Ensure frame dimension: (C, H, W) -> (C, 1, H, W)
+                                if img.dim() == 3:
+                                    img = img.unsqueeze(1)
+
+                                x_list.append(img)
+                    else:
+                        # Convert x to list format if it's still a tensor
+                        x_list = []
+                        if x.shape[0] > 0:  # Check batch size
+                            for i in range(x.shape[0]):
+                                img = x[i]  # (C, H, W) or (C, F, H, W)
+                                if img.numel() > 0:  # Check if tensor is not empty
+                                    if img.dim() == 3:
+                                        # Add frame dimension: (C, H, W) -> (C, 1, H, W)
+                                        img = img.unsqueeze(1)
+                                    x_list.append(img)
+                    
+                    # Check if x_list is empty (should not happen, but handle gracefully)
+                    if len(x_list) == 0:
+                        raise ValueError("x_list is empty - cannot process empty batch. x type: {}, x shape: {}".format(type(x), getattr(x, 'shape', 'N/A')))
+                    
+                    # Normalize timestep: ComfyUI passes sigma [1 -> 0], Z-Image-Turbo expects [0 -> 1]
+                    # For now, assume timestep is already in the correct format from model base
+                    # If not, we may need to convert: t_zimage = 1.0 - t_normalized
+                    t_zimage = timestep
+                    
+                    # Convert cap_feats (context) to list format if needed
+                    # ComfyUI passes c_concat as context (arg 3) and c_crossattn as y (arg 4)
+                    # Z-Image needs caption features. If context (c_concat) is empty, try y (c_crossattn).
+                    # Also check kwargs for explicit 'cap_feats' passed by some wrappers (e.g. zimage.py)
+                    cap_feats = kwargs.pop("cap_feats", None)
+                    
+                    if cap_feats is None:
+                        cap_feats = context
+                        if cap_feats is None and y is not None:
+                            cap_feats = y
+                    
+                    if cap_feats is not None:
+                        if not isinstance(cap_feats, list):
+                            # Split batch into list of tensors
+                            if cap_feats.shape[0] > 0:  # Check batch size
+                                cap_feats = [cap_feats[i] for i in range(cap_feats.shape[0])]
+                            else:
+                                cap_feats = []
+                    else:
+                        cap_feats = []
+                    
+                    # Prepare kwargs for Z-Image-Turbo
+                    zimage_kwargs = {}
+                    if "patch_size" in kwargs:
+                        zimage_kwargs["patch_size"] = kwargs["patch_size"]
+                    if "f_patch_size" in kwargs:
+                        zimage_kwargs["f_patch_size"] = kwargs["f_patch_size"]
+                    zimage_kwargs["return_dict"] = False
+                    
+                    # DEBUG: Log shapes to diagnose empty iterable error
+                    logger.info(f"DEBUG: x_list len={len(x_list) if isinstance(x_list, list) else 'Not List'}")
+                    if isinstance(x_list, list) and len(x_list) > 0:
+                         logger.info(f"DEBUG: x_list[0] shape={x_list[0].shape}")
+                    logger.info(f"DEBUG: cap_feats len={len(cap_feats) if isinstance(cap_feats, list) else 'Not List'}")
+                    if isinstance(cap_feats, list) and len(cap_feats) > 0:
+                        logger.info(f"DEBUG: cap_feats[0] shape={cap_feats[0].shape}")
+                    
+                    # Check for mismatch which causes zip to truncate
+                    if isinstance(x_list, list) and isinstance(cap_feats, list):
+                        if len(x_list) != len(cap_feats):
+                            logger.warning(f"WARNING: Mismatch in lengths! x_list={len(x_list)}, cap_feats={len(cap_feats)}. This will cause truncation in zip()!")
+                            if len(cap_feats) == 0:
+                                 raise ValueError("cap_feats is empty! Model requires caption features (y/c_crossattn).")
+
+                    # Call Z-Image-Turbo forward with correct signature
+                    zimage_kwargs_clean = {k: v for k, v in zimage_kwargs.items() if k not in ('control', 'transformer_options')}
+                    
+                    # Build kwargs based on what the forward method accepts
+                    forward_kwargs = zimage_kwargs_clean.copy()
+                    if 'control' in forward_params:
+                        forward_kwargs['control'] = control
+                    if 'transformer_options' in forward_params:
+                        forward_kwargs['transformer_options'] = transformer_options
+                    
+                    model_output = self.model(
+                        x_list,
+                        t_zimage,
+                        cap_feats=cap_feats,
+                        **forward_kwargs
+                    )
+                    
+                    # Extract list from tuple: (x,) -> x
+                    if isinstance(model_output, tuple):
+                        model_output = model_output[0]
+                    
+                    # Convert output from List[torch.Tensor] to single tensor (B, C, H, W)
+                    if isinstance(model_output, list):
+                        # Stack list of tensors: each tensor is (C, F, H, W)
+                        model_output = torch.stack(model_output, dim=0)  # (B, C, F, H, W)
+                        # Remove frame dimension F=1: (B, C, F, H, W) -> (B, C, H, W)
+                        if model_output.shape[2] == 1:
+                            model_output = model_output.squeeze(2)
+                    
+                    return model_output
+
+                # Branch 2: ComfyUI Lumina2 / NextDiT signature
+                # forward(x, timesteps, context, num_tokens, attention_mask=None, **kwargs)
+                if "context" in forward_params and "num_tokens" in forward_params:
+                    # Ensure x is a tensor (ComfyUI-Lumina2 passes tensor)
+                    if isinstance(x, list):
+                        # Best-effort conversion: List[(C,F,H,W)] -> (B,C,H,W)
+                        x_stack = torch.stack([t for t in x if t is not None], dim=0)
+                        if x_stack.ndim == 5 and x_stack.shape[2] == 1:
+                            x_stack = x_stack.squeeze(2)
+                        x_tensor = x_stack
+                    else:
+                        x_tensor = x
+
+                    # Derive num_tokens if not provided (ComfyUI usually provides it)
+                    if num_tokens_value is None and isinstance(context, torch.Tensor) and context.ndim >= 2:
+                        num_tokens_value = context.shape[1]
+
+                    forward_kwargs = {}
+                    if "attention_mask" in forward_params:
+                        forward_kwargs["attention_mask"] = attention_mask_value
+                    if "transformer_options" in forward_params:
+                        forward_kwargs["transformer_options"] = transformer_options
+                    if "control" in forward_params:
+                        forward_kwargs["control"] = control
+
+                    # NOTE: NextDiT expects `context` and `num_tokens` as required args
+                    return self.model(
+                        x_tensor,
+                        timestep,
+                        context=context,
+                        num_tokens=num_tokens_value,
+                        **forward_kwargs,
+                        **kwargs,
+                    )
+
+                raise TypeError(
+                    f"Unsupported diffusion model forward() signature for ComfyZImageTurboWrapper. "
+                    f"Got params={list(forward_sig.parameters.keys())}"
                 )
-                
-                # Extract list from tuple: (x,) -> x
-                if isinstance(model_output, tuple):
-                    model_output = model_output[0]
-                
-                # Convert output from List[torch.Tensor] to single tensor (B, C, H, W)
-                if isinstance(model_output, list):
-                    # Stack list of tensors: each tensor is (C, F, H, W)
-                    model_output = torch.stack(model_output, dim=0)  # (B, C, F, H, W)
-                    # Remove frame dimension F=1: (B, C, F, H, W) -> (B, C, H, W)
-                    if model_output.shape[2] == 1:
-                        model_output = model_output.squeeze(2)
-                
-                return model_output
 

@@ -31,6 +31,8 @@ A new dedicated node `NunchakuQwenImageDiffsynthControlnet` enables diffsynth Co
 
 For detailed technical explanation, see [v2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0)
 
+## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
+
 For installation instructions, features, and requirements, see [Installation Guide](md/installation.md).
 
 ## Upgrade Guide for v1.57 and Earlier Users

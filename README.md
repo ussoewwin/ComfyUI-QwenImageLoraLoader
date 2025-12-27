@@ -56,8 +56,8 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 3. Select your LoRA file and set the strength
 4. Connect to your workflow
 
-**For Nunchaku Z-Image-Turbo models (Official loader):**
-1. Load your Nunchaku Z-Image-Turbo model using the official `Nunchaku Z-Image DiT Loader`
+**For Nunchaku Z-Image-Turbo models:**
+1. Load your Nunchaku Z-Image-Turbo model using `Nunchaku Z-Image DiT Loader`
 2. Add `Nunchaku Z-Image-Turbo LoRA Stack V3` node
 3. Select your LoRA file and set the strength
 4. Connect to your workflow

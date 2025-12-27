@@ -49,8 +49,16 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models (v2.0)
 
 ### Basic Usage
+
+**For Nunchaku Qwen Image models:**
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
 2. Add either `NunchakuQwenImageLoraLoader` or `NunchakuQwenImageLoraStack` node
+3. Select your LoRA file and set the strength
+4. Connect to your workflow
+
+**For Nunchaku Z-Image-Turbo models (Official loader):**
+1. Load your Nunchaku Z-Image-Turbo model using the official `Nunchaku Z-Image DiT Loader`
+2. Add `Nunchaku Z-Image-Turbo LoRA Stack V3` node
 3. Select your LoRA file and set the strength
 4. Connect to your workflow
 

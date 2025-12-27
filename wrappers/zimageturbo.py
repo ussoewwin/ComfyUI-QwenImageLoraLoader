@@ -439,13 +439,28 @@ class ComfyZImageTurboWrapper(nn.Module):
                     if num_tokens_value is None and isinstance(context, torch.Tensor) and context.ndim >= 2:
                         num_tokens_value = context.shape[1]
 
+                    # NextDiT forward is: forward(x, timesteps, context, num_tokens, attention_mask=None, **kwargs)
+                    # It consumes `transformer_options` via **kwargs (not a named parameter),
+                    # so we must pass it when the function supports VAR_KEYWORD.
+                    supports_kwargs = any(
+                        p.kind == inspect.Parameter.VAR_KEYWORD for p in forward_sig.parameters.values()
+                    )
+
                     forward_kwargs = {}
                     if "attention_mask" in forward_params:
                         forward_kwargs["attention_mask"] = attention_mask_value
-                    if "transformer_options" in forward_params:
+
+                    if supports_kwargs:
+                        # Ensure patches (e.g. double_block from DiffSynth/ControlNet) reach NextDiT
                         forward_kwargs["transformer_options"] = transformer_options
-                    if "control" in forward_params:
-                        forward_kwargs["control"] = control
+                        # Safe to forward; NextDiT ignores it if unused.
+                        if control is not None:
+                            forward_kwargs["control"] = control
+                    else:
+                        if "transformer_options" in forward_params:
+                            forward_kwargs["transformer_options"] = transformer_options
+                        if "control" in forward_params:
+                            forward_kwargs["control"] = control
 
                     # NOTE: NextDiT expects `context` and `num_tokens` as required args
                     return self.model(

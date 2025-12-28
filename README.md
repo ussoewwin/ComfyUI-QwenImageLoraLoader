@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.2.2 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.2)
+> Latest release: [v2.2.3 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -210,7 +210,13 @@ For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMF
 
 ## Changelog
 
-### v2.2.2 (latest)
+### v2.2.3 (latest)
+- **Added**: Toggle buttons to enable/disable individual LoRA slots and all LoRAs at once ([Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36))
+- **Added**: Automatic LoRA format detection (Standard LoRA, LoKR, LoHa, IA3) with detailed logging
+- ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuZImageTurboLoraStackV3` node only
+- **Technical Details**: See [v2.2.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3) for complete explanation
+
+### v2.2.2
 - **Added**: Diffsynth ControlNet support for Nunchaku Z-ImageTurbo models
 - **Technical Details**: See [v2.2.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.2) for complete explanation
 

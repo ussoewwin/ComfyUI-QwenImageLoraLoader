@@ -212,8 +212,8 @@ For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMF
 
 ### v2.2.3 (latest)
 - **Added**: Toggle buttons to enable/disable individual LoRA slots and all LoRAs at once ([Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36))
-- **Added**: Automatic LoRA format detection (Standard LoRA, LoKR, LoHa, IA3) with detailed logging
-- ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuZImageTurboLoraStackV3` node only. ComfyUI Nodes 2.0 environment only.
+- **Added**: Automatic LoRA format detection (Standard LoRA, LoKR, LoHa, IA3) with detailed logging ([Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36))
+- ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuZImageTurboLoraStackV3` node only. ComfyUI Nodes 2.0 environment only. With current technical capabilities, it is not possible to fully implement all requested features in JavaScript.
 - **Technical Details**: See [v2.2.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3) for complete explanation
 
 ### v2.2.2

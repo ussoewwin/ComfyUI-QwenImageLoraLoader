@@ -17,10 +17,6 @@ This LoRA loader was extracted and modified from GavChap's fork:
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
 
-## 🎉 MAJOR UPDATE: v2.2.2 - Nunchaku Z-ImageTurbo Diffsynth ControlNet Support Added!
-
-For detailed technical explanation, see [v2.2.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.2)
-
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
 
 For detailed technical explanation, see [v2.2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.0)

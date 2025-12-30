@@ -27,6 +27,127 @@ logger = logging.getLogger(__name__)
 # Users can override by setting env var `QWENIMAGE_LORA_APPLY_AWQ_MOD=1`.
 _APPLY_AWQ_MOD = str(os.getenv("QWENIMAGE_LORA_APPLY_AWQ_MOD", "0")).strip().lower() in ("1", "true", "yes", "y", "on")
 
+
+def _detect_lora_format(lora_state_dict: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+    """
+    Detect LoRA formats based on key patterns.
+    Returns a dict containing detected format flags and sample keys.
+
+    Formats:
+    - Standard LoRA: lora_up/lora_down, lora_A/lora_B, and dot variants.
+    - LoKR (Lycoris): lokr_w1/lokr_w2
+    - LoHa: hada_w1/hada_w2/hada_t1/hada_t2
+    - IA3: ia3_w or '.ia3.' patterns
+    """
+    keys = list(lora_state_dict.keys())
+
+    standard_patterns = (
+        ".lora_up.weight",
+        ".lora_down.weight",
+        ".lora_A.weight",
+        ".lora_B.weight",
+        ".lora.up.weight",
+        ".lora.down.weight",
+        ".lora.A.weight",
+        ".lora.B.weight",
+    )
+
+    def _sample(match_fn, limit: int = 8) -> List[str]:
+        out = []
+        for k in keys:
+            if match_fn(k):
+                out.append(k)
+                if len(out) >= limit:
+                    break
+        return out
+
+    has_standard = any(p in k for k in keys for p in standard_patterns)
+    has_lokr = any(".lokr_w1" in k or ".lokr_w2" in k for k in keys)
+    has_loha = any(".hada_w1" in k or ".hada_w2" in k or ".hada_t1" in k or ".hada_t2" in k for k in keys)
+    has_ia3 = any(".ia3." in k or ".ia3_w" in k or k.endswith(".ia3.weight") for k in keys)
+
+    return {
+        "has_standard": has_standard,
+        "has_lokr": has_lokr,
+        "has_loha": has_loha,
+        "has_ia3": has_ia3,
+        "sample_standard": _sample(lambda k: any(p in k for p in standard_patterns)),
+        "sample_lokr": _sample(lambda k: ".lokr_w1" in k or ".lokr_w2" in k),
+        "sample_loha": _sample(lambda k: ".hada_w1" in k or ".hada_w2" in k or ".hada_t1" in k or ".hada_t2" in k),
+        "sample_ia3": _sample(lambda k: ".ia3." in k or ".ia3_w" in k or k.endswith(".ia3.weight")),
+        "total_keys": len(keys),
+    }
+
+
+def _log_lora_format_detection(lora_name: str, detection: Dict[str, Any]) -> None:
+    sep = "=" * 80
+    logger.info(sep)
+    logger.info(f"LoRA Format Detection: {lora_name}")
+    logger.info(sep)
+    logger.info("Detected Formats:")
+
+    has_standard = detection["has_standard"]
+    has_lokr = detection["has_lokr"]
+    has_loha = detection["has_loha"]
+    has_ia3 = detection["has_ia3"]
+
+    if has_standard:
+        logger.info("  ✅ Standard LoRA (Rank-Decomposed)")
+    if has_lokr:
+        logger.info("  ❌ LoKR (Lycoris) - Not Supported")
+    if has_loha:
+        logger.info("  ❌ LoHa - Not Supported")
+    if has_ia3:
+        logger.info("  ❌ IA3 - Not Supported")
+
+    if not (has_standard or has_lokr or has_loha or has_ia3):
+        logger.info("  ❌ Unknown/Unsupported (no known LoRA keys detected)")
+
+    if has_standard:
+        logger.info("")
+        logger.info("✅ Standard LoRA Details:")
+        logger.info("   Supported weight keys:")
+        logger.info("   - lora_up.weight / lora_down.weight")
+        logger.info("   - lora.up.weight / lora.down.weight")
+        logger.info("   - lora_A.weight / lora_B.weight")
+        logger.info("   - lora.A.weight / lora.B.weight")
+        logger.info("   These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.")
+
+    if has_lokr:
+        logger.info("")
+        logger.info("❌ LoKR (Lycoris) - Not Supported")
+        logger.info("   Issue: LoRAs in LoKR format (created by Lycoris) are not supported.")
+        logger.info("   Important Note: This limitation applies specifically to Nunchaku quantization models.")
+        logger.info("   LoKR format LoRAs may work with standard (non-quantized) Qwen Image models, but this node is designed for Nunchaku models only.")
+        logger.info("   LoKR weights are automatically skipped when detected (experimental conversion code is disabled).")
+        logger.info("   Converting to Standard LoRA using SVD approximation (via external tools or scripts) has also been tested")
+        logger.info("   and found to result in noise/artifacts when applied to Nunchaku quantization models.")
+        logger.info("   Conclusion: At this time, we have not found a way to successfully apply LoKR weights to Nunchaku models.")
+        logger.info("   Please use Standard LoRA formats.")
+        sample = detection.get("sample_lokr") or []
+        if sample:
+            logger.info(f"   Sample LoKR keys found: {sample}")
+
+    if has_loha:
+        logger.info("")
+        logger.info("❌ LoHa - Not Supported")
+        logger.info("   Issue: LoRAs in LoHa format are not supported for Nunchaku quantization models in this loader.")
+        logger.info("   Please convert LoHa to Standard LoRA format before use.")
+        sample = detection.get("sample_loha") or []
+        if sample:
+            logger.info(f"   Sample LoHa keys found: {sample}")
+
+    if has_ia3:
+        logger.info("")
+        logger.info("❌ IA3 - Not Supported")
+        logger.info("   Issue: IA3 format is not supported for Nunchaku models in this loader.")
+        logger.info("   Please use Standard LoRA formats.")
+        sample = detection.get("sample_ia3") or []
+        if sample:
+            logger.info(f"   Sample IA3 keys found: {sample}")
+
+    logger.info(sep)
+
 # --- Centralized & Optimized Key Mapping ---
 # This structure is faster to process and easier to maintain than a long if/elif chain.
 # --- CORRECTED Centralized & Optimized Key Mapping ---
@@ -1038,6 +1159,14 @@ def compose_loras_v2(
         lora_name = lora_path_or_dict if isinstance(lora_path_or_dict, str) else "dict"
         lora_state_dict = _load_lora_state_dict(lora_path_or_dict)
 
+        # LoRA format detection + detailed logging (v2.2.3)
+        try:
+            detection = _detect_lora_format(lora_state_dict)
+            _log_lora_format_detection(str(lora_name), detection)
+        except Exception:
+            # Safety: never fail compose due to logging
+            pass
+
         lora_grouped: Dict[str, Dict[str, torch.Tensor]] = defaultdict(dict)
         lokr_keys_count = 0
         standard_keys_count = 0
@@ -1069,50 +1198,18 @@ def compose_loras_v2(
             else:
                 lora_grouped[base_key][ab] = value
 
-        # Detect and log LoRA format
+        # Existing lightweight summary is kept at DEBUG to avoid duplicating the v2.2.3 detailed log block.
         has_lokr = lokr_keys_count > 0
         has_standard = standard_keys_count > 0
-        unrecognized_count = len(unrecognized_keys)
-        
         if has_lokr and has_standard:
             lora_format = "Mixed (LoKR + Standard LoRA)"
         elif has_lokr:
-            if qkv_lokr_keys_count > 0:
-                lora_format = "LoKR (QKV format)"
-            else:
-                lora_format = "LoKR"
+            lora_format = "LoKR (QKV format)" if qkv_lokr_keys_count > 0 else "LoKR"
         elif has_standard:
             lora_format = "Standard LoRA"
         else:
             lora_format = "Unknown/Unsupported"
-        
-        logger.info(f"📦 LoRA: {lora_name} | Format: {lora_format} | Strength: {strength:.3f}")
-        if has_lokr:
-            logger.debug(f"   LoKR keys: {lokr_keys_count} (QKV: {qkv_lokr_keys_count}), Standard keys: {standard_keys_count}")
-        
-        # Warn about unrecognized keys
-        if unrecognized_count > 0:
-            unrecognized_ratio = unrecognized_count / total_keys * 100
-            if unrecognized_ratio >= 50:
-                logger.warning(f"⚠️  {lora_name}: {unrecognized_count}/{total_keys} keys ({unrecognized_ratio:.1f}%) are unrecognized/unsupported format!")
-                # Show sample unrecognized keys
-                sample_keys = unrecognized_keys[:5]
-                for sample_key in sample_keys:
-                    logger.warning(f"   Unrecognized key example: {sample_key}")
-                if unrecognized_count > 5:
-                    logger.warning(f"   ... and {unrecognized_count - 5} more unrecognized keys")
-            else:
-                logger.debug(f"   {unrecognized_count}/{total_keys} keys ({unrecognized_ratio:.1f}%) are unrecognized (likely metadata or non-LoRA keys)")
-        
-        # Warn if format is completely unknown
-        if lora_format == "Unknown/Unsupported":
-            logger.warning(f"⚠️  {lora_name}: No recognized LoRA format detected! All {total_keys} keys were unrecognized.")
-            if unrecognized_keys:
-                logger.warning(f"   Sample unrecognized keys:")
-                for sample_key in unrecognized_keys[:10]:
-                    logger.warning(f"     - {sample_key}")
-                if len(unrecognized_keys) > 10:
-                    logger.warning(f"     ... and {len(unrecognized_keys) - 10} more")
+        logger.debug(f"LoRA summary: {lora_name} | Format: {lora_format} | Strength: {strength:.3f}")
 
         # Process grouped weights for this LoRA
         processed_groups = {}

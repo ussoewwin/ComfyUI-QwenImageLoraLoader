@@ -1,8 +1,12 @@
-# ComfyUI-QwenImageLoraLoader
+# ComfyUI-Nunchaku QwenImage&Z-ImageTurboLoraLoader and Diffsynth ControlNet Loader
 
-A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image models. ComfyUI Nodes 2.0 compatible.
+A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image and Z-ImageTurbo models, and diffsynth ControlNet functionality. ComfyUI Nodes 2.0 compatible.
 
-> Latest release: [v2.0.8 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.8)
+## ⚠️ **DEVELOPMENT STATUS**
+
+**Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
+
+> Latest release: [v2.2.3 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -13,14 +17,22 @@ This LoRA loader was extracted and modified from GavChap's fork:
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
 
+## 🎉 MAJOR UPDATE: v2.2.2 - Nunchaku Z-ImageTurbo Diffsynth ControlNet Support Added!
+
+For detailed technical explanation, see [v2.2.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.2)
+
+## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
+
+For detailed technical explanation, see [v2.2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.0)
+
 ## 🎉 MAJOR UPDATE: v2.0 - Diffsynth ControlNet Support Added!
 
-**As of v2.0, diffsynth ControlNet is now fully supported for Nunchaku Qwen Image models.**
+**As of v2.0, diffsynth ControlNet is now fully supported for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.**
 
-A new dedicated node `NunchakuQwenImageDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized Qwen Image models.
+A new dedicated node `NunchakuQI&ZITDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.
 
 ### What's New in v2.0
-- ✅ **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku Qwen Image models
+- ✅ **New Node**: `NunchakuQI&ZITDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models
 - ✅ **Full ControlNet Support**: Works with standard diffsynth ControlNet models
 - ✅ **Seamless Integration**: Automatically applies ControlNet patches during model forward pass
 - ✅ **Backward Compatible**: All existing LoRA functionality remains unchanged
@@ -29,62 +41,7 @@ For detailed technical explanation, see [v2.0 Release Notes](https://github.com/
 
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
-**As of v1.60, manual integration with ComfyUI-nunchaku's `__init__.py` is completely unnecessary.**
-
-The node now operates as a fully independent custom node that works out-of-the-box. Simply clone the repository into your `custom_nodes` folder and restart ComfyUI. The nodes will automatically appear in ComfyUI's node menu through ComfyUI's built-in automatic node loading mechanism.
-
-### What Changed in v1.60
-- ✅ **Removed dependency on ComfyUI-nunchaku integration** - The LoRA loader is now a standalone plugin
-- ✅ **Simplified installation** - No batch scripts or manual file editing required
-- ✅ **Cleaner architecture** - Node registration happens automatically
-- ✅ **Backward compatible** - All existing LoRA files and workflows continue to work
-
-For a detailed technical explanation of why integration is no longer needed, see [v1.60 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.60)
-
-## Features
-
-- **NunchakuQwenImageLoraLoader**: Load and apply single LoRA to Qwen Image models
-- **NunchakuQwenImageLoraStack**: Apply multiple LoRAs with dynamic UI control
-- **NunchakuQwenImageDiffsynthControlnet**: Apply diffsynth ControlNet to Nunchaku Qwen Image models (v2.0)
-- **Dynamic VRAM Management**: Automatic CPU offloading based on available VRAM
-- **LoRA Composition**: Efficient LoRA stacking and composition
-- **ComfyUI Integration**: Seamless integration with ComfyUI workflows
-
-## Installation
-
-### Quick Installation (v1.60 - Simplified!)
-
-**Prerequisites:**
-- ComfyUI-nunchaku must be installed
-
-1. Clone this repository to your ComfyUI custom_nodes directory:
-
-```bash
-cd ComfyUI/custom_nodes
-git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
-```
-
-2. Restart ComfyUI
-
-**That's it!** The nodes will automatically appear in ComfyUI's node menu.
-
-### Manual Installation (Alternative)
-
-If you prefer to install manually or are using macOS/Linux:
-
-```bash
-cd /path/to/ComfyUI/custom_nodes
-git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
-```
-
-Then restart ComfyUI.
-
-### Requirements
-
-- Python 3.11+
-- ComfyUI (latest version recommended)
-- ComfyUI-nunchaku (required)
-- CUDA-capable GPU (optional, but recommended for performance)
+For installation instructions, features, and requirements, see [Installation Guide](md/installation.md).
 
 ## Upgrade Guide for v1.57 and Earlier Users
 
@@ -96,16 +53,29 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageLoraLoader**: Single LoRA loader
 - **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
-- **NunchakuQwenImageDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models (v2.0)
+- **NunchakuZImageTurboLoraStackV3**: Z-Image-Turbo LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
+- **NunchakuQI&ZITDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models (v2.0)
 
 ### Basic Usage
+
+**For Nunchaku Qwen Image models:**
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
 2. Add either `NunchakuQwenImageLoraLoader` or `NunchakuQwenImageLoraStack` node
 3. Select your LoRA file and set the strength
 4. Connect to your workflow
 
+**For Nunchaku Z-Image-Turbo models:**
+1. Load your Nunchaku Z-Image-Turbo model using `Nunchaku Z-Image DiT Loader`
+2. Add `Nunchaku Z-Image-Turbo LoRA Stack V3` node
+3. Select your LoRA file and set the strength
+4. Connect to your workflow
+
 ### Dynamic UI Control
-The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visible LoRA slots based on the `lora_count` parameter (1-10).
+
+<img src="images/qilorastacker.png" alt="Dynamic UI Control" width="400">
+<img src="images/zitlorav3.png" alt="Dynamic UI Control V3" width="400">
+
+The `NunchakuQwenImageLoraStack` and `NunchakuZImageTurboLoraStackV3` nodes automatically adjust the number of visible LoRA slots based on the `lora_count` parameter (1-10).
 
 ### Diffsynth ControlNet Usage
 
@@ -113,7 +83,7 @@ The `NunchakuQwenImageLoraStack` node automatically adjusts the number of visibl
 
 1. Load your diffsynth ControlNet model patch using `Model Patch Loader` from [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)
 2. The `Model Patch Loader` (`ModelPatchLoaderCustom`) supports CPU offload, allowing you to load ControlNet patches to CPU memory to save VRAM
-3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQwenImageDiffsynthControlnet` node
+3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
 
@@ -184,52 +154,9 @@ This node is designed to work with:
 
 ### Issue #25: ComfyUI 0.4.0 Model Management Errors
 - **Status**: ⚠️ **Environment Dependent** - May require ComfyUI core fixes
-- **Issue**: After the ComfyUI 0.4.0 update, multiple nodes (including this one in some environments) experienced errors such as `TypeError: 'NoneType' object is not callable` and `AttributeError: 'NoneType' object has no attribute`. In our environment, we resolved these errors by modifying ComfyUI's core `model_management.py`. Note that in our environment, these errors did not occur with this node (ComfyUI-QwenImageLoraLoader). Nunchaku library and ComfyUI-Nunchaku nodes should use the latest versions. If errors persist even after applying the latest version of this node (ComfyUI-QwenImageLoraLoader), modification of ComfyUI's core `model_management.py` may be necessary.
-- **Root Cause**: In ComfyUI 0.4.0, ComfyUI's core `model_management.py` lacks sufficient None checks, causing `TypeError` and `AttributeError` when accessing methods or attributes on objects that became `None` after models were unloaded or garbage collected. This problem is not a bug in individual nodes, but rather a structural issue in ComfyUI 0.4.0's model management (`model_management.py`).
-- **GC Changes in ComfyUI 0.4.0**: Compared to ComfyUI 0.3.x, automatic model unloading occurs earlier, making the following flow more likely:
 
-```
-ModelPatcher → GC → weakref(None)
-```
+For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md).
 
-This also explains why the occurrence of the issue varies by user environment.
-- **Technical Basis**:
-  1. **Multiple Locations with "Missing None Checks"** - This is not a bug in individual nodes, but the core main logic crashes when accessing attributes on `None`. The added fixes like `if model is None: continue` are defensive code that ComfyUI core should have in all paths.
-  2. **Post-Weak-Reference GC Behavior Not Considered** - The introduction of `LoadedModel._model = weakref.ref(ModelPatcher)` in ComfyUI 0.4.0 is a breaking change. When the weak reference target is garbage collected, it returns `None`, but this is not handled. Post-processing for the breaking update is incomplete.
-  3. **Multiple Nodes Were Affected in a Chain Reaction** - This is not a problem with nodes, but multiple nodes were affected in a chain reaction due to core behavior changes. Model loading/unloading, memory calculation, GPU/CPU offloading, and `ModelPatcher` lifecycle are all controlled by ComfyUI core.
-  4. **All Fix Locations Are Core Responsibility Areas** - The locations fixed (`model_memory`, `model_offloaded_memory`, `load_models_gpu`, `free_memory`, `model_unload`, `is_dead` checks, etc.) are all ComfyUI core functions. These are not areas that node developers should touch. The fact that all fix locations are core logic leaves no explanation other than a core defect.
-  5. **Result of Applying Fixes** - After applying None check fixes to ComfyUI's core `model_management.py` in our environment, similar errors were resolved. This demonstrates that the problem can be solved by adding defensive code that the core should have.
-- **Model Lifecycle and ModelPatcher Initialization Relationship**:
-  - **Fact 1: Relationship between LoadedModel and ModelPatcher** - The `LoadedModel` class (lines 502-524 in ComfyUI's `model_management.py`) holds a weak reference to `ModelPatcher`:
-
-```python
-def _set_model(self, model):
-    self._model = weakref.ref(model)  # Weak reference to ModelPatcher
-
-@property
-def model(self):
-    return self._model()  # Returns None when garbage collected
-```
-
-  - **Fact 2: ModelPatcher Initialization** - In the `__init__` of the `ModelPatcher` class (lines 215-237 in `model_patcher.py`), the `pinned` attribute is initialized:
-
-```python
-def __init__(self, model, load_device, offload_device, size=0, weight_inplace_update=False):
-    # ...
-    self.pinned = set()  # Line 237: Initialized
-```
-
-  - **Fact 3: Fix Content in ComfyUI Core's model_management.py** - The fix in ComfyUI's core `model_management.py` now skips `LoadedModel` instances where `model` is `None`: In `load_models_gpu()`, skips `LoadedModel` instances where `model` is `None` (lines 712, 727, 743); In `free_memory()`, excludes `LoadedModel` instances where `model` is `None` (line 646).
-  - **Fact 4: Problem Before Fix** - `LoadedModel` holds a weak reference to `ModelPatcher`. When garbage collected, `LoadedModel.model` returns `None`. Before the fix, methods were called on `LoadedModel` instances where `model` was `None`, causing errors.
-  - **Fact 5: Behavior After Fix** - By skipping `LoadedModel` instances where `model` is `None`, errors do not occur. Because errors do not occur, processing continues normally.
-  - **Fact 6: Why copy.deepcopy Fails** - `copy.deepcopy` fails because references to GC'd `ModelPatcher` instances remain in the dictionary being deepcopied. When these references are accessed, they return `None`, causing deepcopy to stop.
-  - **Fact 7: Confirmation Items** - After applying the fix, `copy.deepcopy` and `pinned` attribute errors do not occur in our environment. Nunchaku library and ComfyUI-Nunchaku nodes should use the latest versions, but this may still be insufficient. While these errors did not occur with this node (ComfyUI-QwenImageLoraLoader) in our environment, the fix to ComfyUI's core `model_management.py` may have indirectly affected it, making errors less likely to occur.
-- **Important Note: Not a Problem with Nunchaku Library** - This problem is not caused by the Nunchaku library's implementation. Nunchaku's `model_config` and `ModelPatcher` itself are normal. The problem is in the upstream = ComfyUI core's `model_management.py` GC processing.
-- **Speculation (Items That May Be Environment-Dependent)**: The fix allows `ModelPatcher` initialization to complete normally. As a result, the `pinned` attribute is also properly initialized. Accessing `self.pinned` in `__del__` does not cause errors.
-- **Recommendations**:
-  1. Update Nunchaku library and ComfyUI-Nunchaku nodes to the latest version (addresses `model_config` issues)
-  2. Consider applying None check fixes to ComfyUI's core `model_management.py` (may address the root cause)
-- **Note**: This is the first support measure. I have published the technical details of the fixes I applied to ComfyUI's core `model_management.py` in my environment. See [COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md](md/COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md) for details. Note that these fixes were applied in my specific environment and may not work universally in all environments. This may also resolve `copy.deepcopy` and `pinned` attribute errors.
 - **Related Issues**: 
   - [Issue #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25) - `AttributeError: 'NunchakuModelPatcher' object has no attribute 'pinned'` and deepcopy errors with `model_config`
   - [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33) - `AttributeError: 'NoneType' object has no attribute 'to'` in `to_safely` method (Fixed in v2.1.0)
@@ -283,24 +210,18 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 
 ## Changelog
 
-### v2.2.4 (latest)
-- **Added**: AWQ Modulation Layer Detection and Skip Logic
-- **Feature**: Default skip of LoRA application to `img_mod.1` and `txt_mod.1` modulation layers in AWQ quantized models to prevent image noise
-- **Environment Variable**: `QWENIMAGE_LORA_APPLY_AWQ_MOD=1` to force-enable (not recommended due to noise risk)
-- **Technical Details**: See [v2.2.4 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.4) for complete explanation
-- **Documentation**: See [AWQ_MODULATION_LORA_EXPLANATION.md](AWQ_MODULATION_LORA_EXPLANATION.md) for detailed technical explanation
-
-### v2.2.3
-- **Added**: Toggle buttons and LoRA format detection features
+### v2.2.3 (latest)
+- **Added**: Toggle buttons to enable/disable individual LoRA slots and all LoRAs at once ([Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36))
+- ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuZImageTurboLoraStackV3` node only. ComfyUI Nodes 2.0 environment only. With current technical capabilities, it is not possible to fully implement all requested features in JavaScript.
 - **Technical Details**: See [v2.2.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3) for complete explanation
 
 ### v2.2.2
-- **Added**: Nunchaku Z-ImageTurbo Diffsynth ControlNet support
+- **Added**: Diffsynth ControlNet support for Nunchaku Z-ImageTurbo models
 - **Technical Details**: See [v2.2.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.2) for complete explanation
 
 ### v2.2.0
-- **MAJOR UPDATE**: Added Nunchaku Z-Image-Turbo LoRA Loader V3 Support
-- **Technical Details**: See [v2.2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.0) for complete explanation
+- **Added**: NunchakuZImageTurboLoraStackV3 node – Z-Image-Turbo LoRA stacker with dynamic UI for official Nunchaku Z-Image loader
+- **Technical Details**: See [v2.2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.2.0) for complete explanation
 
 ### v2.1.1
 - **Fixed**: ComfyUI v0.6.0+ compatibility – Migrated from `guidance` to `additional_t_cond` parameter in `_execute_model` method to support ComfyUI v0.6.0+ API changes ([PR #34](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/34))
@@ -310,11 +231,9 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 - **Fixed**: Resolved [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33) – Fixed `AttributeError: 'NoneType' object has no attribute 'to'` by adding None checks to `to_safely` and `forward` methods in `ComfyQwenImageWrapper`
 - **Technical Details**: See [v2.1.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.1.0) for complete explanation
 
-### v2.0.8
-- **Fixed**: Resolved [Issue #30](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/30) – Fixed `TypeError: got multiple values for argument 'guidance'` error by adding final cleanup of kwargs before calling model forward
-- **Technical Details**: See [v2.0.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.8) for complete explanation
-
-### v2.0.2 - v2.0.7
+### v2.0.2 - v2.0.8
+- **v2.0.8 Fixed**: Resolved [Issue #30](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/30) – Fixed `TypeError: got multiple values for argument 'guidance'` error by adding final cleanup of kwargs before calling model forward
+  - **Technical Details**: See [v2.0.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.8) for complete explanation
 - **v2.0.7 Fixed**: Enhanced [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) fix by adding exclusion processing in `forward` method in addition to `_execute_model` method to prevent duplicate argument errors
   - **Technical Details**: See [v2.0.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0.7) for complete explanation
 - **v2.0.6 Fixed**: Excluded `ref_latents`, `transformer_options`, and `attention_mask` from kwargs to prevent duplicate argument errors
@@ -330,7 +249,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 
 ### v2.0
 - **MAJOR UPDATE**: Added diffsynth ControlNet support for Nunchaku Qwen Image models
-- **New Node**: `NunchakuQwenImageDiffsynthControlnet` - Enables diffsynth ControlNet to work with Nunchaku quantized Qwen Image models
+- **New Node**: `NunchakuQI&ZITDiffsynthControlnet` - Enables diffsynth ControlNet to work with Nunchaku quantized Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models
 - **Features**: 
   - Full diffsynth ControlNet functionality for Nunchaku Qwen Image models
   - Automatic patch registration and application
@@ -357,10 +276,7 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
   - Complete feature parity with V1 implementation
   - Dynamic UI for adjusting slot count
   - Automatic node height adjustment
-- **Technical Details**: 
-  - Flexible widget management using `optional` inputs
-  - Clean implementation using Flux V2-style widget array reconstruction
-  - Complete feature reproduction in both Python backend and JavaScript frontend
+- **Technical Details**: See [v1.70 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.70) for complete explanation
 
 ### v1.63
 - **Fixed**: Addressed [Issue #21](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/21) – User-configurable CPU offload setting

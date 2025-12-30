@@ -50,7 +50,6 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuQwenImageLoraStackV3**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
-- **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA stacker with dynamic UI (unofficial loader only)
 - **NunchakuZImageTurboLoraStackV3**: Z-Image-Turbo LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuQI&ZITDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models (v2.0)
 

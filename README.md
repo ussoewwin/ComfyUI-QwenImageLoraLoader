@@ -173,6 +173,30 @@ For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMF
 - **Related Issues**: 
   - [Issue #32](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/32) - `TypeError: got multiple values for argument 'guidance'` error when using LoRA with KSampler
 
+### Error: "No module named 'diffusers.models.transformers.transformer_z_image'"
+
+**Problem**: This error occurs when using Qwen-Edit models or Z-Image-Turbo models with an outdated `diffusers` library version.
+
+**Error Message**: `ModuleNotFoundError: No module named 'diffusers.models.transformers.transformer_z_image'`
+
+**Root Cause**: The most likely cause is that the `diffusers` library version is too old and does not include the `transformer_z_image` module, which is required for Z-Image-Turbo model support. When ComfyUI-nunchaku's model loader tries to load Z-Image-Turbo models (or Qwen-Edit models that may be detected as Z-Image format), it attempts to import this module, but it doesn't exist in older `diffusers` versions. This module was added in a later version of `diffusers` to support Z-Image-Turbo models.
+
+**Solution**: Update the `diffusers` library to the latest version:
+
+**If using a virtual environment (venv):**
+```bash
+pip install --upgrade diffusers
+```
+
+**If using ComfyUI's embedded Python:**
+```bash
+ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
+```
+
+**How to Verify**: After updating, restart ComfyUI and try loading your model again. The error should be resolved.
+
+**Related Issue**: [Issue #38](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/38)
+
 ## Known Limitations
 
 ### LoKR (Lycoris) LoRA Support

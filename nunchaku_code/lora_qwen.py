@@ -1,5 +1,6 @@
 import functools
 import logging
+import os
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -18,6 +19,13 @@ from nunchaku.lora.flux.nunchaku_converter import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Safety switch:
+# QwenImage's modulation linears (`img_mod.1` / `txt_mod.1`) are extremely sensitive because their
+# output is reshaped into shift/scale/gate parameters. With AWQ quantization (AWQW4A16Linear),
+# applying LoRA here often results in severe noise. Default to skipping these two layers.
+# Users can override by setting env var `QWENIMAGE_LORA_APPLY_AWQ_MOD=1`.
+_APPLY_AWQ_MOD = str(os.getenv("QWENIMAGE_LORA_APPLY_AWQ_MOD", "0")).strip().lower() in ("1", "true", "yes", "y", "on")
 
 # --- Centralized & Optimized Key Mapping ---
 # This structure is faster to process and easier to maintain than a long if/elif chain.
@@ -1118,6 +1126,26 @@ def compose_loras_v2(
             continue
         if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")) and not isinstance(module, nn.Linear):
             logger.info(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
+            continue
+        
+        # Check for AWQ modulation layer skip logic
+        is_awq_w4a16 = (
+            module.__class__.__name__ == "AWQW4A16Linear"
+            and hasattr(module, "qweight")
+            and hasattr(module, "wscales")
+            and hasattr(module, "wzeros")
+            and hasattr(module, "in_features")
+            and hasattr(module, "out_features")
+        )
+        
+        # Check if this is img_mod.1 or txt_mod.1
+        is_modulation_layer = (
+            ".img_mod.1" in resolved_name or ".txt_mod.1" in resolved_name
+        )
+        
+        # Skip AWQ modulation layers by default (unless environment variable is set)
+        if is_awq_w4a16 and is_modulation_layer and not _APPLY_AWQ_MOD:
+            logger.warning(f"[SKIP] {resolved_name}: AWQ modulation layer LoRA is disabled by default (prevents noise). Set QWENIMAGE_LORA_APPLY_AWQ_MOD=1 to force-enable.")
             continue
 
         all_A = []

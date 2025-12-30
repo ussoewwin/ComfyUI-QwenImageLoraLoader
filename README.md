@@ -41,7 +41,7 @@ For installation instructions, features, and requirements, see [Installation Gui
 
 ## Upgrade Guide for v1.57 and Earlier Users
 
-If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku's `__init__.py`, see [UPGRADE_GUIDE_V1.57.md](md/UPGRADE_GUIDE_V1.57.md) for detailed upgrade instructions.
+If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku's `__init__.py`, see [UPGRADE_GUIDE_V1.57.md](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/md/UPGRADE_GUIDE_V1.57.md) for detailed upgrade instructions.
 
 ## Usage
 

@@ -300,7 +300,63 @@ class ComfyZImageTurboWrapper(nn.Module):
                 )
         else:
             with torch.inference_mode():
-                # Z-Image-Turbo forward signature: forward(x, t, cap_feats, patch_size=2, f_patch_size=1, return_dict=True)
+                # Check for NextDiT signature first (forward(x, timesteps, context, num_tokens, ...))
+                import inspect
+                forward_sig = inspect.signature(self.model.forward)
+                forward_params = set(forward_sig.parameters.keys())
+                
+                # Branch 1: NextDiT signature (ComfyUI Lumina2 / NextDiT)
+                if "context" in forward_params and "num_tokens" in forward_params:
+                    # NextDiT forward signature: forward(x, timesteps, context, num_tokens, attention_mask=None, **kwargs)
+                    # Process x for NextDiT format
+                    if isinstance(x, list):
+                        # Stack list of tensors into a single tensor
+                        x_stack = torch.stack([t for t in x if t is not None], dim=0)
+                        if x_stack.ndim == 5 and x_stack.shape[2] == 1:
+                            x_stack = x_stack.squeeze(2)  # Remove frame dimension if F=1
+                        x_tensor = x_stack
+                    else:
+                        x_tensor = x
+                    
+                    # Extract num_tokens from kwargs if not provided
+                    num_tokens_value = kwargs.pop("num_tokens", None)
+                    if num_tokens_value is None and isinstance(context, torch.Tensor) and context.ndim >= 2:
+                        num_tokens_value = context.shape[1]
+                    
+                    # Extract attention_mask from kwargs
+                    attention_mask_value = kwargs.pop("attention_mask", None)
+                    
+                    # Check if forward method supports **kwargs
+                    supports_kwargs = any(
+                        p.kind == inspect.Parameter.VAR_KEYWORD for p in forward_sig.parameters.values()
+                    )
+                    
+                    forward_kwargs = {}
+                    if "attention_mask" in forward_params:
+                        forward_kwargs["attention_mask"] = attention_mask_value
+                    
+                    if supports_kwargs:
+                        # Ensure patches (e.g. double_block from DiffSynth/ControlNet) reach NextDiT
+                        forward_kwargs["transformer_options"] = transformer_options
+                        if control is not None:
+                            forward_kwargs["control"] = control
+                    else:
+                        if "transformer_options" in forward_params:
+                            forward_kwargs["transformer_options"] = transformer_options
+                        if "control" in forward_params:
+                            forward_kwargs["control"] = control
+                    
+                    # NextDiT expects context and num_tokens as required args
+                    return self.model(
+                        x_tensor,
+                        timestep,
+                        context=context,
+                        num_tokens=num_tokens_value,
+                        **forward_kwargs,
+                        **kwargs,
+                    )
+                
+                # Branch 2: Z-Image-Turbo forward signature: forward(x, t, cap_feats, patch_size=2, f_patch_size=1, return_dict=True)
                 # x: List[torch.Tensor] with shape (C, F, H, W) for each image
                 # t: normalized timestep in [0, 1]
                 # cap_feats: List[torch.Tensor] or None
@@ -387,10 +443,7 @@ class ComfyZImageTurboWrapper(nn.Module):
 
                 # Call Z-Image-Turbo forward with correct signature
                 # Pass control and transformer_options to allow Model Patcher (double_block patches) to work
-                # Check if the model's forward method accepts control parameter
-                import inspect
-                forward_sig = inspect.signature(self.model.forward)
-                forward_params = set(forward_sig.parameters.keys())
+                # forward_sig and forward_params are already defined above (NextDiT branch check)
                 
                 zimage_kwargs_clean = {k: v for k, v in zimage_kwargs.items() if k not in ('control', 'transformer_options')}
                 

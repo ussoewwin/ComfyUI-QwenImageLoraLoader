@@ -232,7 +232,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ## Changelog
 
 ### v2.2.5 (latest)
-- **Fixed**: Repository recovery - The repository was completely broken after v2.0.8 updates, and recovery work has been performed to restore all functionality.
+- **Fixed**: Repository recovery - All updates after v2.0.8 were completely broken, and recovery work has been performed to restore all functionality.
 
 ### v2.2.4
 - **Added**: AWQ modulation layer detection and skip logic - `img_mod.1` and `txt_mod.1` layers are detected and LoRA application is skipped by default to prevent noise. Can be overridden with `QWENIMAGE_LORA_APPLY_AWQ_MOD=1` environment variable.

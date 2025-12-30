@@ -889,6 +889,68 @@ def _apply_lora_to_module(module: nn.Module, A: torch.Tensor, B: torch.Tensor, m
     if B.shape[0] != module.out_features:
         raise ValueError(f"{module_name}: B shape {B.shape} mismatch with out_features={module.out_features}")
 
+    # Handle AWQ quantized linear layers (e.g. AWQW4A16Linear) by injecting LoRA in forward path.
+    # NOTE: We avoid importing the class directly; name/path may differ across environments.
+    if (
+        module.__class__.__name__ == "AWQW4A16Linear"
+        and hasattr(module, "qweight")
+        and hasattr(module, "wscales")
+        and hasattr(module, "wzeros")
+        and hasattr(module, "in_features")
+        and hasattr(module, "out_features")
+    ):
+        # Save original forward once
+        if not hasattr(module, "_lora_original_forward"):
+            try:
+                module._lora_original_forward = module.forward
+            except Exception:
+                module._lora_original_forward = None
+
+        # Attach LoRA tensors on the module
+        module._lora_A = A
+        module._lora_B = B
+
+        def _awq_lora_forward(x, *args, **kwargs):
+            orig = getattr(module, "_lora_original_forward", None)
+            if orig is None:
+                # Fall back, but don't crash (safety)
+                out = module.forward(x, *args, **kwargs)
+            else:
+                out = orig(x, *args, **kwargs)
+
+            A_local = getattr(module, "_lora_A", None)
+            B_local = getattr(module, "_lora_B", None)
+            if A_local is None or B_local is None:
+                return out
+
+            # Compute LoRA residual in forward path:
+            # x: [..., in] -> [..., out]
+            in_features = int(getattr(module, "in_features"))
+            x_in = x
+            if not torch.is_tensor(x_in):
+                return out
+            if x_in.shape[-1] != in_features:
+                return out
+
+            x_flat = x_in.reshape(-1, in_features)
+            # Ensure compute on same device as A/B
+            x_flat = x_flat.to(device=A_local.device, dtype=A_local.dtype)
+            lora_mid = x_flat @ A_local.transpose(0, 1)  # [N, rank]
+            lora_out = lora_mid @ B_local.transpose(0, 1)  # [N, out]
+            lora_out = lora_out.reshape(*x_in.shape[:-1], B_local.shape[0])
+            # Cast to out dtype/device and add
+            lora_out = lora_out.to(dtype=out.dtype, device=out.device)
+            return out + lora_out
+
+        # Patch forward
+        module.forward = _awq_lora_forward
+
+        if not hasattr(model, "_lora_slots"):
+            model._lora_slots = {}
+        # Track for reset
+        model._lora_slots[module_name] = {"type": "awq_w4a16"}
+        return
+
     # Handle Nunchaku LoRA-ready modules
     if hasattr(module, "proj_down") and hasattr(module, "proj_up"):
         pd, pu = module.proj_down.data, module.proj_up.data
@@ -1124,11 +1186,7 @@ def compose_loras_v2(
         if module is None:
             logger.debug(f"[MISS] Module not found: {module_name} (resolved: {resolved_name})")
             continue
-        if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")) and not isinstance(module, nn.Linear):
-            logger.info(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
-            continue
-        
-        # Check for AWQ modulation layer skip logic
+
         is_awq_w4a16 = (
             module.__class__.__name__ == "AWQW4A16Linear"
             and hasattr(module, "qweight")
@@ -1137,15 +1195,24 @@ def compose_loras_v2(
             and hasattr(module, "in_features")
             and hasattr(module, "out_features")
         )
-        
+
         # Check if this is img_mod.1 or txt_mod.1
-        is_modulation_layer = (
-            ".img_mod.1" in resolved_name or ".txt_mod.1" in resolved_name
-        )
-        
+        is_modulation_layer = (".img_mod.1" in resolved_name or ".txt_mod.1" in resolved_name)
+
         # Skip AWQ modulation layers by default (unless environment variable is set)
         if is_awq_w4a16 and is_modulation_layer and not _APPLY_AWQ_MOD:
-            logger.warning(f"[SKIP] {resolved_name}: AWQ modulation layer LoRA is disabled by default (prevents noise). Set QWENIMAGE_LORA_APPLY_AWQ_MOD=1 to force-enable.")
+            logger.warning(
+                f"[SKIP] {resolved_name}: AWQ modulation layer LoRA is disabled by default (prevents noise). "
+                f"Set QWENIMAGE_LORA_APPLY_AWQ_MOD=1 to force-enable."
+            )
+            continue
+
+        # Supported module types:
+        # - Nunchaku LoRA-ready modules (proj_down/proj_up)
+        # - nn.Linear (weight update fallback)
+        # - AWQW4A16Linear (forward-path LoRA)
+        if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")) and not isinstance(module, nn.Linear) and not is_awq_w4a16:
+            logger.info(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
             continue
 
         all_A = []
@@ -1161,12 +1228,39 @@ def compose_loras_v2(
             elif ".single_transformer_blocks." in resolved_name and ".norm.linear" in resolved_name:
                 B = reorder_adanorm_lora_up(B, splits=3)
 
+            # Special reorder for modulation layers when force-enabled:
+            # Reorder B to match modulation channel layout (shift/scale/gate × 2).
+            if is_awq_w4a16 and is_modulation_layer and _APPLY_AWQ_MOD:
+                # Expect out_features divisible by 6
+                if B.shape[0] % 6 == 0:
+                    try:
+                        dim = B.shape[0] // 6
+                        B = (
+                            B.contiguous()
+                            .view(6, dim, B.shape[1])
+                            .transpose(0, 1)
+                            .reshape(B.shape[0], B.shape[1])
+                        )
+                    except Exception:
+                        # Safety: never fail due to reorder
+                        pass
+                else:
+                    logger.warning(
+                        f"{resolved_name}: expected mod up-matrix with out_features divisible by 6, "
+                        f"got B({B.shape[0]}, {B.shape[1]}); skipping mod-channel reorder"
+                    )
+
             if hasattr(module, "proj_down"):
                 target_dtype = module.proj_down.dtype
                 target_device = module.proj_down.device
-            else:
+            elif isinstance(module, nn.Linear):
                 target_dtype = module.weight.dtype
                 target_device = module.weight.device
+            else:
+                # AWQ: place LoRA tensors on same device as qweight; compute in fp16 by default.
+                qweight = getattr(module, "qweight", None)
+                target_device = qweight.device if torch.is_tensor(qweight) else torch.device("cpu")
+                target_dtype = torch.float16
 
             all_A.append(A.to(dtype=target_dtype, device=target_device))
             all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
@@ -1263,6 +1357,21 @@ def reset_lora_v2(model: nn.Module) -> None:
                 # Restore original weight
                 with torch.no_grad():
                     module.weight.data.copy_(info["original_weight"].to(module.weight.device))
+
+        elif module_type == "awq_w4a16":
+            # Restore original forward and remove attached LoRA tensors
+            if hasattr(module, "_lora_original_forward"):
+                try:
+                    module.forward = module._lora_original_forward
+                except Exception:
+                    # Safety: never fail reset
+                    pass
+            for attr in ("_lora_A", "_lora_B", "_lora_original_forward"):
+                if hasattr(module, attr):
+                    try:
+                        delattr(module, attr)
+                    except Exception:
+                        pass
             
     model._lora_slots.clear()
     model._lora_strength = 1.0

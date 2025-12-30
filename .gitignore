@@ -67,5 +67,8 @@ venv.bak/
 Thumbs.db
 
 # User-specific documentation files
-technical_explanation.md
+# Ignore root directory versions, but allow versions in md/ folder
+/technical_explanation.md
 PR34_COMFYUI_V0.6.0_COMPATIBILITY.md
+# Ignore Japanese version in root, but allow English version in md/ folder
+/ZIMAGETURBO_CONTROLNET_FIX.md

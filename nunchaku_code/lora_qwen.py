@@ -153,6 +153,27 @@ def _log_lora_format_detection(lora_name: str, detection: Dict[str, Any]) -> Non
 # --- CORRECTED Centralized & Optimized Key Mapping ---
 # --- Centralized & Optimized Key Mapping ---
 # This version correctly tokenizes all module paths.
+
+# Active mapping override (used for runtime model-structure switching, e.g. NextDiT).
+_ACTIVE_KEY_MAPPING = None
+
+# --- NextDiT (ComfyUI Lumina2) mappings for Z-Image-Turbo official loader ---
+# These are required because NextDiT uses:
+# - layers.N.attention.qkv / layers.N.attention.out
+# - layers.N.feed_forward.w1/w2/w3 (unpatched) OR layers.N.feed_forward.w13 + w2 (nunchaku-patched)
+ZIMAGE_NEXTDIT_UNPATCHED_KEY_MAPPING = [
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]([qkv])$"), r"\1.\2.attention.qkv", "qkv", lambda m: m.group(3).upper()),
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]out(?:[._]0)?$"), r"\1.\2.attention.out", "regular", None),
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._](w1|w2|w3)$"), r"\1.\2.feed_forward.\3", "regular", None),
+]
+
+ZIMAGE_NEXTDIT_NUNCHAKU_PATCHED_KEY_MAPPING = [
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]([qkv])$"), r"\1.\2.attention.qkv", "qkv", lambda m: m.group(3).upper()),
+    (re.compile(r"^(layers)[._](\d+)[._]attention[._]to[._]out(?:[._]0)?$"), r"\1.\2.attention.out", "regular", None),
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._](w1|w3)$"), r"\1.\2.feed_forward.w13", "glu", lambda m: m.group(3)),
+    (re.compile(r"^(layers)[._](\d+)[._]feed_forward[._]w2$"), r"\1.\2.feed_forward.w2", "regular", None),
+]
+
 KEY_MAPPING = [
     # Z-Image QKV Fusion
     # Matches: layers.X.attention.to_q/k/v -> layers.X.attention.to_qkv
@@ -341,7 +362,9 @@ def _classify_and_map_key(key: str) -> Optional[Tuple[str, str, Optional[str], s
     if base is None or ab is None:
         return None  # Not a recognized LoRA key format
 
-    for pattern, template, group, comp_fn in KEY_MAPPING:
+    mapping_to_use = _ACTIVE_KEY_MAPPING if _ACTIVE_KEY_MAPPING is not None else KEY_MAPPING
+
+    for pattern, template, group, comp_fn in mapping_to_use:
         match = pattern.match(base)
         if match:
             final_key = match.expand(template)
@@ -1137,252 +1160,275 @@ def compose_loras_v2(
     logger.info(f"Composing {len(lora_configs)} LoRAs...")
     reset_lora_v2(model)
 
-    # DEBUG: Inspect all keys in the first LoRA to help debug missing layers
-    if lora_configs:
-        first_lora_path_or_dict, first_lora_strength = lora_configs[0]
-        first_lora_state_dict = _load_lora_state_dict(first_lora_path_or_dict)
-        logger.info(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {first_lora_strength}) ---")
-        for key in first_lora_state_dict.keys():
-             parsed_res = _classify_and_map_key(key)
-             if parsed_res:
-                 group, base_key, comp, ab = parsed_res
-                 mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
-                 logger.info(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
-             else:
-                 logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
-        logger.info("--- DEBUG: End key inspection ---")
-
-    aggregated_weights: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-
-    # 1. Aggregate weights from all LoRAs
-    for lora_path_or_dict, strength in lora_configs:
-        lora_name = lora_path_or_dict if isinstance(lora_path_or_dict, str) else "dict"
-        lora_state_dict = _load_lora_state_dict(lora_path_or_dict)
-
-        # LoRA format detection + detailed logging (v2.2.3)
-        try:
-            detection = _detect_lora_format(lora_state_dict)
-            _log_lora_format_detection(str(lora_name), detection)
-        except Exception:
-            # Safety: never fail compose due to logging
-            pass
-
-        lora_grouped: Dict[str, Dict[str, torch.Tensor]] = defaultdict(dict)
-        lokr_keys_count = 0
-        standard_keys_count = 0
-        qkv_lokr_keys_count = 0
-        unrecognized_keys = []
-        total_keys = len(lora_state_dict)
-        
-        for key, value in lora_state_dict.items():
-            parsed = _classify_and_map_key(key)
-            if parsed is None:
-                unrecognized_keys.append(key)
-                continue
-
-            group, base_key, comp, ab = parsed
-            if ab in ("lokr_w1", "lokr_w2"):
-                lokr_keys_count += 1
-                # Check if it's QKV format LoKR
-                if group in ("qkv", "add_qkv") and comp is not None:
-                    qkv_lokr_keys_count += 1
-            elif ab in ("A", "B"):
-                standard_keys_count += 1
-                
-            if group in ("qkv", "add_qkv", "glu") and comp is not None:
-                # Handle both standard LoRA (A/B) and LoKR (lokr_w1/lokr_w2) formats
-                if ab in ("lokr_w1", "lokr_w2"):
-                    lora_grouped[base_key][f"{comp}_{ab}"] = value
-                else:
-                    lora_grouped[base_key][f"{comp}_{ab}"] = value
+    # ---------------------------------------------------------------------------------
+    # Auto mapping switching for official Z-Image-Turbo loader (NextDiT / comfy.ldm.lumina)
+    # Without this, LoRAs get mapped to legacy diffusers-style paths (to_qkv/net.0.proj)
+    # and are silently skipped on NextDiT, resulting in "adaLN only" partial application.
+    # ---------------------------------------------------------------------------------
+    global _ACTIVE_KEY_MAPPING
+    prev_mapping = _ACTIVE_KEY_MAPPING
+    try:
+        nextdit_markers = (
+            "layers.0.attention.qkv",
+            "layers.0.attention.out",
+            "layers.0.feed_forward.w1",
+            "layers.0.feed_forward.w2",
+            "layers.0.feed_forward.w3",
+            "layers.0.feed_forward.w13",
+        )
+        is_nextdit_style = any(_get_module_by_name(model, p) is not None for p in nextdit_markers)
+        if is_nextdit_style:
+            has_w13 = _get_module_by_name(model, "layers.0.feed_forward.w13") is not None
+            if has_w13:
+                _ACTIVE_KEY_MAPPING = ZIMAGE_NEXTDIT_NUNCHAKU_PATCHED_KEY_MAPPING + KEY_MAPPING
             else:
-                lora_grouped[base_key][ab] = value
-
-        # Existing lightweight summary is kept at DEBUG to avoid duplicating the v2.2.3 detailed log block.
-        has_lokr = lokr_keys_count > 0
-        has_standard = standard_keys_count > 0
-        if has_lokr and has_standard:
-            lora_format = "Mixed (LoKR + Standard LoRA)"
-        elif has_lokr:
-            lora_format = "LoKR (QKV format)" if qkv_lokr_keys_count > 0 else "LoKR"
-        elif has_standard:
-            lora_format = "Standard LoRA"
+                _ACTIVE_KEY_MAPPING = ZIMAGE_NEXTDIT_UNPATCHED_KEY_MAPPING + KEY_MAPPING
         else:
-            lora_format = "Unknown/Unsupported"
-        logger.debug(f"LoRA summary: {lora_name} | Format: {lora_format} | Strength: {strength:.3f}")
+            _ACTIVE_KEY_MAPPING = None
 
-        # Process grouped weights for this LoRA
-        processed_groups = {}
-        special_handled = set()
-        for base_key, lw in lora_grouped.items():
-            if base_key in special_handled:
-                continue
+        # DEBUG: Inspect all keys in the first LoRA to help debug missing layers (very noisy)
+        # NOTE: User requirement: do NOT hide/remove logs.
+        if lora_configs:
+            first_lora_path_or_dict, first_lora_strength = lora_configs[0]
+            first_lora_state_dict = _load_lora_state_dict(first_lora_path_or_dict)
+            logger.info(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {first_lora_strength}) ---")
+            for key in first_lora_state_dict.keys():
+                parsed_res = _classify_and_map_key(key)
+                if parsed_res:
+                    group, base_key, comp, ab = parsed_res
+                    mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
+                    logger.info(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
+                else:
+                    logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
+            logger.info("--- DEBUG: End key inspection ---")
 
-            # Check if this is LoKR format (lokr_w1, lokr_w2)
-            if "lokr_w1" in lw or "lokr_w2" in lw:
-                # --- EXPERIMENTAL LoKR CODE START ---
-                # The following code block is for experimental LoKR support.
-                # Currently, it does not work correctly with Nunchaku and produces noise.
-                # It has been disabled to prevent issues.
-                """
-                # Try to get module info early for Strategy 5/6 (square matrix case and non-standard cases)
-                resolved_name, module = _resolve_module_name(model, base_key)
-                module_in_features = module.in_features if module is not None and hasattr(module, 'in_features') else None
-                module_out_features = module.out_features if module is not None and hasattr(module, 'out_features') else None
-                A, B, alpha = _convert_lokr_to_lora(lw, module_in_features=module_in_features, module_out_features=module_out_features)
+        aggregated_weights: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+
+        # 1. Aggregate weights from all LoRAs
+        for lora_path_or_dict, strength in lora_configs:
+            lora_name = lora_path_or_dict if isinstance(lora_path_or_dict, str) else "dict"
+            lora_state_dict = _load_lora_state_dict(lora_path_or_dict)
+
+            # LoRA format detection + detailed logging (v2.2.3)
+            try:
+                detection = _detect_lora_format(lora_state_dict)
+                _log_lora_format_detection(str(lora_name), detection)
+            except Exception:
+                # Safety: never fail compose due to logging
+                pass
+
+            lora_grouped: Dict[str, Dict[str, torch.Tensor]] = defaultdict(dict)
+            lokr_keys_count = 0
+            standard_keys_count = 0
+            qkv_lokr_keys_count = 0
+            unrecognized_keys = []
+            total_keys = len(lora_state_dict)
+
+            for key, value in lora_state_dict.items():
+                parsed = _classify_and_map_key(key)
+                if parsed is None:
+                    unrecognized_keys.append(key)
+                    continue
+
+                group, base_key, comp, ab = parsed
+                if ab in ("lokr_w1", "lokr_w2"):
+                    lokr_keys_count += 1
+                    # Check if it's QKV format LoKR
+                    if group in ("qkv", "add_qkv") and comp is not None:
+                        qkv_lokr_keys_count += 1
+                elif ab in ("A", "B"):
+                    standard_keys_count += 1
+
+                if group in ("qkv", "add_qkv", "glu") and comp is not None:
+                    # Handle both standard LoRA (A/B) and LoKR (lokr_w1/lokr_w2) formats
+                    if ab in ("lokr_w1", "lokr_w2"):
+                        lora_grouped[base_key][f"{comp}_{ab}"] = value
+                    else:
+                        lora_grouped[base_key][f"{comp}_{ab}"] = value
+                else:
+                    lora_grouped[base_key][ab] = value
+
+            # Existing lightweight summary is kept at DEBUG to avoid duplicating the v2.2.3 detailed log block.
+            has_lokr = lokr_keys_count > 0
+            has_standard = standard_keys_count > 0
+            if has_lokr and has_standard:
+                lora_format = "Mixed (LoKR + Standard LoRA)"
+            elif has_lokr:
+                lora_format = "LoKR (QKV format)" if qkv_lokr_keys_count > 0 else "LoKR"
+            elif has_standard:
+                lora_format = "Standard LoRA"
+            else:
+                lora_format = "Unknown/Unsupported"
+            logger.debug(f"LoRA summary: {lora_name} | Format: {lora_format} | Strength: {strength:.3f}")
+
+            # Process grouped weights for this LoRA
+            processed_groups = {}
+            special_handled = set()
+            for base_key, lw in lora_grouped.items():
+                if base_key in special_handled:
+                    continue
+
+                # Check if this is LoKR format (lokr_w1, lokr_w2)
+                if "lokr_w1" in lw or "lokr_w2" in lw:
+                    logger.warning(
+                        f"Skipping LoKR weights for {base_key}: LoKR support is currently experimental and disabled due to compatibility issues (produces noise). Please convert LoKR to standard LoRA first."
+                    )
+                    continue
+
+                if "qkv" in base_key:
+                    # Pass model and base_key to _fuse_qkv_lora for actual module inspection
+                    A, B, alpha = (lw.get("A"), lw.get("B"), lw.get("alpha")) if "A" in lw else _fuse_qkv_lora(lw, model=model, base_key=base_key)
+                elif "w1_A" in lw or "w3_A" in lw:  # GLU Fusion detection
+                    A, B, alpha = _fuse_glu_lora(lw)
+                elif ".proj_out" in base_key and "single_transformer_blocks" in base_key:
+                    split_map, consumed_keys = _handle_proj_out_split(lora_grouped, base_key, model)
+                    processed_groups.update(split_map)
+                    special_handled.update(consumed_keys)
+                    continue
+                else:
+                    A, B, alpha = lw.get("A"), lw.get("B"), lw.get("alpha")
+
                 if A is not None and B is not None:
                     processed_groups[base_key] = (A, B, alpha)
+
+            # Warn if no weights were processed for this LoRA
+            if not processed_groups:
+                if lora_format == "Unknown/Unsupported":
+                    logger.error(f"❌ {lora_name}: No weights were processed - LoRA format is unsupported and will be skipped!")
                 else:
-                    logger.warning(f"Failed to convert LoKR weights for {base_key}, skipping")
-                """
-                logger.warning(f"Skipping LoKR weights for {base_key}: LoKR support is currently experimental and disabled due to compatibility issues (produces noise). Please convert LoKR to standard LoRA first.")
-                continue
-                # --- EXPERIMENTAL LoKR CODE END ---
-
-            if "qkv" in base_key:
-                # Pass model and base_key to _fuse_qkv_lora for actual module inspection
-                A, B, alpha = (lw.get("A"), lw.get("B"), lw.get("alpha")) if "A" in lw else _fuse_qkv_lora(lw, model=model, base_key=base_key)
-            elif "w1_A" in lw or "w3_A" in lw: # GLU Fusion detection
-                A, B, alpha = _fuse_glu_lora(lw)
-            elif ".proj_out" in base_key and "single_transformer_blocks" in base_key:
-                split_map, consumed_keys = _handle_proj_out_split(lora_grouped, base_key, model)
-                processed_groups.update(split_map)
-                special_handled.update(consumed_keys)
-                continue
+                    logger.warning(f"⚠️  {lora_name}: No weights were processed - this LoRA will have no effect!")
+                    # Debug: show what keys were grouped but not processed
+                    if lora_grouped:
+                        logger.warning(f"   Debug: {len(lora_grouped)} base keys were grouped but none were processed:")
+                        for bk, lw in list(lora_grouped.items())[:10]:
+                            keys_in_group = list(lw.keys())
+                            logger.warning(f"     - {bk}: keys={keys_in_group}")
+                        if len(lora_grouped) > 10:
+                            logger.warning(f"     ... and {len(lora_grouped) - 10} more grouped keys")
             else:
-                A, B, alpha = lw.get("A"), lw.get("B"), lw.get("alpha")
+                logger.debug(f"   {lora_name}: Processed {len(processed_groups)} module groups")
 
-            if A is not None and B is not None:
-                processed_groups[base_key] = (A, B, alpha)
+            for module_key, (A, B, alpha) in processed_groups.items():
+                aggregated_weights[module_key].append(
+                    {"A": A, "B": B, "alpha": alpha, "strength": strength, "source": lora_name}
+                )
 
-        # Warn if no weights were processed for this LoRA
-        if not processed_groups:
-            if lora_format == "Unknown/Unsupported":
-                logger.error(f"❌ {lora_name}: No weights were processed - LoRA format is unsupported and will be skipped!")
-            else:
-                logger.warning(f"⚠️  {lora_name}: No weights were processed - this LoRA will have no effect!")
-                # Debug: show what keys were grouped but not processed
-                if lora_grouped:
-                    logger.warning(f"   Debug: {len(lora_grouped)} base keys were grouped but none were processed:")
-                    for base_key, lw in list(lora_grouped.items())[:10]:
-                        keys_in_group = list(lw.keys())
-                        logger.warning(f"     - {base_key}: keys={keys_in_group}")
-                    if len(lora_grouped) > 10:
-                        logger.warning(f"     ... and {len(lora_grouped) - 10} more grouped keys")
-        else:
-            logger.debug(f"   {lora_name}: Processed {len(processed_groups)} module groups")
-        for module_key, (A, B, alpha) in processed_groups.items():
-            aggregated_weights[module_key].append(
-                {"A": A, "B": B, "alpha": alpha, "strength": strength, "source": lora_name})
+        # 2. Apply aggregated weights to the model
+        applied_modules_count = 0
 
-    # 2. Apply aggregated weights to the model
-    applied_modules_count = 0
+        for module_name, parts in aggregated_weights.items():
+            resolved_name, module = _resolve_module_name(model, module_name)
+            if module is None:
+                logger.debug(f"[MISS] Module not found: {module_name} (resolved: {resolved_name})")
+                continue
 
-    for module_name, parts in aggregated_weights.items():
-        resolved_name, module = _resolve_module_name(model, module_name)
-        if module is None:
-            logger.debug(f"[MISS] Module not found: {module_name} (resolved: {resolved_name})")
-            continue
-
-        is_awq_w4a16 = (
-            module.__class__.__name__ == "AWQW4A16Linear"
-            and hasattr(module, "qweight")
-            and hasattr(module, "wscales")
-            and hasattr(module, "wzeros")
-            and hasattr(module, "in_features")
-            and hasattr(module, "out_features")
-        )
-
-        # Check if this is img_mod.1 or txt_mod.1
-        is_modulation_layer = (".img_mod.1" in resolved_name or ".txt_mod.1" in resolved_name)
-
-        # Skip AWQ modulation layers by default (unless environment variable is set)
-        if is_awq_w4a16 and is_modulation_layer and not _APPLY_AWQ_MOD:
-            logger.warning(
-                f"[SKIP] {resolved_name}: AWQ modulation layer LoRA is disabled by default (prevents noise). "
-                f"Set QWENIMAGE_LORA_APPLY_AWQ_MOD=1 to force-enable."
+            is_awq_w4a16 = (
+                module.__class__.__name__ == "AWQW4A16Linear"
+                and hasattr(module, "qweight")
+                and hasattr(module, "wscales")
+                and hasattr(module, "wzeros")
+                and hasattr(module, "in_features")
+                and hasattr(module, "out_features")
             )
-            continue
 
-        # Supported module types:
-        # - Nunchaku LoRA-ready modules (proj_down/proj_up)
-        # - nn.Linear (weight update fallback)
-        # - AWQW4A16Linear (forward-path LoRA)
-        if not (hasattr(module, "proj_down") and hasattr(module, "proj_up")) and not isinstance(module, nn.Linear) and not is_awq_w4a16:
-            logger.info(f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})")
-            continue
+            # Check if this is img_mod.1 or txt_mod.1
+            is_modulation_layer = (".img_mod.1" in resolved_name or ".txt_mod.1" in resolved_name)
 
-        all_A = []
-        all_B_scaled = []
-        for part in parts:
-            A, B, alpha, strength = part["A"], part["B"], part["alpha"], part["strength"]
-            r_lora = A.shape[0]
-            scale_alpha = alpha.item() if alpha is not None else float(r_lora)
-            scale = strength * (scale_alpha / max(1.0, float(r_lora)))
+            # Skip AWQ modulation layers by default (unless environment variable is set)
+            if is_awq_w4a16 and is_modulation_layer and not _APPLY_AWQ_MOD:
+                logger.warning(
+                    f"[SKIP] {resolved_name}: AWQ modulation layer LoRA is disabled by default (prevents noise). "
+                    f"Set QWENIMAGE_LORA_APPLY_AWQ_MOD=1 to force-enable."
+                )
+                continue
 
-            if ".norm1.linear" in resolved_name or ".norm1_context.linear" in resolved_name:
-                B = reorder_adanorm_lora_up(B, splits=6)
-            elif ".single_transformer_blocks." in resolved_name and ".norm.linear" in resolved_name:
-                B = reorder_adanorm_lora_up(B, splits=3)
+            # Supported module types:
+            # - Nunchaku LoRA-ready modules (proj_down/proj_up)
+            # - nn.Linear (weight update fallback)
+            # - AWQW4A16Linear (forward-path LoRA)
+            if (
+                not (hasattr(module, "proj_down") and hasattr(module, "proj_up"))
+                and not isinstance(module, nn.Linear)
+                and not is_awq_w4a16
+            ):
+                logger.info(
+                    f"[MISS] Module found but unsupported/missing proj_down/proj_up: {resolved_name} (Type: {type(module)})"
+                )
+                continue
 
-            # Special reorder for modulation layers when force-enabled:
-            # Reorder B to match modulation channel layout (shift/scale/gate × 2).
-            if is_awq_w4a16 and is_modulation_layer and _APPLY_AWQ_MOD:
-                # Expect out_features divisible by 6
-                if B.shape[0] % 6 == 0:
-                    try:
-                        dim = B.shape[0] // 6
-                        B = (
-                            B.contiguous()
-                            .view(6, dim, B.shape[1])
-                            .transpose(0, 1)
-                            .reshape(B.shape[0], B.shape[1])
+            all_A = []
+            all_B_scaled = []
+            for part in parts:
+                A, B, alpha, strength = part["A"], part["B"], part["alpha"], part["strength"]
+                r_lora = A.shape[0]
+                scale_alpha = alpha.item() if alpha is not None else float(r_lora)
+                scale = strength * (scale_alpha / max(1.0, float(r_lora)))
+
+                if ".norm1.linear" in resolved_name or ".norm1_context.linear" in resolved_name:
+                    B = reorder_adanorm_lora_up(B, splits=6)
+                elif ".single_transformer_blocks." in resolved_name and ".norm.linear" in resolved_name:
+                    B = reorder_adanorm_lora_up(B, splits=3)
+
+                # Special reorder for modulation layers when force-enabled:
+                # Reorder B to match modulation channel layout (shift/scale/gate × 2).
+                if is_awq_w4a16 and is_modulation_layer and _APPLY_AWQ_MOD:
+                    # Expect out_features divisible by 6
+                    if B.shape[0] % 6 == 0:
+                        try:
+                            dim = B.shape[0] // 6
+                            B = (
+                                B.contiguous()
+                                .view(6, dim, B.shape[1])
+                                .transpose(0, 1)
+                                .reshape(B.shape[0], B.shape[1])
+                            )
+                        except Exception:
+                            # Safety: never fail due to reorder
+                            pass
+                    else:
+                        logger.warning(
+                            f"{resolved_name}: expected mod up-matrix with out_features divisible by 6, "
+                            f"got B({B.shape[0]}, {B.shape[1]}); skipping mod-channel reorder"
                         )
-                    except Exception:
-                        # Safety: never fail due to reorder
-                        pass
+
+                if hasattr(module, "proj_down"):
+                    target_dtype = module.proj_down.dtype
+                    target_device = module.proj_down.device
+                elif isinstance(module, nn.Linear):
+                    target_dtype = module.weight.dtype
+                    target_device = module.weight.device
                 else:
-                    logger.warning(
-                        f"{resolved_name}: expected mod up-matrix with out_features divisible by 6, "
-                        f"got B({B.shape[0]}, {B.shape[1]}); skipping mod-channel reorder"
-                    )
+                    # AWQ: place LoRA tensors on same device as qweight; compute in fp16 by default.
+                    qweight = getattr(module, "qweight", None)
+                    target_device = qweight.device if torch.is_tensor(qweight) else torch.device("cpu")
+                    target_dtype = torch.float16
 
-            if hasattr(module, "proj_down"):
-                target_dtype = module.proj_down.dtype
-                target_device = module.proj_down.device
-            elif isinstance(module, nn.Linear):
-                target_dtype = module.weight.dtype
-                target_device = module.weight.device
-            else:
-                # AWQ: place LoRA tensors on same device as qweight; compute in fp16 by default.
-                qweight = getattr(module, "qweight", None)
-                target_device = qweight.device if torch.is_tensor(qweight) else torch.device("cpu")
-                target_dtype = torch.float16
+                all_A.append(A.to(dtype=target_dtype, device=target_device))
+                all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
 
-            all_A.append(A.to(dtype=target_dtype, device=target_device))
-            all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
+            if not all_A:
+                continue
 
-        if not all_A:
-            continue
+            final_A = torch.cat(all_A, dim=0)
+            final_B = torch.cat(all_B_scaled, dim=1)
 
-        final_A = torch.cat(all_A, dim=0)
-        final_B = torch.cat(all_B_scaled, dim=1)
+            _apply_lora_to_module(module, final_A, final_B, resolved_name, model)
+            logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
+            applied_modules_count += 1
 
-        _apply_lora_to_module(module, final_A, final_B, resolved_name, model)
-        logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
-        applied_modules_count += 1
+        total_loras = len(lora_configs)
+        # Always output the existing log message
+        logger.info(f"Applied LoRA compositions to {applied_modules_count} modules.")
 
-    total_loras = len(lora_configs)
-    # Always output the existing log message
-    logger.info(f"Applied LoRA compositions to {applied_modules_count} modules.")
-    
-    # Add additional error message if needed (but keep existing log)
-    if total_loras > 0 and applied_modules_count == 0:
-        logger.error(f"❌ No LoRA modules were applied! {total_loras} LoRA(s) were loaded but none matched the model structure.")
-        logger.error("   This may indicate:")
-        logger.error("   - Unsupported LoRA format (check format warnings above)")
-        logger.error("   - LoRA for a different model architecture")
-        logger.error("   - Corrupted or incompatible LoRA file(s)")
+        # Add additional error message if needed (but keep existing log)
+        if total_loras > 0 and applied_modules_count == 0:
+            logger.error(f"❌ No LoRA modules were applied! {total_loras} LoRA(s) were loaded but none matched the model structure.")
+            logger.error("   This may indicate:")
+            logger.error("   - Unsupported LoRA format (check format warnings above)")
+            logger.error("   - LoRA for a different model architecture")
+            logger.error("   - Corrupted or incompatible LoRA file(s)")
+    finally:
+        _ACTIVE_KEY_MAPPING = prev_mapping
 
 def update_lora_params_v2(
         model: torch.nn.Module,

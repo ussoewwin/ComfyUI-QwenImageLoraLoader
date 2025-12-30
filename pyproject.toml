@@ -1,0 +1,42 @@
+[tool.isort]
+profile = "black"
+known_first_party = ["nunchaku"]
+line_length = 120
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.per-file-ignores]
+"tests/scripts/*.py" = ["E402"]
+"tests/legacy_scripts/*.py" = ["E402"]
+"__init__.py" = ["E402"]
+
+[project]
+name = "ComfyUI-QwenImageLoraLoader"
+version = "2.1.1"
+description = "Standalone ComfyUI custom node for Nunchaku QwenImage LoRA loading and diffsynth ControlNet functionality. ComfyUI Nodes 2.0 compatible."
+authors = [{ name = "ussoewwin" }]
+license = { file = "LICENSE" }
+requires-python = ">=3.10, <3.13"
+keywords = ["ComfyUI", "QwenImage", "LoRA"]
+
+[project.urls]
+Repository = "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader"
+
+[tool.comfy]
+PublisherId = "ussoewwin"
+DisplayName = "ComfyUI-Nunchaku QwenImageLoraLoader and Diffsynth ControlNet Loader"
+Icon = "https://raw.githubusercontent.com/nunchaku-tech/nunchaku/96615bd93a1f0d2cf98039fddecfec43ce34cc96/assets/nunchaku.svg"
+
+[tool.doc8]
+max-line-length = 120
+ignore-path = ["docs/_build"]
+ignore = ["D000", "D001"]
+
+[tool.rstcheck]
+ignore_directives = ["tabs"]
+ignore_messages = ["ERROR/3", "INFO/1"]

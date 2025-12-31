@@ -233,6 +233,10 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.2.5 (latest)
 - **Fixed**: Repository recovery - All updates after v2.0.8 were completely broken, and recovery work has been performed to restore all functionality.
+- **Recovery Details**: Restored all deleted files (images/, nodes/, wrappers/, nunchaku_code/, js/, md/, LICENSE, pyproject.toml) from local backups
+- **Feature Verification**: Verified and restored all features from v2.0.8 through v2.2.4 (NextDiT support, AWQ skip logic, toggle buttons, LoRA format detection)
+- **Related Issues**: [Issue #38](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/38), [Issue #37](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/37), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36), [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33)
+- **Technical Details**: See [v2.2.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.5) for complete explanation
 
 ### v2.2.4
 - **Added**: AWQ modulation layer detection and skip logic - `img_mod.1` and `txt_mod.1` layers are detected and LoRA application is skipped by default to prevent noise. Can be overridden with `QWENIMAGE_LORA_APPLY_AWQ_MOD=1` environment variable.

@@ -163,6 +163,17 @@ This recovery addresses multiple issues that arose from the repository corruptio
 
 ✅ **Update to v2.2.5**: All issues are resolved in this release.
 
+### ⚠️ Important: Release ZIP Availability
+
+**All release ZIP files for versions after v2.0.8 have NOT been restored.**
+
+Due to the repository corruption, the release ZIP files for versions v2.0.9 through v2.2.4 are not available. **Only the v2.2.5 release ZIP is available and functional.**
+
+If you need to download the source code:
+- ✅ **Use v2.2.5 release ZIP**: This is the only working release ZIP available for versions after v2.0.8
+- ❌ **Do not use v2.0.9 - v2.2.4 release ZIPs**: These are not available or may be corrupted
+- ✅ **v2.0.8 and earlier**: All release ZIPs for v2.0.8 and earlier versions remain available and functional
+
 ## Apology
 
 We sincerely apologize for the inconvenience caused by the repository corruption incident. The recovery work has been thorough, and we have taken measures to prevent similar incidents in the future.

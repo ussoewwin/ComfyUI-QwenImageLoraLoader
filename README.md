@@ -222,9 +222,9 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### context_refiner and noise_refiner Layer Support
 - **Status**: ❌ **Not Supported**
-- **Issue**: LoRA keys for `context_refiner` and `noise_refiner` layers are **not supported**. These are specialized layers used in Z-Image-Turbo models for refiner functionality.
-- **Details**: The current key mapping system does not include specific mappings for `context_refiner` and `noise_refiner` layers. If you manually modify `KEY_MAPPING` to load these layers, the mapping may not match the actual model structure correctly, leading to inconsistent results compared to loading LoRA on the original model structure.
-- **Conclusion**: At this time, support for `context_refiner` and `noise_refiner` layers is not implemented. Please use LoRAs that target the standard transformer layers only.
+- **Issue**: LoRA keys for `context_refiner` and `noise_refiner` layers are **not currently supported**. These are specialized layers used in Z-Image-Turbo models for refiner functionality.
+- **Details**: We have not tested these layers with actual models that contain them. Because we have not tested them, we cannot determine the correct key mappings for `context_refiner` and `noise_refiner` layers. The current key mapping system does not include specific mappings for these layers, and they **will not work correctly** at this time.
+- **Conclusion**: Support for `context_refiner` and `noise_refiner` layers is not implemented because we have not been able to test them with actual models. Please use LoRAs that target the standard transformer layers only.
 - **Related Issues**: 
   - [Issue #41](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/41) - 无法加载context_refiner和noise_refiner层的参数
 

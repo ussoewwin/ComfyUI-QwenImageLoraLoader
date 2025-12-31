@@ -221,10 +221,10 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - [Issue #29](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/29) - LyCORIS / LoKr Qwen Image LoRA not recognized by ComfyUI
 
 ### context_refiner and noise_refiner Layer Support
-- **Status**: ❌ **Not Supported**
+- **Status**: ❌ **Not Currently Supported**
 - **Issue**: LoRA keys for `context_refiner` and `noise_refiner` layers are **not currently supported**. These are specialized layers used in Z-Image-Turbo models for refiner functionality.
-- **Details**: We have not tested these layers with actual models that contain them. Because we have not tested them, we cannot determine the correct key mappings for `context_refiner` and `noise_refiner` layers. The current key mapping system does not include specific mappings for these layers, and they **will not work correctly** at this time.
-- **Conclusion**: Support for `context_refiner` and `noise_refiner` layers is not implemented because we have not been able to test them with actual models. Please use LoRAs that target the standard transformer layers only.
+- **Details**: We have not tested LoRAs that contain `context_refiner` and `noise_refiner` layers with actual models. Without testing, we cannot determine if correct key mappings are possible for these layers. The current key mapping system does not include mappings for these layers, and they **will not work** at this time.
+- **Conclusion**: Support for `context_refiner` and `noise_refiner` layers is not implemented because we have not been able to test LoRAs containing these layers. Even if we test them, it is unknown whether correct key mappings can be determined. Please use LoRAs that target the standard transformer layers only.
 - **Related Issues**: 
   - [Issue #41](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/41) - 无法加载context_refiner和noise_refiner层的参数
 

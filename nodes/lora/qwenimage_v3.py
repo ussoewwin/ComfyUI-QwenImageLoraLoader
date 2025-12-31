@@ -141,7 +141,11 @@ class NunchakuQwenImageLoraStackV2:
             lora_name = kwargs.get(f"lora_name_{i}")
             lora_strength = kwargs.get(f"lora_strength_{i}", 1.0)
             enabled_individual = kwargs.get(f"enabled_{i}", True)
-            enabled = toggle_all and enabled_individual
+            # Check if this LoRA is enabled (considering both toggle_all and individual enabled_<i>)
+            # If toggle_all is False, still respect individual enabled_<i> settings (individual override)
+            # If toggle_all is True, respect individual enabled_<i> settings
+            # Fixed: Allow individual enabled_<i> to work even when toggle_all is False (Issue #42)
+            enabled = enabled_individual
 
             status_parts = []
             status_parts.append(f"Slot {i}:")

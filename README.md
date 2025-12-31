@@ -226,7 +226,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **Details**: We have not tested LoRAs that contain `context_refiner` and `noise_refiner` layers with actual models. Without testing, we cannot determine if correct key mappings are possible for these layers. The current key mapping system does not include mappings for these layers, and they **will not work** at this time.
 - **Conclusion**: Support for `context_refiner` and `noise_refiner` layers is not implemented because we have not been able to test LoRAs containing these layers. Even if we test them, it is unknown whether correct key mappings can be determined. Please use LoRAs that target the standard transformer layers only.
 - **Related Issues**: 
-  - [Issue #41](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/41) - 无法加载context_refiner和noise_refiner层的参数
+  - [#41](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/41) - 无法加载context_refiner和noise_refiner层的参数
 
 ### RES4LYF Sampler Compatibility Issue
 - **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2

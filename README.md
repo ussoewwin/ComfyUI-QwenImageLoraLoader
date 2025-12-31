@@ -232,10 +232,9 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ## Changelog
 
 ### v2.2.5 (latest)
-- **Fixed**: Repository recovery - All updates after v2.0.8 were completely broken, and recovery work has been performed to restore all functionality.
+- **Fixed**: Repository recovery - All updates after v2.0.8 were completely broken, and recovery work has been performed to restore all functionality. Related to [Issue #38](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/38), [Issue #37](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/37), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36), and [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33)
 - **Recovery Details**: Restored all deleted files (images/, nodes/, wrappers/, nunchaku_code/, js/, md/, LICENSE, pyproject.toml) from local backups
 - **Feature Verification**: Verified and restored all features from v2.0.8 through v2.2.4 (NextDiT support, AWQ skip logic, toggle buttons, LoRA format detection)
-- **Related Issues**: [Issue #38](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/38), [Issue #37](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/37), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36), [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33)
 - **Technical Details**: See [v2.2.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.5) for complete explanation
 
 ### v2.2.4
@@ -244,7 +243,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **Technical Details**: See [v2.2.4 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.4) for complete explanation
 
 ### v2.2.3
-- **Added**: Toggle buttons to enable/disable individual LoRA slots and all LoRAs at once ([Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36))
+- **Added**: Toggle buttons to enable/disable individual LoRA slots and all LoRAs at once. Resolved [Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12) and [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36)
 - ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuZImageTurboLoraStackV3` node only. ComfyUI Nodes 2.0 environment only. With current technical capabilities, it is not possible to fully implement all requested features in JavaScript.
 - **Technical Details**: See [v2.2.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3) for complete explanation
 

@@ -220,6 +220,14 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **Related Issues**: 
   - [Issue #29](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/29) - LyCORIS / LoKr Qwen Image LoRA not recognized by ComfyUI
 
+### context_refiner and noise_refiner Layer Support
+- **Status**: ❌ **Not Supported**
+- **Issue**: LoRA keys for `context_refiner` and `noise_refiner` layers are **not supported**. These are specialized layers used in Z-Image-Turbo models for refiner functionality.
+- **Details**: The current key mapping system does not include specific mappings for `context_refiner` and `noise_refiner` layers. If you manually modify `KEY_MAPPING` to load these layers, the mapping may not match the actual model structure correctly, leading to inconsistent results compared to loading LoRA on the original model structure.
+- **Conclusion**: At this time, support for `context_refiner` and `noise_refiner` layers is not implemented. Please use LoRAs that target the standard transformer layers only.
+- **Related Issues**: 
+  - [Issue #41](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/41) - 无法加载context_refiner和noise_refiner层的参数
+
 ### RES4LYF Sampler Compatibility Issue
 - **Status**: ✅ Fixed in ComfyUI-nunchaku v1.0.2
 - **Issue**: Device mismatch errors occurred when using RES4LYF sampler with LoRA ([Issue #7](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/7), [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8))
@@ -244,7 +252,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.2.3
 - **Added**: Toggle buttons to enable/disable individual LoRA slots and all LoRAs at once. Resolved [Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12) and [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36)
-- ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuZImageTurboLoraStackV3` node only. ComfyUI Nodes 2.0 environment only. With current technical capabilities, it is not possible to fully implement all requested features in JavaScript.
+- ⚠️ **DEVELOPMENT STATUS**: These features are currently experimental implementations for the `NunchakuQwenImageLoraStackV3` and `NunchakuZImageTurboLoraStackV3` nodes. ComfyUI Nodes 2.0 environment only. With current technical capabilities, it is not possible to fully implement all requested features in JavaScript.
 - **Technical Details**: See [v2.2.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.3) for complete explanation
 
 ### v2.2.2

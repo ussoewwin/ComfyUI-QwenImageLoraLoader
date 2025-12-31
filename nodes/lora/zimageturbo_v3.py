@@ -140,7 +140,10 @@ class NunchakuZImageTurboLoraStackV2:
             lora_strength = kwargs.get(f"lora_strength_{i}", 1.0)
             enabled_individual = kwargs.get(f"enabled_{i}", True)
             # Check if this LoRA is enabled (considering both toggle_all and individual enabled_<i>)
-            enabled = toggle_all and enabled_individual
+            # If toggle_all is False, still respect individual enabled_<i> settings (individual override)
+            # If toggle_all is True, respect individual enabled_<i> settings
+            # Fixed: Allow individual enabled_<i> to work even when toggle_all is False (Issue #42)
+            enabled = enabled_individual
             
             # Log each LoRA slot status
             status_parts = []

@@ -195,7 +195,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 **How to Verify**: After updating, restart ComfyUI and try loading your model again. The error should be resolved.
 
-**Related Issue**: [Issue #38](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/38)
+**Related Issues**: [Issue #38](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/38), [Issue #40](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/40)
 
 ## Known Limitations
 

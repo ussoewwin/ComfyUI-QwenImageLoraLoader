@@ -149,7 +149,7 @@ This node is designed to work with:
 2. Follow the nunchaku installation instructions to install the nunchaku wheel
 3. Restart ComfyUI
 
-### Issue #25: ComfyUI 0.4.0 Model Management Errors
+### Issue #25: ComfyUI 0.4.0+ Model Management Errors
 - **Status**: ⚠️ **Environment Dependent** - May require ComfyUI core fixes
 
 For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md).
@@ -157,9 +157,9 @@ For detailed information, see [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMF
 - **Related Issues**: 
   - [Issue #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25) - `AttributeError: 'NunchakuModelPatcher' object has no attribute 'pinned'` and deepcopy errors with `model_config`
   - [Issue #33](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/33) - `AttributeError: 'NoneType' object has no attribute 'to'` in `to_safely` method (Fixed in v2.1.0)
-  - [ComfyUI Issue #6590](https://github.com/comfyanonymous/ComfyUI/issues/6590): `'NoneType' object has no attribute 'shape'`
-  - [ComfyUI Issue #6600](https://github.com/comfyanonymous/ComfyUI/issues/6600): `'NoneType' object is not callable` (Loader-related)
-  - [ComfyUI Issue #6532](https://github.com/comfyanonymous/ComfyUI/issues/6532): Crash after referencing models after model unload
+  - [ComfyUI Issue #6590](https://github.com/comfyanonymous/ComfyUI/issues/6590) - `'NoneType' object has no attribute 'shape'`
+  - [ComfyUI Issue #6600](https://github.com/comfyanonymous/ComfyUI/issues/6600) - `'NoneType' object is not callable` (Loader-related)
+  - [ComfyUI Issue #6532](https://github.com/comfyanonymous/ComfyUI/issues/6532) - Crash after referencing models after model unload
 
 ### Issue #30: TypeError: got multiple values for argument 'guidance' (v2.0+)
 

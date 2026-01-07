@@ -167,21 +167,26 @@ class ComfyZImageTurboWrapper(nn.Module):
             elif self.cpu_offload_setting == "enable" and offload_is_on:
                 logger.debug("CPU offload is 'enable'. Will rebuild offload manager for LoRAs.")
 
-            # Compose LoRAs. This changes internal tensor shapes.
-            compose_loras_v2(self.model, self.loras)
+            # 4. Compose LoRAs. This changes internal tensor shapes.
+            # Returns True if successful (supported format), False if unsupported (skipped).
+            is_supported_format = compose_loras_v2(self.model, self.loras)
 
             # Validate composition result; if 0 targets after a crash/transition, retry once
+            # But ONLY if the format was supported. If unsupported, retrying is pointless.
             try:
                 has_slots = hasattr(self.model, "_lora_slots") and bool(self.model._lora_slots)
             except Exception:
                 has_slots = True
-            if self.loras and not has_slots:
-                logger.warning("LoRA composition reported 0 target modules. Forcing reset and one retry.")
+            
+            if self.loras and not has_slots and is_supported_format:
+                logger.warning("LoRA composition reported 0 target modules (supported format). Forcing reset and one retry.")
                 try:
                     reset_lora_v2(self.model)
                     compose_loras_v2(self.model, self.loras)
                 except Exception as e:
                     logger.error(f"LoRA re-compose retry failed: {e}")
+            elif self.loras and not has_slots and not is_supported_format:
+                logger.info("Skipping retry because LoRA format is unsupported.")
 
             # Re-build offload manager if it's supposed to be on
             if should_enable_offload:

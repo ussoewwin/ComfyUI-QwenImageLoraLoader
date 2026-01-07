@@ -292,10 +292,6 @@ The peak memory usage is the same, but we avoid the intermediate garbage collect
 4. **Memory efficient**: No increase in peak memory usage
 5. **Backward compatible**: Works with all existing LoRA files and workflows
 
-**Related Documentation**:
-- `optimization_report_lora_loading.md` - Detailed implementation explanation (Japanese)
-- `speed_improvement_proposal.md` - Additional optimization proposals for future improvements
-
 **Modified Files**
 
 `ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader/nunchaku_code/lora_qwen.py`

@@ -220,7 +220,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - ❌ **IA3**: Not supported
 - **Related Issues**: 
   - [Issue #29](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/29) - LyCORIS / LoKr Qwen Image LoRA not recognized by ComfyUI
-  - [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - [MISS] Module found but unsupported/missing proj_down/proj_up (freeze issue fixed in v2.2.8)
+  - [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - [MISS] Module found but unsupported/missing proj_down/proj_up (performance slowdown issue fixed in v2.2.8)
 
 ### context_refiner and noise_refiner Layer Support
 - **Status**: ❌ **Not Currently Supported**
@@ -244,7 +244,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ## Changelog
 
 ### v2.2.8 (latest)
-- **Fixed**: Resolved [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) – Fixed freeze issue when loading unsupported LoRA formats (SD1.5, LoKR, LoHa, etc.). Unsupported formats are now detected early and detailed key inspection is skipped to prevent console freeze. Retry logic is also skipped for unsupported formats to prevent duplicate logging
+- **Fixed**: Resolved [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) – Fixed performance slowdown issue when loading unsupported LoRA formats (LoKR, LoHa, IA3, etc.). Unsupported formats are now detected early and detailed key inspection is skipped to prevent console slowdown. Retry logic is also skipped for unsupported formats to prevent duplicate logging
 - **Technical Details**: See [v2.2.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.8) for complete explanation
 
 ### v2.2.7

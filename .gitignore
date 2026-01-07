@@ -72,3 +72,6 @@ Thumbs.db
 PR34_COMFYUI_V0.6.0_COMPATIBILITY.md
 # Ignore Japanese version in root, but allow English version in md/ folder
 /ZIMAGETURBO_CONTROLNET_FIX.md
+
+# Ignore log adjustment guide
+md/log_adjustment_guide.md

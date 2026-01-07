@@ -203,6 +203,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **Status**: ❌ **Not Supported**
 - **Issue**: LoRAs in LoKR format (created by Lycoris) are **not supported**.
   - **Important Note**: This limitation applies specifically to **Nunchaku quantization models**. LoKR format LoRAs may work with standard (non-quantized) Qwen Image models, but this node is designed for Nunchaku models only.
+  - ⚠️ **Development History**: **We have spent considerable time analyzing the internal structure of LoKR format and performing extensive mapping tests. Despite these efforts, we have not been able to find a successful way to apply LoKR weights to Nunchaku quantization models.** The experimental conversion code has been tested but ultimately disabled due to incompatibility issues.
   - LoKR weights are automatically skipped when detected (experimental conversion code is disabled).
   - Converting to Standard LoRA using SVD approximation (via external tools or scripts) has also been tested and **found to result in noise/artifacts** when applied to Nunchaku quantization models.
 - **Conclusion**: At this time, we have not found a way to successfully apply LoKR weights to Nunchaku models. Please use Standard LoRA formats.
@@ -219,6 +220,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - ❌ **IA3**: Not supported
 - **Related Issues**: 
   - [Issue #29](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/29) - LyCORIS / LoKr Qwen Image LoRA not recognized by ComfyUI
+  - [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - [MISS] Module found but unsupported/missing proj_down/proj_up (freeze issue fixed in v2.2.8)
 
 ### context_refiner and noise_refiner Layer Support
 - **Status**: ❌ **Not Currently Supported**

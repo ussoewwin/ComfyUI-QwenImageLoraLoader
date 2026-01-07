@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.2.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.6)
+> Latest release: [v2.2.7 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.7)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -241,7 +241,11 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.2.6 (latest)
+### v2.2.7 (latest)
+- **Performance**: LoRA loading speed improvement - Implemented optimization by eliminating duplicate file reads. The first LoRA file loaded for debug logging is now cached and reused in actual processing, eliminating duplicate file I/O and deserialization operations
+- **Technical Details**: See [v2.2.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.7) for complete explanation
+
+### v2.2.6
 - **Fixed**: Resolved [Issue #43](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/43) – Fixed `TypeError: QwenTimestepProjEmbeddings.forward() takes 3 positional arguments but 4 were given` error by forcing `guidance=None` after converting to `additional_t_cond` to prevent ComfyUI-nunchaku's buggy code path from executing
 - **Technical Details**: See [v2.2.6 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.6) for complete explanation
 

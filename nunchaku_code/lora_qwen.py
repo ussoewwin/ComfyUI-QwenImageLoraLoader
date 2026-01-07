@@ -267,6 +267,11 @@ KEY_MAPPING = [
     (re.compile(r"^(time_text_embed)[._](timestep_embedder)[._](linear_1)$"), r"\1.\2.\3", "regular", None),
     (re.compile(r"^(time_text_embed)[._](timestep_embedder)[._](linear_2)$"), r"\1.\2.\3", "regular", None),
 ]
+
+
+
+
+
 _RE_LORA_SUFFIX = re.compile(r"\.(?P<tag>lora(?:[._](?:A|B|down|up)))(?:\.[^.]+)*\.weight$")
 _RE_LOKR_SUFFIX = re.compile(r"\.(?P<tag>lokr_w[12])(?:\.[^.]+)*$")
 _RE_ALPHA_SUFFIX = re.compile(r"\.(?:alpha|lora_alpha)(?:\.[^.]+)*$")
@@ -316,6 +321,7 @@ def _rename_layer_underscore_layer_name(old_name: str) -> str:
         new_name = re.sub(pattern, replacement, new_name)
 
     return new_name
+
 
 def _classify_and_map_key(key: str) -> Optional[Tuple[str, str, Optional[str], str]]:
     """
@@ -1188,9 +1194,12 @@ def compose_loras_v2(
 
         # DEBUG: Inspect all keys in the first LoRA to help debug missing layers (very noisy)
         # NOTE: User requirement: do NOT hide/remove logs.
+        # OPTIMIZATION: Cache first LoRA state dict for reuse in processing loop
+        _cached_first_lora_state_dict = None
         if lora_configs:
             first_lora_path_or_dict, first_lora_strength = lora_configs[0]
             first_lora_state_dict = _load_lora_state_dict(first_lora_path_or_dict)
+            _cached_first_lora_state_dict = first_lora_state_dict  # Cache for reuse
             logger.info(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {first_lora_strength}) ---")
             for key in first_lora_state_dict.keys():
                 parsed_res = _classify_and_map_key(key)
@@ -1205,9 +1214,13 @@ def compose_loras_v2(
         aggregated_weights: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
 
         # 1. Aggregate weights from all LoRAs
-        for lora_path_or_dict, strength in lora_configs:
+        for idx, (lora_path_or_dict, strength) in enumerate(lora_configs):
             lora_name = lora_path_or_dict if isinstance(lora_path_or_dict, str) else "dict"
-            lora_state_dict = _load_lora_state_dict(lora_path_or_dict)
+            # OPTIMIZATION: Reuse cached first LoRA state dict to avoid duplicate file I/O
+            if idx == 0 and _cached_first_lora_state_dict is not None:
+                lora_state_dict = _cached_first_lora_state_dict
+            else:
+                lora_state_dict = _load_lora_state_dict(lora_path_or_dict)
 
             # LoRA format detection + detailed logging (v2.2.3)
             try:

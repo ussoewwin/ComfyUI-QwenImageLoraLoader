@@ -244,7 +244,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ### v2.2.7 (latest)
 - **Performance**: LoRA loading speed improvement - Implemented optimization by eliminating duplicate file reads. The first LoRA file loaded for debug logging is now cached and reused in actual processing, eliminating duplicate file I/O and deserialization operations
 - **Technical Details**: See [v2.2.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/2.2.7) for complete explanation
-- **Acknowledgments**: 本次改进参考了zhihu.com上Jimmy先生发表的文章《【closerAI ComfyUI】nunchakuV1.1支持z-image+支持zimage-LORA的修复方案，短板一次性补全，nunchaku zimage全面高速生图解决方案！》。虽然我的解决方案可能与Jimmy先生的方案存在差异，但这促使我意识到在速度优化方面仍有提升空间。借此机会向Jimmy先生致以诚挚谢意。
+- **Acknowledgments**: 本次性能改进参考了知乎（zhihu.com）上 Jimmy 先生发表的文章《【closerAI ComfyUI】nunchaku V1.1 支持 z-image + 支持 zimage-LoRA 的修复方案，短板一次性补全，nunchaku zimage 全面高速生图解决方案！》。虽然本项目采用的实现方案在具体设计与实现细节上可能与 Jimmy 先生的方案有所不同，但该文章促使我重新审视 LoRA 加载流程中的性能瓶颈，并意识到在速度优化方面仍然存在改进空间。借此机会，谨向 Jimmy 先生表示诚挚的感谢。
 
 ### v2.2.6
 - **Fixed**: Resolved [Issue #43](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/43) – Fixed `TypeError: QwenTimestepProjEmbeddings.forward() takes 3 positional arguments but 4 were given` error by forcing `guidance=None` after converting to `additional_t_cond` to prevent ComfyUI-nunchaku's buggy code path from executing

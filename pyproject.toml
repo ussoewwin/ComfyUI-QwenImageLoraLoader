@@ -17,8 +17,8 @@ line-length = 120
 
 [project]
 name = "ComfyUI-QwenImageLoraLoader"
-version = "2.3.0"
-description = "Standalone ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image and Universal models via UniversalLoraStack, and diffsynth ControlNet functionality. ComfyUI Nodes 2.0 compatible."
+version = "2.3.1"
+description = "Standalone ComfyUI custom node for Nunchaku QwenImage and Z-ImageTurbo LoRA loading and diffsynth ControlNet functionality. ComfyUI Nodes 2.0 compatible."
 authors = [{ name = "ussoewwin" }]
 license = { file = "LICENSE" }
 requires-python = ">=3.10, <3.13"
@@ -29,7 +29,7 @@ Repository = "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader"
 
 [tool.comfy]
 PublisherId = "ussoewwin"
-DisplayName = "ComfyUI-Nunchaku QwenImage＆UniversalLoraStack and Diffsynth ControlNet Loader"
+DisplayName = "ComfyUI-Nunchaku QwenImage&Z-ImageTurboLoraStack and Diffsynth ControlNet Loader"
 Icon = "https://raw.githubusercontent.com/nunchaku-tech/nunchaku/96615bd93a1f0d2cf98039fddecfec43ce34cc96/assets/nunchaku.svg"
 
 [tool.doc8]

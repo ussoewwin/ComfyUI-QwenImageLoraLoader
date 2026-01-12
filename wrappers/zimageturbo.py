@@ -73,6 +73,20 @@ class ComfyZImageTurboWrapper(nn.Module):
             self.model.to(device)
         return self
 
+    def __getattr__(self, name):
+        """Delegate attribute access to the wrapped model (e.g., layers, config, etc.)."""
+        # Delegate attributes that don't exist on this wrapper to the wrapped model (NextDiT)
+        # This allows ZImageModelPatcher and other code to access NextDiT attributes like 'layers'
+        # Note: 'model' is a normal attribute set in __init__, so __getattr__ should not be called for it
+        # Use super().__getattribute__ to access 'model' through nn.Module's attribute system
+        try:
+            model = super().__getattribute__('model')
+            if model is not None:
+                return getattr(model, name)
+        except AttributeError:
+            pass
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
     def forward(
             self,
             x,

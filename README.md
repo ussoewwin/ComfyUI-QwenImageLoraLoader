@@ -37,7 +37,6 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuQwenImageLoraStackV3**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuZImageTurboLoraStackV4**: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible
-- **NunchakuQI&ZITDiffsynthControlnet**: Diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models (v2.0)
 
 ### Basic Usage
 

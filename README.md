@@ -60,16 +60,6 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 
 The `NunchakuQwenImageLoraStack` and `NunchakuZImageTurboLoraStackV3` nodes automatically adjust the number of visible LoRA slots based on the `lora_count` parameter (1-10).
 
-### Diffsynth ControlNet Usage
-
-<img src="png/diffsynth.png" alt="Diffsynth ControlNet Usage" width="400">
-
-1. Load your diffsynth ControlNet model patch using `Model Patch Loader` from [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)
-2. The `Model Patch Loader` (`ModelPatchLoaderCustom`) supports CPU offload, allowing you to load ControlNet patches to CPU memory to save VRAM
-3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
-4. Connect your Nunchaku Qwen Image model, VAE, and control image
-5. Set the ControlNet strength and connect to your workflow
-
 ## Features
 
 - **Easy Installation**: Simple git clone installation

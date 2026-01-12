@@ -21,20 +21,6 @@ This LoRA loader was extracted and modified from GavChap's fork:
 
 For detailed technical explanation, see [v2.2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.2.0)
 
-## 🎉 MAJOR UPDATE: v2.0 - Diffsynth ControlNet Support Added!
-
-**As of v2.0, diffsynth ControlNet is now fully supported for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.**
-
-A new dedicated node `NunchakuQI&ZITDiffsynthControlnet` enables diffsynth ControlNet functionality with Nunchaku quantized Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models.
-
-### What's New in v2.0
-- ✅ **New Node**: `NunchakuQI&ZITDiffsynthControlnet` - Dedicated diffsynth ControlNet loader for Nunchaku Qwen Image models, Z Image Turbo BF16.safetensors, and Nunchaku Z Image Turbo models
-- ✅ **Full ControlNet Support**: Works with standard diffsynth ControlNet models
-- ✅ **Seamless Integration**: Automatically applies ControlNet patches during model forward pass
-- ✅ **Backward Compatible**: All existing LoRA functionality remains unchanged
-
-For detailed technical explanation, see [v2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.0)
-
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
 For installation instructions, features, and requirements, see [Installation Guide](md/installation.md).

@@ -55,17 +55,6 @@ try:
 except ImportError:
     logger.exception("LoRA nodes import failed:")
 
-# Try to import ControlNet node separately - it may fail if comfy.ldm.lumina.controlnet is not available
-try:
-    from .nodes.controlnet import NunchakuQwenImageDiffsynthControlnet
-    NunchakuQwenImageDiffsynthControlnet.__version__ = __version__
-    NODE_CLASS_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = NunchakuQwenImageDiffsynthControlnet
-    logger.info("✅ ControlNet node loaded successfully")
-except ImportError:
-    logger.warning("⚠️ ControlNet node not available (comfy.ldm.lumina.controlnet not found). LoRA nodes will still work.")
-except Exception as e:
-    logger.warning(f"⚠️ ControlNet node failed to load: {e}. LoRA nodes will still work.")
-
 NODE_DISPLAY_NAME_MAPPINGS = {
     "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
     "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
@@ -77,10 +66,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     # **ZIMAGETURBO_V3_NAMES,
     **ZIMAGETURBO_V4_NAMES
 }
-
-# Add ControlNet display name only if the node was successfully loaded
-if "NunchakuQwenImageDiffsynthControlnet" in NODE_CLASS_MAPPINGS:
-    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "NunchakuQI&ZITDiffsynthControlnet"
 
 # Register JavaScript extensions
 WEB_DIRECTORY = "js"

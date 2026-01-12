@@ -241,6 +241,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.3.0 (latest)
 - **Added**: UniversalLoraStack V4 - Standard ComfyUI LoRA loading mechanism support
+- **Removed**: Z-ImageTurbo Loader v3 registration - Removed from ComfyUI node registration
 - **Technical Details**: See [v2.3.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.0) for complete explanation
 
 ### v2.2.8

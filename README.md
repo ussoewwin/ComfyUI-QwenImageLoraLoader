@@ -1,6 +1,6 @@
-# ComfyUI-Nunchaku QwenImage＆ZImageTurboLoraStack and Diffsynth ControlNet Loader
+# ComfyUI-Nunchaku QwenImage＆ZImageTurboLoraStack
 
-A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image and Z-ImageTurbo models, and diffsynth ControlNet functionality. ComfyUI Nodes 2.0 compatible.
+A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image and Z-ImageTurbo models. ComfyUI Nodes 2.0 compatible.
 
 ## ⚠️ **DEVELOPMENT STATUS**
 

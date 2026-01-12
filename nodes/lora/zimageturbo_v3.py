@@ -128,6 +128,18 @@ class NunchakuZImageTurboLoraStackV2:
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. V3 is for official Nunchaku Z-Image loader only. For unofficial loader, use V2."
 
     def load_lora_stack(self, model, lora_count, cpu_offload="disable", toggle_all=True, **kwargs):
+        """
+        Apply multiple LoRAs to a Nunchaku Z-Image-Turbo diffusion model.
+        Uses ComfyUI standard load_lora_for_models mechanism (compatible with new ZImageModelPatcher).
+        """
+        # Import standard ComfyUI LoRA loader
+        try:
+            from comfy.sd import load_lora_for_models
+            import comfy.utils
+        except ImportError:
+            logger.error("Failed to import standard ComfyUI LoRA loader. Please ensure ComfyUI is properly installed.")
+            raise
+
         loras_to_apply = []
         
         # Log toggle_all state
@@ -172,100 +184,68 @@ class NunchakuZImageTurboLoraStackV2:
         if not loras_to_apply:
             return (model,)
 
-        model_wrapper = model.model.diffusion_model
-
-        # Dynamic import with explicit path manipulation
-        import sys
-        import importlib.util
-        lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        if lora_loader_dir not in sys.path:
-            sys.path.insert(0, lora_loader_dir)
-        
-        spec = importlib.util.spec_from_file_location(
-            "wrappers.zimageturbo",
-            os.path.join(lora_loader_dir, "wrappers", "zimageturbo.py")
-        )
-        wrappers_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(wrappers_module)
-        ComfyZImageTurboWrapper = wrappers_module.ComfyZImageTurboWrapper
-        
-        from nunchaku import NunchakuZImageTransformer2DModel
-        
-        # Debug logging
-        model_wrapper_type_name = type(model_wrapper).__name__
-        model_wrapper_module = type(model_wrapper).__module__
-        logger.info(f"🔍 Model wrapper type: '{model_wrapper_type_name}'")
-        logger.info(f"🔍 Model wrapper module: {model_wrapper_module}")
-        logger.info(f"🔍 Type repr: {repr(type(model_wrapper))}")
-        logger.info(f"🔍 Has 'model' attr? {hasattr(model_wrapper, 'model')}")
-        logger.info(f"🔍 Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
-        
-        # Check if it's already wrapped
-        # ComfyZImageTurboWrapper has a 'model' attribute that contains the transformer
-        # and a 'loras' list attribute
-        if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
-            # Already wrapped, proceed normally
-            logger.info("✅ Model is already wrapped (detected via attributes)")
-            logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
-            # Update CPU offload setting if different
-            if model_wrapper.cpu_offload_setting != cpu_offload:
-                logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
-                model_wrapper.cpu_offload_setting = cpu_offload
-            transformer = model_wrapper.model
-        elif model_wrapper_type_name == "NextDiT" and model_wrapper_module == "comfy.ldm.lumina.model":
-            # Official Nunchaku loader uses ComfyUI Lumina2 / NextDiT signature.
-            # Our ComfyZImageTurboWrapper now supports both NextDiT and Z-Image signatures.
-            logger.info("🔧 Official loader detected (NextDiT), wrapping with ComfyZImageTurboWrapper")
-            transformer = model_wrapper
-            logger.info(f"📦 Creating ComfyZImageTurboWrapper for NextDiT with cpu_offload='{cpu_offload}'")
-            wrapped_model = ComfyZImageTurboWrapper(
-                transformer,
-                getattr(transformer, 'config', {}),
-                None,  # customized_forward
-                {},    # forward_kwargs
-                cpu_offload,  # cpu_offload_setting
-                4.0,   # vram_margin_gb
-            )
-
-            # Replace the model's diffusion_model with our wrapper
-            model.model.diffusion_model = wrapped_model
-            model_wrapper = wrapped_model
-            transformer = model_wrapper.model
-        else:
-            logger.error(f"❌ Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
-            logger.error("V3 is for official Nunchaku Z-Image DiT Loader only. For unofficial loader, please use V2.")
-            raise TypeError(f"This LoRA loader (V3) only works with official Nunchaku Z-Image loader, but got {model_wrapper_type_name}.")
-
-        # Flux-style deepcopy
-        # Save config before deepcopy to avoid __setstate__ errors
-        saved_config = None
-        if hasattr(model, 'model') and hasattr(model.model, 'model_config'):
-            saved_config = model.model.model_config
-            model.model.model_config = None
-        
-        model_wrapper.model = None
+        # Import mapping debug functions from nunchaku_code.lora_qwen
         try:
-            ret_model = copy.deepcopy(model)
-        finally:
-            # Restore config and model
-            if saved_config is not None:
-                model.model.model_config = saved_config
-            model_wrapper.model = transformer
-        
-        ret_model_wrapper = ret_model.model.diffusion_model
-        # Restore config in copied model if it was saved
-        if saved_config is not None:
-            ret_model.model.model_config = saved_config
-        ret_model_wrapper.model = transformer
+            # Use lora_loader_dir that was set at module level
+            if lora_loader_dir not in sys.path:
+                sys.path.insert(0, lora_loader_dir)
+            
+            from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format
+        except ImportError as e:
+            logger.warning(f"Failed to import mapping debug functions: {e}")
+            logger.warning("Mapping debug logs will be skipped.")
+            _classify_and_map_key = None
+            _load_lora_state_dict = None
+            _detect_lora_format = None
 
-        ret_model_wrapper.loras = model_wrapper.loras.copy()
+        # DEBUG: Inspect all keys in the first LoRA (mapping debug logs)
+        if loras_to_apply and _classify_and_map_key and _load_lora_state_dict and _detect_lora_format:
+            first_lora_name, first_lora_strength = loras_to_apply[0]
+            try:
+                first_lora_path = folder_paths.get_full_path_or_raise("loras", first_lora_name)
+                first_lora_state_dict = _load_lora_state_dict(first_lora_path)
+                logger.info(f"--- DEBUG: Inspecting keys for LoRA 1: '{first_lora_name}' (Strength: {first_lora_strength}) ---")
+                
+                # Check format first (same optimization as v3)
+                _first_detection = _detect_lora_format(first_lora_state_dict)
+                if _first_detection["has_standard"]:
+                    # Standard format (or mixed): Log EVERYTHING as requested.
+                    for key in first_lora_state_dict.keys():
+                        parsed_res = _classify_and_map_key(key)
+                        if parsed_res:
+                            group, base_key, comp, ab = parsed_res
+                            mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
+                            logger.info(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
+                        else:
+                            logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
+                else:
+                    # Unsupported format only: Skip loop to prevent freeze.
+                    logger.warning(f"⚠️  Unsupported LoRA format detected (No standard keys).")
+                    logger.warning(f"   Skipping detailed key inspection of {len(first_lora_state_dict)} keys to prevent console freeze.")
+                    logger.warning(f"   Note: This LoRA will likely have no effect or will be skipped entirely.")
+                
+                logger.info("--- DEBUG: End key inspection ---")
+            except Exception as e:
+                logger.warning(f"Failed to inspect LoRA keys for debugging: {e}")
 
+        # Use standard ComfyUI LoRA loading mechanism (compatible with new ZImageModelPatcher)
+        # Start with the original model
+        ret_model = model
+
+        # Apply each LoRA using standard ComfyUI mechanism
         for lora_name, lora_strength in loras_to_apply:
             lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-            ret_model_wrapper.loras.append((lora_path, lora_strength))
-            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength})")
+            logger.debug(f"Loading LoRA: {lora_name} (strength={lora_strength})")
+            
+            # Load LoRA file
+            lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
+            
+            # Apply LoRA using standard ComfyUI mechanism (MODEL only, no CLIP)
+            # load_lora_for_models(model, clip, lora, strength_model, strength_clip)
+            ret_model, _ = load_lora_for_models(ret_model, None, lora, lora_strength, 0)
+            logger.debug(f"LoRA loaded successfully: {lora_name}")
 
-        logger.info(f"Total LoRAs in stack: {len(ret_model_wrapper.loras)}")
+        logger.info(f"Total LoRAs applied: {len(loras_to_apply)}")
 
         return (ret_model,)
 

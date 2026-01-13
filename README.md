@@ -51,6 +51,8 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 
 - **NunchakuZImageTurboLoraStackV4**: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible
 
+<img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">
+
 ### Basic Usage
 
 **For Nunchaku Qwen Image models:**

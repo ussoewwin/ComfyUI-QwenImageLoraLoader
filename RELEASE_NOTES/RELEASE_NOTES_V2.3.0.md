@@ -116,16 +116,16 @@ def _classify_and_map_key(key: str) -> Optional[Tuple[str, str, Optional[str], s
 
 **4. Why It's Called "Perfect Mapping" (Standard LoRA Format Only)**
 
-**Important**: "Perfect mapping" refers specifically to **Standard LoRA format** (A/B matrices). For other formats like LoKR, LoHa, IA3, etc., the mapping may be incomplete or unsupported.
+**Important**: "Perfect mapping" refers specifically to **Standard LoRA format** (A/B matrices). For other formats like LoKR, LoHa, IA3, etc., perfect mapping is **not possible** - these formats are fundamentally incompatible with the perfect mapping mechanism.
 
 For Standard LoRA format:
 - **Complete Coverage**: All Standard LoRA keys (A/B matrices) are correctly mapped to the NextDiT model structure
-- **No Silent Failures**: Unlike the official implementation, no Standard LoRA keys are silently skipped
+- **No Silent Failures**: Unlike the standard loader, no Standard LoRA keys are silently skipped
 - **Automatic Detection**: Detects nunchaku-patched vs unpatched NextDiT automatically
 - **QKV Fusion**: Correctly handles fused QKV attention layers (maps `to_q`, `to_k`, `to_v` → `qkv`)
 - **GLU Fusion**: Correctly handles fused GLU feed-forward layers (maps `w1`, `w3` → `w13` for patched models)
 
-**Note on Other Formats**: LoKR (lokr_w1/lokr_w2) and other formats are supported but may not achieve the same level of mapping completeness as Standard LoRA format.
+**Note on Other Formats**: LoKR (lokr_w1/lokr_w2) and other formats are supported but **cannot achieve perfect mapping** - they fall back to standard loader behavior which may have incomplete mapping.
 
 **5. Code Flow in v4**
 

@@ -60,13 +60,6 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 4. Select your LoRA file and set the strength
 5. Connect to your workflow
 
-### Dynamic UI Control
-
-<img src="images/qilorastacker.png" alt="Dynamic UI Control" width="400">
-<img src="images/zitlorav3.png" alt="Dynamic UI Control V3" width="400">
-
-The `NunchakuQwenImageLoraStack` and `NunchakuZImageTurboLoraStackV3` nodes automatically adjust the number of visible LoRA slots based on the `lora_count` parameter (1-10).
-
 ## Features
 
 - **Easy Installation**: Simple git clone installation

@@ -19,11 +19,11 @@ This release updates the Z-ImageTurbo Loader to v4, which conforms to the standa
 - **Diffsynth ControlNet support**: Removed `NunchakuQI&ZITDiffsynthControlnet` node registration and all related documentation. ComfyUI-Nunchaku now has native support for ZIT (Z-Image-Turbo) Diffsynth ControlNet, so this custom node is no longer needed.
 
 ### Updated
-- **Z-ImageTurbo Loader v4**: Updated to conform to standard ComfyUI LoRA loader format while maintaining perfect mapping functionality
+- **Z-ImageTurbo Loader v4**: Updated to conform to standard ComfyUI LoRA loader format
+  - **Standard Format Compliance**: Now matches standard ComfyUI LoRA loader interface `(MODEL, CLIP)` input/output
   - **CLIP Input/Output**: Added CLIP input and output (v3 had MODEL only)
   - **CPU Offload Parameter Removal**: Removed `cpu_offload` parameter to conform to standard format
-  - **Standard Format Compliance**: Now matches standard ComfyUI LoRA loader interface `(MODEL, CLIP)` input/output
-  - **Perfect Mapping Maintained**: Uses the same `compose_loras_v2` as v3 for perfect mapping
+  - **Perfect Mapping for Standard LoRA Format**: Uses the same `compose_loras_v2` as v3 for perfect mapping (Standard LoRA format only)
   - **Enhanced Fallback Functionality**: Three-point fallback system (import, model type, application) for maximum compatibility and robustness
 
 ## Technical Details

@@ -1,8 +1,8 @@
-# v2.3.0 - Z-ImageTurbo Loader v4: Standard Format Compliance with Perfect Mapping
+# v2.3.0 - Z-ImageTurbo LoRA Stack v4: Standard Format Compliance with Perfect Mapping
 
 ## ⚠️ **REQUIREMENTS**
 
-**To use Z-ImageTurbo Loader v4, you must update to:**
+**To use Z-ImageTurbo LoRA Stack v4, you must update to:**
 - **Nunchaku 1.2.0 or later**
 - **ComfyUI-Nunchaku 1.2.0 or later**
 
@@ -10,16 +10,16 @@ v4 is designed for the official Nunchaku Z-Image loader (NextDiT) introduced in 
 
 ## Overview
 
-This release updates the Z-ImageTurbo Loader to v4, which conforms to the standard ComfyUI LoRA loader format (CLIP input/output, no CPU offload parameter) while maintaining the same perfect mapping functionality as v3. Additionally, Z-ImageTurbo Loader v3 registration has been removed from ComfyUI node registration.
+This release updates the Z-ImageTurbo LoRA Stack to v4, which conforms to the standard ComfyUI LoRA loader format (CLIP input/output, no CPU offload parameter) while maintaining the same perfect mapping functionality as v3. Additionally, Z-ImageTurbo LoRA Stack v3 registration has been removed from ComfyUI node registration.
 
 ## Changes
 
 ### Removed
-- **Z-ImageTurbo Loader v3 registration**: Removed from ComfyUI node registration. The node file remains in the repository but is no longer registered. Users should use `NunchakuZImageTurboLoraStackV4` instead.
+- **Z-ImageTurbo LoRA Stack v3 registration**: Removed from ComfyUI node registration. The node file remains in the repository but is no longer registered. Users should use `NunchakuZImageTurboLoraStackV4` instead.
 - **Diffsynth ControlNet support**: Removed `NunchakuQI&ZITDiffsynthControlnet` node registration and all related documentation. ComfyUI-Nunchaku now has native support for ZIT (Z-Image-Turbo) Diffsynth ControlNet, so this custom node is no longer needed.
 
 ### Updated
-- **Z-ImageTurbo Loader v4**: Updated to conform to standard ComfyUI LoRA loader format
+- **Z-ImageTurbo LoRA Stack v4**: Updated to conform to standard ComfyUI LoRA loader format
   - **Standard Format Compliance**: Now matches standard ComfyUI LoRA loader interface `(MODEL, CLIP)` input/output
   - **CLIP Input/Output**: Added CLIP input and output (v3 had MODEL only)
   - **CPU Offload Parameter Removal**: Removed `cpu_offload` parameter to conform to standard format
@@ -301,4 +301,4 @@ For complete technical documentation, see:
 
 ## Summary
 
-v2.3.0 updates the Z-ImageTurbo Loader to v4, which conforms to the standard ComfyUI LoRA loader format while maintaining perfect mapping functionality. The v3 node registration has been removed, and users are encouraged to migrate to v4 for better compatibility with standard ComfyUI workflows.
+v2.3.0 updates the Z-ImageTurbo LoRA Stack to v4, which conforms to the standard ComfyUI LoRA loader format while maintaining perfect mapping functionality. The v3 node registration has been removed, and users are encouraged to migrate to v4 for better compatibility with standard ComfyUI workflows.

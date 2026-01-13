@@ -125,8 +125,6 @@ For Standard LoRA format:
 - **QKV Fusion**: Correctly handles fused QKV attention layers (maps `to_q`, `to_k`, `to_v` → `qkv`)
 - **GLU Fusion**: Correctly handles fused GLU feed-forward layers (maps `w1`, `w3` → `w13` for patched models)
 
-**Note on Other Formats**: LoKR (lokr_w1/lokr_w2) and other formats are supported but **cannot achieve perfect mapping** - they fall back to standard loader behavior which may have incomplete mapping.
-
 **5. Code Flow in v4**
 
 ```python

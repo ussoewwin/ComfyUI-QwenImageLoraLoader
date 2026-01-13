@@ -16,6 +16,10 @@ logger.info("=" * 40 + " ComfyUI-QwenImageLoraLoader Initialization " + "=" * 40
 NODE_CLASS_MAPPINGS = {}
 QWEN_V2_NODES = {}
 QWEN_V2_NAMES = {}
+QWEN_V3_NODES = {}
+QWEN_V3_NAMES = {}
+ZIMAGETURBO_V4_NODES = {}
+ZIMAGETURBO_V4_NAMES = {}
 
 try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack

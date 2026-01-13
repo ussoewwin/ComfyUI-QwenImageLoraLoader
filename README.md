@@ -32,8 +32,15 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 ## Usage
 
 ### Available Nodes
+
 - **NunchakuQwenImageLoraLoader**: Single LoRA loader
+
+<img src="images/single_loader.png" alt="NunchakuQwenImageLoraLoader: Single LoRA loader" width="400">
+
 - **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
+
+<img src="images/legacy_stack.png" alt="NunchakuQwenImageLoraStack: Multi LoRA stacker with dynamic UI (Legacy)" width="400">
+
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuQwenImageLoraStackV3**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
 - **NunchakuZImageTurboLoraStackV4**: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible

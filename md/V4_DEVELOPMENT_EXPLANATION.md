@@ -188,7 +188,7 @@ This ensures the node continues to work even if the custom mapping function is u
 
 ### Development Rationale
 
-ComfyUI-nunchaku v1.2.0 implemented official Z-Image LoRA support, but it was discovered that the official implementation's mapping is incomplete. While v3 implemented perfect mapping functionality (`compose_loras_v2`), v4 uses the same mapping mechanism as v3 while achieving the following improvements:
+The standard ComfyUI LoRA loader has incomplete key mapping for Nunchaku Z-Image-Turbo (NextDiT) models. While v3 implemented perfect mapping functionality (`compose_loras_v2`), v4 uses the same mapping mechanism as v3 while achieving the following improvements:
 
 1. **CLIP Input Addition**
    - v3: `(MODEL,)` input/output only
@@ -204,7 +204,7 @@ ComfyUI-nunchaku v1.2.0 implemented official Z-Image LoRA support, but it was di
 
 4. **Same Mapping Functionality as v3**
    - Uses `compose_loras_v2` directly to achieve perfect mapping
-   - Avoids issues with the official implementation using the same mapping logic as v3
+   - Uses the same mapping logic as v3 to overcome standard LoRA loader limitations
 
 5. **Enhanced Fallback Functionality**
    - Three-point fallback system for maximum compatibility
@@ -747,7 +747,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
 **Technical Significance**:
 - Registers v4 node in ComfyUI's node system
-- Provides v2/v3/v4 simultaneously, allowing user selection
 - Sets version on node classes for version tracking
 
 ## Migration Guide
@@ -922,12 +921,6 @@ def load_lora_stack(self, model, clip, lora_count, toggle_all=True, **kwargs):
     return (model, clip)  # CLIP unchanged
 ```
 
-### When to Use Each
-
-- **v3**: Implementation using custom wrapper (with CPU offload parameter)
-- **v4**: Implementation using `compose_loras_v2` directly (standard format compliant, CLIP input/output)
-
-Both use the same mapping functionality (`compose_loras_v2`), so mapping quality is equivalent. v4 is recommended for new workflows due to standard format compliance and enhanced fallback functionality.
 
 ## Files Modified
 

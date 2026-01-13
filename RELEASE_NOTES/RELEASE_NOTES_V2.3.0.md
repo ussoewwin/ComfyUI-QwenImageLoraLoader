@@ -294,11 +294,6 @@ If you are currently using `NunchakuZImageTurboLoraStackV3`:
 - `js/zimageturbo_lora_dynamic_v4.js`: Updated to remove CPU offload widget
 - `__init__.py`: v3 registration removed, v4 registration maintained
 
-## Related Documentation
-
-For complete technical documentation, see:
-- [V4 Development Explanation](md/V4_DEVELOPMENT_EXPLANATION.md) - Complete technical documentation with detailed code explanations
-
 ## Summary
 
 v2.3.0 updates the Z-ImageTurbo LoRA Stack to v4, which conforms to the standard ComfyUI LoRA loader format while maintaining perfect mapping functionality. The v3 node registration has been removed, and users are encouraged to migrate to v4 for better compatibility with standard ComfyUI workflows.

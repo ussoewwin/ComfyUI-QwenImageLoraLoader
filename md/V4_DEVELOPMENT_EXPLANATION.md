@@ -134,8 +134,8 @@ from nunchaku_code.lora_qwen import compose_loras_v2
 
 # Prepare LoRA configs: [(lora_path, strength), ...]
 lora_configs = []
-for lora_name, lora_strength in loras_to_apply:
-    lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
+        for lora_name, lora_strength in loras_to_apply:
+            lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
     lora_configs.append((lora_path, lora_strength))
 
 # Apply using compose_loras_v2 (perfect mapping happens inside)
@@ -150,7 +150,7 @@ compose_loras_v2(transformer, lora_configs)
 | **Model Detection** | Static, assumes one structure | Dynamic, auto-detects NextDiT structure |
 | **QKV Handling** | May fail on fused QKV | Correctly handles fused QKV |
 | **GLU Handling** | May fail on fused GLU (w13) | Correctly handles both w1/w3 and w13 |
-| **LoKR Support** | Limited | Supported but not "perfect mapping" |
+| **LoKR Support** | Not supported (for Nunchaku) | Not supported |
 | **Debug Logging** | Minimal | Comprehensive key-by-key logging |
 
 **7. Technical Details: Key Mapping Patterns**
@@ -640,7 +640,7 @@ else:
 # Prepare LoRA configs for compose_loras_v2
 lora_configs = []
 for lora_name, lora_strength in loras_to_apply:
-    lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
+        lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
     lora_configs.append((lora_path, lora_strength))
 ```
 
@@ -659,13 +659,13 @@ except Exception as e:
     logger.error("Falling back to standard loader.")
     # Fallback to standard loader
     from comfy.sd import load_lora_for_models
-    ret_model = model
-    ret_clip = clip
-    for lora_name, lora_strength in loras_to_apply:
-        lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-        lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
+ret_model = model
+ret_clip = clip
+for lora_name, lora_strength in loras_to_apply:
+    lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
+    lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
         ret_model, ret_clip = load_lora_for_models(ret_model, ret_clip, lora, lora_strength, lora_strength)
-    return (ret_model, ret_clip)
+return (ret_model, ret_clip)
 ```
 
 **Fallback #3**: If `compose_loras_v2` raises an exception during application, catches it and falls back to standard loader. This ensures robustness even if the perfect mapping function encounters unexpected errors.

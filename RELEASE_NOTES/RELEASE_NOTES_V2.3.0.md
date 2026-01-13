@@ -44,13 +44,137 @@ v4 conforms to the standard ComfyUI LoRA loader format by:
    - CLIP is returned unchanged (LoRAs are only applied to the model, not to CLIP)
    - Maintains compatibility with standard ComfyUI LoRA loader interface
 
-### Perfect Mapping Functionality
+### Perfect Mapping Functionality - Core Technical Explanation
 
-v4 maintains the same perfect mapping functionality as v3:
+v4 uses `compose_loras_v2` to achieve **perfect mapping** between LoRA keys and the NextDiT model structure. This is the core technical innovation that makes v4 work correctly.
 
-- Uses `compose_loras_v2` directly to achieve perfect mapping
-- Avoids issues with the official implementation using the same mapping logic as v3
-- Maintains detailed debug logging functionality equivalent to v3
+#### The Problem: Standard LoRA Loader's Incomplete Mapping
+
+The standard ComfyUI LoRA loader has incomplete key mapping for Z-Image-Turbo (NextDiT) models. LoRA keys from standard training (e.g., `layers.0.attention.to_qkv`) don't match the NextDiT structure (`layers.0.attention.qkv`), causing LoRAs to be silently skipped or only partially applied when using the standard loader.
+
+#### The Solution: Dynamic Key Mapping with compose_loras_v2
+
+v4 uses `compose_loras_v2` which implements a sophisticated key mapping system:
+
+**1. Automatic Model Structure Detection**
+
+`compose_loras_v2` automatically detects the model structure and switches mapping rules:
+
+```python
+# From nunchaku_code/lora_qwen.py (lines 1179-1198)
+global _ACTIVE_KEY_MAPPING
+nextdit_markers = (
+    "layers.0.attention.qkv",
+    "layers.0.attention.out",
+    "layers.0.feed_forward.w1",
+    "layers.0.feed_forward.w2",
+    "layers.0.feed_forward.w3",
+    "layers.0.feed_forward.w13",
+)
+is_nextdit_style = any(_get_module_by_name(model, p) is not None for p in nextdit_markers)
+if is_nextdit_style:
+    has_w13 = _get_module_by_name(model, "layers.0.feed_forward.w13") is not None
+    if has_w13:
+        _ACTIVE_KEY_MAPPING = ZIMAGE_NEXTDIT_NUNCHAKU_PATCHED_KEY_MAPPING + KEY_MAPPING
+    else:
+        _ACTIVE_KEY_MAPPING = ZIMAGE_NEXTDIT_UNPATCHED_KEY_MAPPING + KEY_MAPPING
+```
+
+**2. NextDiT-Specific Key Mappings**
+
+For NextDiT models, special mappings are used to convert LoRA keys to match the actual model structure:
+
+```python
+# ZIMAGE_NEXTDIT_UNPATCHED_KEY_MAPPING (for standard NextDiT)
+# Maps: layers.0.attention.to_qkv -> layers.0.attention.qkv
+# Maps: layers.0.feed_forward.w1/w2/w3 -> layers.0.feed_forward.w1/w2/w3
+
+# ZIMAGE_NEXTDIT_NUNCHAKU_PATCHED_KEY_MAPPING (for nunchaku-patched NextDiT)
+# Maps: layers.0.feed_forward.w1/w3 -> layers.0.feed_forward.w13 (fused GLU)
+# Maps: layers.0.feed_forward.w2 -> layers.0.feed_forward.w2
+```
+
+**3. Key Classification and Mapping Process**
+
+Each LoRA key is classified and mapped using `_classify_and_map_key`:
+
+```python
+# From nunchaku_code/lora_qwen.py (lines 326-380)
+def _classify_and_map_key(key: str) -> Optional[Tuple[str, str, Optional[str], str]]:
+    """
+    Classifies a LoRA key and maps it to the model structure.
+    Returns: (group, base_key, component, ab) where:
+    - group: "qkv", "glu", "regular", etc.
+    - base_key: Mapped model key (e.g., "layers.0.attention.qkv")
+    - component: Component identifier (e.g., "Q", "K", "V" for QKV)
+    - ab: LoRA matrix type ("A", "B", "lokr_w1", "lokr_w2")
+    """
+    # Extract base key and LoRA suffix (A/B or lokr_w1/lokr_w2)
+    # Apply regex patterns from _ACTIVE_KEY_MAPPING or KEY_MAPPING
+    # Return mapped key that matches actual model structure
+```
+
+**4. Why It's Called "Perfect Mapping" (Standard LoRA Format Only)**
+
+**Important**: "Perfect mapping" refers specifically to **Standard LoRA format** (A/B matrices). For other formats like LoKR, LoHa, IA3, etc., the mapping may be incomplete or unsupported.
+
+For Standard LoRA format:
+- **Complete Coverage**: All Standard LoRA keys (A/B matrices) are correctly mapped to the NextDiT model structure
+- **No Silent Failures**: Unlike the official implementation, no Standard LoRA keys are silently skipped
+- **Automatic Detection**: Detects nunchaku-patched vs unpatched NextDiT automatically
+- **QKV Fusion**: Correctly handles fused QKV attention layers (maps `to_q`, `to_k`, `to_v` → `qkv`)
+- **GLU Fusion**: Correctly handles fused GLU feed-forward layers (maps `w1`, `w3` → `w13` for patched models)
+
+**Note on Other Formats**: LoKR (lokr_w1/lokr_w2) and other formats are supported but may not achieve the same level of mapping completeness as Standard LoRA format.
+
+**5. Code Flow in v4**
+
+```python
+# From nodes/lora/zimageturbo_v4.py (lines 336-405)
+# Import compose_loras_v2
+from nunchaku_code.lora_qwen import compose_loras_v2
+
+# Prepare LoRA configs: [(lora_path, strength), ...]
+lora_configs = []
+for lora_name, lora_strength in loras_to_apply:
+    lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
+    lora_configs.append((lora_path, lora_strength))
+
+# Apply using compose_loras_v2 (perfect mapping happens inside)
+compose_loras_v2(transformer, lora_configs)
+```
+
+**6. Comparison with Official Implementation**
+
+| Aspect | Official Implementation | v4 (compose_loras_v2) |
+|--------|------------------------|------------------------|
+| **Key Mapping (Standard LoRA)** | Incomplete, many keys skipped | Complete, all Standard LoRA keys mapped (perfect mapping) |
+| **Model Detection** | Static, assumes one structure | Dynamic, auto-detects NextDiT structure |
+| **QKV Handling** | May fail on fused QKV | Correctly handles fused QKV |
+| **GLU Handling** | May fail on fused GLU (w13) | Correctly handles both w1/w3 and w13 |
+| **LoKR Support** | Limited | Supported but not "perfect mapping" |
+| **Debug Logging** | Minimal | Comprehensive key-by-key logging |
+
+**7. Technical Details: Key Mapping Patterns**
+
+The mapping uses regex patterns to transform LoRA keys:
+
+```python
+# Example: QKV Attention Mapping
+# LoRA key: "layers.0.attention.to_qkv.lora_A"
+# Pattern: r"^(layers)[._](\d+)[._]attention[._]to[._]([qkv])$"
+# Template: r"\1.\2.attention.qkv"
+# Result: "layers.0.attention.qkv" (matches NextDiT structure)
+# Component: "Q" (extracted from match group 3)
+
+# Example: GLU Feed-Forward Mapping (Nunchaku-Patched)
+# LoRA key: "layers.0.feed_forward.w1.lora_A"
+# Pattern: r"^(layers)[._](\d+)[._]feed_forward[._](w1|w3)$"
+# Template: r"\1.\2.feed_forward.w13"
+# Result: "layers.0.feed_forward.w13" (fused GLU in patched NextDiT)
+```
+
+This perfect mapping (for Standard LoRA format) ensures that **all Standard LoRA weights (A/B matrices) are correctly applied to the model**, achieving the same quality as v3 while conforming to the standard ComfyUI LoRA loader format.
 
 ### Enhanced Fallback Functionality
 

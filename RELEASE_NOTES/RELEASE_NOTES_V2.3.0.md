@@ -142,10 +142,10 @@ for lora_name, lora_strength in loras_to_apply:
 compose_loras_v2(transformer, lora_configs)
 ```
 
-**6. Comparison with Official Implementation**
+**6. Comparison with Standard ComfyUI LoRA Loader**
 
-| Aspect | Official Implementation | v4 (compose_loras_v2) |
-|--------|------------------------|------------------------|
+| Aspect | Standard ComfyUI LoRA Loader | v4 (compose_loras_v2) |
+|--------|------------------------------|------------------------|
 | **Key Mapping (Standard LoRA)** | Incomplete, many keys skipped | Complete, all Standard LoRA keys mapped (perfect mapping) |
 | **Model Detection** | Static, assumes one structure | Dynamic, auto-detects NextDiT structure |
 | **QKV Handling** | May fail on fused QKV | Correctly handles fused QKV |

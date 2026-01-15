@@ -156,15 +156,31 @@ class NunchakuZImageTurboLoraStackV2:
         # Check if it's already wrapped
         # ComfyZImageTurboWrapper has a 'model' attribute that contains the transformer
         # and a 'loras' list attribute
-        if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
+        # Directly check __dict__ and _modules to avoid nn.Module's __getattr__ issues
+        # nn.Module stores child modules (nn.Module) in _modules and regular attributes in __dict__
+        has_model = 'model' in model_wrapper.__dict__ or 'model' in getattr(model_wrapper, '_modules', {})
+        has_loras = 'loras' in model_wrapper.__dict__
+        
+        def get_model_attr(wrapper):
+            """Get model attribute from _modules or __dict__ of nn.Module"""
+            if 'model' in wrapper.__dict__:
+                return wrapper.__dict__['model']
+            if 'model' in getattr(wrapper, '_modules', {}):
+                return wrapper._modules['model']
+            return None
+        
+        if has_model and has_loras:
             # Already wrapped, proceed normally
-            logger.info("✅ Model is already wrapped (detected via attributes)")
+            logger.info("✅ Model is already wrapped (detected via __dict__/_modules)")
             logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
             # Update CPU offload setting if different
             if model_wrapper.cpu_offload_setting != cpu_offload:
                 logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
                 model_wrapper.cpu_offload_setting = cpu_offload
-            transformer = model_wrapper.model
+            # Get from __dict__ or _modules
+            transformer = get_model_attr(model_wrapper)
+            if transformer is None:
+                raise AttributeError(f"'{type(model_wrapper).__name__}' object has no attribute 'model'")
         elif model_wrapper_type_name == "NunchakuZImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuZImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first
             logger.info("🔧 Wrapping NunchakuZImageTransformer2DModel with ComfyZImageTurboWrapper")
@@ -183,7 +199,10 @@ class NunchakuZImageTurboLoraStackV2:
             # Replace the model's diffusion_model with our wrapper
             model.model.diffusion_model = wrapped_model
             model_wrapper = wrapped_model
-            transformer = model_wrapper.model
+            # Get from __dict__ or _modules
+            transformer = get_model_attr(model_wrapper)
+            if transformer is None:
+                raise AttributeError(f"'{type(model_wrapper).__name__}' object has no attribute 'model'")
         else:
             logger.error(f"❌ Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
             logger.error("Please use 'Nunchaku-ussoewwin Z-Image-Turbo DiT Loader'.")

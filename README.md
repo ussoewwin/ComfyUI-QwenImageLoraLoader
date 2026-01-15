@@ -53,6 +53,10 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 
 <img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">
 
+- **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA stacker with dynamic UI - **Unofficial loader only** - ComfyUI Nodes 2.0 compatible
+  - ⚠️ **Warning**: This node is **only compatible with the unofficial Nunchaku Z-Image-Turbo DiT Loader** from [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader)
+  - ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku
+
 ### Basic Usage
 
 **For Nunchaku Qwen Image models:**
@@ -62,7 +66,7 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 4. Connect to your workflow
 
 **For Nunchaku Z-Image-Turbo models:**
-1. Load your Nunchaku Z-Image-Turbo model using `Nunchaku Z-Image DiT Loader`
+1. Load your Nunchaku Z-Image-Turbo model using `Nunchaku Z-Image DiT Loader` (official ComfyUI-Nunchaku)
 2. Add `Nunchaku Z-Image-Turbo LoRA Stack V4` node
 3. Connect CLIP input (required in v4)
 4. Select your LoRA file and set the strength
@@ -197,6 +201,11 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ## Changelog
+
+### v2.3.2
+- **Restored**: `NunchakuZImageTurboLoraStackV2` node registration has been restored
+- ⚠️ **Important**: This node is **only compatible with the unofficial Nunchaku Z-Image-Turbo DiT Loader** provided by [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader)
+- ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku
 
 ### v2.3.1 (latest)
 - **Fixed**: Resolved [Issue #46](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/46) – Fixed `NameError: name 'ZIMAGETURBO_V4_NAMES' is not defined` error that occurred when `zimageturbo_v4` module import failed. Initialized `ZIMAGETURBO_V4_NAMES`, `ZIMAGETURBO_V4_NODES`, `QWEN_V3_NAMES`, and `QWEN_V3_NODES` before the import block to prevent NameError on import failure.

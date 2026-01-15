@@ -18,6 +18,8 @@ QWEN_V2_NODES = {}
 QWEN_V2_NAMES = {}
 QWEN_V3_NODES = {}
 QWEN_V3_NAMES = {}
+ZIMAGETURBO_V2_NODES = {}
+ZIMAGETURBO_V2_NAMES = {}
 ZIMAGETURBO_V4_NODES = {}
 ZIMAGETURBO_V4_NAMES = {}
 
@@ -25,8 +27,7 @@ try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack
     from .nodes.lora.qwenimage_v2 import GENERATED_NODES as QWEN_V2_NODES, GENERATED_DISPLAY_NAMES as QWEN_V2_NAMES
     from .nodes.lora.qwenimage_v3 import GENERATED_NODES as QWEN_V3_NODES, GENERATED_DISPLAY_NAMES as QWEN_V3_NAMES
-    # Z-Image-Turbo V2 is deprecated (unofficial loader only) - removed from registration to avoid confusion
-    # from .nodes.lora.zimageturbo_v2 import GENERATED_NODES as ZIMAGETURBO_V2_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V2_NAMES
+    from .nodes.lora.zimageturbo_v2 import GENERATED_NODES as ZIMAGETURBO_V2_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V2_NAMES
     # Z-Image-Turbo V3 is deprecated - removed from registration
     # from .nodes.lora.zimageturbo_v3 import GENERATED_NODES as ZIMAGETURBO_V3_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V3_NAMES
     from .nodes.lora.zimageturbo_v4 import GENERATED_NODES as ZIMAGETURBO_V4_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V4_NAMES
@@ -38,9 +39,8 @@ try:
         node_class.__version__ = __version__
     for node_class in QWEN_V3_NODES.values():
         node_class.__version__ = __version__
-    # Z-Image-Turbo V2 registration removed (unofficial loader only)
-    # for node_class in ZIMAGETURBO_V2_NODES.values():
-    #     node_class.__version__ = __version__
+    for node_class in ZIMAGETURBO_V2_NODES.values():
+        node_class.__version__ = __version__
     # Z-Image-Turbo V3 registration removed
     # for node_class in ZIMAGETURBO_V3_NODES.values():
     #     node_class.__version__ = __version__
@@ -51,8 +51,7 @@ try:
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
     NODE_CLASS_MAPPINGS.update(QWEN_V2_NODES)
     NODE_CLASS_MAPPINGS.update(QWEN_V3_NODES)
-    # Z-Image-Turbo V2 registration removed (unofficial loader only)
-    # NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V2_NODES)
+    NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V2_NODES)
     # Z-Image-Turbo V3 registration removed
     # NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V3_NODES)
     NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V4_NODES)
@@ -64,8 +63,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
     **QWEN_V2_NAMES,
     **QWEN_V3_NAMES,
-    # Z-Image-Turbo V2 registration removed (unofficial loader only)
-    # **ZIMAGETURBO_V2_NAMES,
+    **ZIMAGETURBO_V2_NAMES,
     # Z-Image-Turbo V3 registration removed
     # **ZIMAGETURBO_V3_NAMES,
     **ZIMAGETURBO_V4_NAMES

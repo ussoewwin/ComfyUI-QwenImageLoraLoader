@@ -63,28 +63,57 @@ class ComfyZImageTurboWrapper(nn.Module):
         # Track last seen device to detect CPU/GPU moves that require re-compose
         self._last_device = None
 
+    def _get_model_safe(self):
+        """Safely get model attribute from _modules or __dict__ of nn.Module.
+        
+        In nn.Module subclasses, when self.model = nn.Module() is set, the model attribute
+        is stored in the _modules dictionary. Access via __getattr__ can cause issues,
+        so we retrieve it directly from the dictionary.
+        """
+        # First check __dict__ (regular Python attributes)
+        if 'model' in self.__dict__:
+            return self.__dict__['model']
+        # Next check _modules (nn.Module child modules)
+        modules = self.__dict__.get('_modules', {})
+        if modules and 'model' in modules:
+            return modules['model']
+        return None
+
     def to_safely(self, device):
         """Safely move the model to the specified device."""
-        if self.model is None:
+        # Use _get_model_safe to bypass nn.Module's attribute system
+        model = self._get_model_safe()
+        if model is None:
             return self
-        if hasattr(self.model, "to_safely"):
-            self.model.to_safely(device)
+        if hasattr(model, "to_safely"):
+            model.to_safely(device)
         else:
-            self.model.to(device)
+            model.to(device)
         return self
 
     def __getattr__(self, name):
         """Delegate attribute access to the wrapped model (e.g., layers, config, etc.)."""
+        # Special handling for direct access to 'model' attribute
+        # nn.Module stores child modules in _modules, so normal attribute access won't find them
+        if name == 'model':
+            # Try to get from _modules
+            modules = self.__dict__.get('_modules', {})
+            if modules and 'model' in modules:
+                return modules['model']
+            # Try to get from __dict__
+            if 'model' in self.__dict__:
+                return self.__dict__['model']
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute 'model'")
+        
         # Delegate attributes that don't exist on this wrapper to the wrapped model (NextDiT)
         # This allows ZImageModelPatcher and other code to access NextDiT attributes like 'layers'
-        # Note: 'model' is a normal attribute set in __init__, so __getattr__ should not be called for it
-        # Use super().__getattribute__ to access 'model' through nn.Module's attribute system
-        try:
-            model = super().__getattribute__('model')
-            if model is not None:
+        # Use _get_model_safe to bypass nn.Module's attribute system
+        model = self._get_model_safe()
+        if model is not None:
+            try:
                 return getattr(model, name)
-        except AttributeError:
-            pass
+            except AttributeError:
+                pass
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def forward(
@@ -445,13 +474,28 @@ class ComfyZImageTurboWrapper(nn.Module):
                     zimage_kwargs["f_patch_size"] = kwargs["f_patch_size"]
                 zimage_kwargs["return_dict"] = False
                 
-                # DEBUG: Log shapes to diagnose empty iterable error
-                logger.info(f"DEBUG: x_list len={len(x_list) if isinstance(x_list, list) else 'Not List'}")
-                if isinstance(x_list, list) and len(x_list) > 0:
-                     logger.info(f"DEBUG: x_list[0] shape={x_list[0].shape}")
-                logger.info(f"DEBUG: cap_feats len={len(cap_feats) if isinstance(cap_feats, list) else 'Not List'}")
-                if isinstance(cap_feats, list) and len(cap_feats) > 0:
-                    logger.info(f"DEBUG: cap_feats[0] shape={cap_feats[0].shape}")
+                # =============================================================================
+                # DEBUG LOGGING (MUTED) - Uncomment to diagnose input tensor issues
+                # =============================================================================
+                # This debug block logs the shapes of input tensors for Z-Image-Turbo forward pass.
+                # It is specifically active when using NunchakuZImageTurboLoraStackV2 (zimageturbo_v2.py)
+                # which wraps the model with ComfyZImageTurboWrapper.
+                #
+                # Output format:
+                #   - x_list: List of latent tensors, shape [C, F, H, W] = [channels, frames, height, width]
+                #   - cap_feats: Caption features from text encoder, shape [tokens, embed_dim]
+                #
+                # Note: Logs appear twice per step due to CFG (Classifier-Free Guidance) which runs
+                # both positive and negative conditioning through the model.
+                #
+                # To enable: Remove the '#' prefix from the logger.info lines below.
+                # =============================================================================
+                # logger.info(f"DEBUG: x_list len={len(x_list) if isinstance(x_list, list) else 'Not List'}")
+                # if isinstance(x_list, list) and len(x_list) > 0:
+                #      logger.info(f"DEBUG: x_list[0] shape={x_list[0].shape}")
+                # logger.info(f"DEBUG: cap_feats len={len(cap_feats) if isinstance(cap_feats, list) else 'Not List'}")
+                # if isinstance(cap_feats, list) and len(cap_feats) > 0:
+                #     logger.info(f"DEBUG: cap_feats[0] shape={cap_feats[0].shape}")
                 
                 # Check for mismatch which causes zip to truncate
                 if isinstance(x_list, list) and isinstance(cap_feats, list):

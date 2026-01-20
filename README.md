@@ -202,7 +202,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.3.2
+### v2.3.5
 - **Restored**: `NunchakuZImageTurboLoraStackV2` node registration has been restored
 - ⚠️ **Important**: This node is **only compatible with the unofficial Nunchaku Z-Image-Turbo DiT Loader** provided by [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader)
 - ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku

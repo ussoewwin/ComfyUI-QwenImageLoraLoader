@@ -17,6 +17,7 @@ if lora_loader_dir not in sys.path:
     sys.path.insert(0, lora_loader_dir)
 
 import folder_paths
+import comfy
 
 # Get log level from environment variable (default to INFO)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -387,9 +388,10 @@ class NunchakuZImageTurboLoraStackV4:
             lora_configs.append((lora_path, lora_strength))
         
         # Apply LoRAs using compose_loras_v2 (perfect mapping)
+        # Z-Image-Turbo does not use AWQ modulation layers, so explicitly disable it
         logger.info(f"Applying {len(lora_configs)} LoRA(s) using compose_loras_v2...")
         try:
-            compose_loras_v2(transformer, lora_configs)
+            compose_loras_v2(transformer, lora_configs, apply_awq_mod=False)
             logger.info(f"✅ Successfully applied {len(lora_configs)} LoRA(s) using compose_loras_v2")
         except Exception as e:
             logger.error(f"❌ Failed to apply LoRAs using compose_loras_v2: {e}")

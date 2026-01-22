@@ -17,12 +17,6 @@ This LoRA loader was extracted and modified from GavChap's fork:
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
 
-## 🎉 LATEST UPDATE: v2.3.6 - AWQ Modulation Layer LoRA Fix
-
-**Fixed**: AWQ modulation layer LoRA application - Implemented Runtime Monkey Patch with Manual Planar Injection to fix noise issues when applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`). The fix uses a runtime patch to inject LoRA weights directly into the transformer block forward pass, bypassing layout/transpose issues that caused noise.
-
-For detailed technical explanation, see [v2.3.6 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.6.md)
-
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
 
 For detailed technical explanation, see [v2.2.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.2.0)

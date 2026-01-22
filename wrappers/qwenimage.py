@@ -8,6 +8,7 @@ import logging
 
 from nunchaku import NunchakuQwenImageTransformer2DModel
 from nunchaku.caching.fbcache import cache_context, create_cache_context
+from nunchaku.caching.fbcache import cache_context, create_cache_context
 from nunchaku_code.lora_qwen import compose_loras_v2, reset_lora_v2
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,8 @@ class ComfyQwenImageWrapper(nn.Module):
             customized_forward: Callable = None,
             forward_kwargs: dict | None = None,
             cpu_offload_setting: str = "auto",
-            vram_margin_gb: float = 4.0
+            vram_margin_gb: float = 4.0,
+            apply_awq_mod: Union[bool, str] = "auto"
     ):
         super().__init__()
         self.model = model
@@ -42,6 +44,7 @@ class ComfyQwenImageWrapper(nn.Module):
 
         self.cpu_offload_setting = cpu_offload_setting
         self.vram_margin_gb = vram_margin_gb
+        self.apply_awq_mod = apply_awq_mod
 
         # Log CPU offload setting on initialization
         logger.info(f"🔧 CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
@@ -199,7 +202,7 @@ class ComfyQwenImageWrapper(nn.Module):
             # 4. Compose LoRAs. This changes internal tensor shapes.
             # 4. Compose LoRAs. This changes internal tensor shapes.
             # Returns True if successful (supported format), False if unsupported (skipped).
-            is_supported_format = compose_loras_v2(self.model, self.loras)
+            is_supported_format = compose_loras_v2(self.model, self.loras, apply_awq_mod=self.apply_awq_mod)
 
             # Validate composition result; if 0 targets after a crash/transition, retry once
             # But ONLY if the format was supported. If unsupported, retrying is pointless.
@@ -212,7 +215,7 @@ class ComfyQwenImageWrapper(nn.Module):
                     logger.warning("LoRA composition reported 0 target modules. Forcing reset and one retry.")
                     try:
                         reset_lora_v2(self.model)
-                        compose_loras_v2(self.model, self.loras)
+                        compose_loras_v2(self.model, self.loras, apply_awq_mod=self.apply_awq_mod)
                     except Exception as e:
                         logger.error(f"LoRA re-compose retry failed: {e}")
             else:

@@ -23,6 +23,17 @@ ZIMAGETURBO_V2_NAMES = {}
 ZIMAGETURBO_V4_NODES = {}
 ZIMAGETURBO_V4_NAMES = {}
 
+# --- Nunchaku Monkey Patch Application ---
+try:
+    from .patches.nunchaku_patch import apply_nunchaku_patch
+    if apply_nunchaku_patch():
+        logger.info("Successfully applied Nunchaku Manual Planar Injection monkey patch.")
+    else:
+        logger.warning("Failed to apply Nunchaku Manual Planar Injection monkey patch.")
+except Exception as e:
+    logger.error(f"Error importing/applying Nunchaku monkey patch: {e}")
+# -----------------------------------------
+
 try:
     from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack
     from .nodes.lora.qwenimage_v2 import GENERATED_NODES as QWEN_V2_NODES, GENERATED_DISPLAY_NAMES as QWEN_V2_NAMES

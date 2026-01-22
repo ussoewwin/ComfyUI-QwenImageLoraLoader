@@ -6,14 +6,14 @@ const HIDDEN_TAG = "tschide";
 
 app.registerExtension({
     name: "nunchaku.qwen_lora_dynamic_combo_final_restore",
-    
+
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "NunchakuQwenImageLoraStackV2") {
             nodeType["@visibleLoraCount"] = { type: "number", default: 1, min: 1, max: 10, step: 1 };
         }
     },
 
-        nodeCreated(node) {
+    nodeCreated(node) {
         if (node.comfyClass !== "NunchakuQwenImageLoraStackV2") return;
 
         if (!node.properties) node.properties = {};
@@ -36,7 +36,7 @@ app.registerExtension({
         const initCache = () => {
             if (cacheReady) return;
             const all = [...node.widgets];
-            
+
             // Cache lora_count widget (required for Python backend, but hidden in UI)
             const loraCountWidget = all.find(w => w.name === "lora_count");
             if (loraCountWidget) {
@@ -50,19 +50,19 @@ app.registerExtension({
                 loraCountWidget.type = HIDDEN_TAG;
                 loraCountWidget.computeSize = () => [0, -4];
             }
-            
+
             // Cache cpu_offload widget
             const cpuOffloadWidget = all.find(w => w.name === "cpu_offload");
             if (cpuOffloadWidget) {
                 node.cachedCpuOffload = cpuOffloadWidget;
             }
 
-            // Cache apply_awq_mod widget (AWQ on/off toggle for V2 node)
+            // Cache apply_awq_mod widget
             const applyAwqModWidget = all.find(w => w.name === "apply_awq_mod");
             if (applyAwqModWidget) {
                 node.cachedApplyAwqMod = applyAwqModWidget;
             }
-            
+
             for (let i = 1; i <= 10; i++) {
                 const wName = all.find(w => w.name === `lora_name_${i}`);
                 const wStrength = all.find(w => w.name === `lora_strength_${i}`);
@@ -79,7 +79,7 @@ app.registerExtension({
 
         const ensureControlWidget = () => {
             const name = "🔢 LoRA Count";
-            
+
             // Remove old button widgets
             for (let i = node.widgets.length - 1; i >= 0; i--) {
                 const w = node.widgets[i];
@@ -111,12 +111,12 @@ app.registerExtension({
             return w;
         };
 
-        node.updateLoraSlots = function() {
+        node.updateLoraSlots = function () {
             if (!cacheReady) initCache();
 
             const count = parseInt(this.properties["visibleLoraCount"] || 1);
             const controlWidget = ensureControlWidget();
-        
+
             // Physical widget reconstruction for clean layout (like Flux V2)
             this.widgets = [controlWidget];
 
@@ -136,7 +136,7 @@ app.registerExtension({
                 this.widgets.push(node.cachedCpuOffload);
             }
 
-            // Add apply_awq_mod widget from cache (AWQ on/off toggle for V2 node)
+            // Add apply_awq_mod widget from cache
             if (node.cachedApplyAwqMod) {
                 this.widgets.push(node.cachedApplyAwqMod);
             }
@@ -145,7 +145,7 @@ app.registerExtension({
             for (let i = 1; i <= count; i++) {
                 const pair = this.cachedWidgets[i];
                 if (pair) {
-                    this.widgets.push(pair[0]); 
+                    this.widgets.push(pair[0]);
                     this.widgets.push(pair[1]);
                 }
             }
@@ -154,28 +154,28 @@ app.registerExtension({
             const HEADER_H = 60;
             const SLOT_H = 54;
             const CPU_OFFLOAD_H = node.cachedCpuOffload ? 40 : 0;
-            const APPLY_AWQ_MOD_H = node.cachedApplyAwqMod ? 28 : 0;
+            const APPLY_AWQ_MOD_H = node.cachedApplyAwqMod ? 30 : 0;
             const PADDING = 20;
             const targetH = HEADER_H + CPU_OFFLOAD_H + APPLY_AWQ_MOD_H + (count * SLOT_H) + PADDING;
-            
+
             this.setSize([this.size[0], targetH]);
-            
+
             if (app.canvas) app.canvas.setDirty(true, true);
         };
 
-        node.onPropertyChanged = function(property, value) {
+        node.onPropertyChanged = function (property, value) {
             if (property === "visibleLoraCount") {
                 const w = this.widgets.find(x => x.name === "🔢 LoRA Count");
                 if (w) w.value = value.toString();
                 this.updateLoraSlots();
             }
         };
-        
+
         // Restore UI on configure
         const origOnConfigure = node.onConfigure;
-        node.onConfigure = function() {
-             if (origOnConfigure) origOnConfigure.apply(this, arguments);
-             setTimeout(() => node.updateLoraSlots(), 100);
+        node.onConfigure = function () {
+            if (origOnConfigure) origOnConfigure.apply(this, arguments);
+            setTimeout(() => node.updateLoraSlots(), 100);
         };
 
         setTimeout(() => {

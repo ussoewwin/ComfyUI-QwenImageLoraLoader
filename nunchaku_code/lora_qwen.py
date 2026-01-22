@@ -1223,8 +1223,12 @@ def compose_loras_v2(
              should_apply_awq_mod = DEFAULT_APPLY_AWQ_MOD_ENV
         else:
              should_apply_awq_mod = apply_awq_mod.strip().lower() in ("1", "true", "yes", "y", "on")
+    elif isinstance(apply_awq_mod, bool):
+        # Explicit bool value - use it directly (V2 node passes bool explicitly)
+        should_apply_awq_mod = apply_awq_mod
     else:
-        should_apply_awq_mod = bool(apply_awq_mod)
+        # None or other -> default to False (safety first)
+        should_apply_awq_mod = False
     
     if should_apply_awq_mod:
         logger.info("⚠️  AWQ Modulation Layer LoRA Injection ENABLED (via override).")
@@ -1444,6 +1448,45 @@ def update_lora_params_v2(
     """Loads and applies a single LoRA to the model (convenience wrapper)."""
     logger.info(f"Loading single LoRA with strength {strength}.")
     compose_loras_v2(model, [(lora_state_dict_or_path, strength)])
+
+
+def compose_loras_v2_v2(
+        model: torch.nn.Module,
+        lora_configs: List[Tuple[Union[str, Path, Dict[str, torch.Tensor]], float]],
+        apply_awq_mod: bool | str | None = None,
+) -> bool:
+    """
+    V2 node-specific LoRA composition function with AWQ modulation control.
+    
+    This function is identical to compose_loras_v2 except it accepts an apply_awq_mod
+    parameter that overrides the global _APPLY_AWQ_MOD environment variable.
+    
+    Args:
+        model: The model to apply LoRAs to
+        lora_configs: List of (lora_path_or_dict, strength) tuples
+        apply_awq_mod: If True/False, overrides global _APPLY_AWQ_MOD setting.
+                       If None or "auto", uses global _APPLY_AWQ_MOD setting.
+                       If string "0"/"false"/"no"/"off" or "1"/"true"/"yes"/"on", parsed as bool.
+    
+    Returns:
+        bool: True if the LoRA format is supported and processed, False otherwise.
+    """
+    # Determine effective AWQ modulation setting:
+    # - If apply_awq_mod is explicitly provided, use it
+    # - Otherwise, fall back to global _APPLY_AWQ_MOD
+    if isinstance(apply_awq_mod, str):
+        apply_awq_mod_flag = apply_awq_mod.lower() not in ("0", "false", "no", "n", "off", "auto", "")
+    elif isinstance(apply_awq_mod, bool):
+        apply_awq_mod_flag = apply_awq_mod
+    else:
+        # None or other -> use global setting
+        apply_awq_mod_flag = _APPLY_AWQ_MOD
+    
+    logger.info(f"[V2 Node] Composing {len(lora_configs)} LoRAs with apply_awq_mod={apply_awq_mod} (effective: {apply_awq_mod_flag})...")
+    
+    # Call compose_loras_v2 with the determined flag
+    # Pass as bool explicitly to override default "auto" behavior
+    return compose_loras_v2(model, lora_configs, apply_awq_mod=apply_awq_mod_flag)
 
 
 def set_lora_strength_v2(model: nn.Module, strength: float) -> None:

@@ -56,6 +56,12 @@ app.registerExtension({
             if (cpuOffloadWidget) {
                 node.cachedCpuOffload = cpuOffloadWidget;
             }
+
+            // Cache apply_awq_mod widget (AWQ on/off toggle for V2 node)
+            const applyAwqModWidget = all.find(w => w.name === "apply_awq_mod");
+            if (applyAwqModWidget) {
+                node.cachedApplyAwqMod = applyAwqModWidget;
+            }
             
             for (let i = 1; i <= 10; i++) {
                 const wName = all.find(w => w.name === `lora_name_${i}`);
@@ -130,6 +136,11 @@ app.registerExtension({
                 this.widgets.push(node.cachedCpuOffload);
             }
 
+            // Add apply_awq_mod widget from cache (AWQ on/off toggle for V2 node)
+            if (node.cachedApplyAwqMod) {
+                this.widgets.push(node.cachedApplyAwqMod);
+            }
+
             // Add only visible LoRA slots (non-visible widgets are removed from array)
             for (let i = 1; i <= count; i++) {
                 const pair = this.cachedWidgets[i];
@@ -143,8 +154,9 @@ app.registerExtension({
             const HEADER_H = 60;
             const SLOT_H = 54;
             const CPU_OFFLOAD_H = node.cachedCpuOffload ? 40 : 0;
+            const APPLY_AWQ_MOD_H = node.cachedApplyAwqMod ? 28 : 0;
             const PADDING = 20;
-            const targetH = HEADER_H + CPU_OFFLOAD_H + (count * SLOT_H) + PADDING;
+            const targetH = HEADER_H + CPU_OFFLOAD_H + APPLY_AWQ_MOD_H + (count * SLOT_H) + PADDING;
             
             this.setSize([this.size[0], targetH]);
             

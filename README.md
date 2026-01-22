@@ -42,7 +42,7 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 <img src="images/legacy_stack.png" alt="NunchakuQwenImageLoraStack: Multi LoRA stacker with dynamic UI (Legacy)" width="400">
 
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
-  - **AWQ Modulation Layer Support**: Includes experimental support for applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) via the "Apply AWQ Mod" toggle. This feature uses Runtime Monkey Patch with Manual Planar Injection to fix noise issues. ⚠️ **Warning**: This is an experimental feature - test thoroughly before using in production workflows.
+  - **AWQ Modulation Layer Support**: Includes experimental support for applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) via the "Apply AWQ Mod" toggle. This feature uses Runtime Monkey Patch with Manual Planar Injection to fix noise issues. ⚠️ **Warning**: **This is an experimental feature currently implemented only in V2 nodes.**
 
 <img src="images/qiv2_stack.png" alt="NunchakuQwenImageLoraStackV2: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible" width="400">
 

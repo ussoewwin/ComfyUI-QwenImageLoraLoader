@@ -80,6 +80,13 @@ class NunchakuQwenImageLoraStackV2:
                         "tooltip": "CPU offload setting. 'auto' enables offload when VRAM is low, 'enable' forces offload, 'disable' disables offload.",
                     },
                 ),
+                "apply_awq_mod": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Enable LoRA application to AWQ modulation layers (img_mod.1/txt_mod.1). Disabled by default to prevent noise. Enable at your own risk.",
+                    },
+                ),
             },
             "optional": {},
         }
@@ -110,7 +117,7 @@ class NunchakuQwenImageLoraStackV2:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. v1.0.3"
 
-    def load_lora_stack(self, model, lora_count, cpu_offload="disable", **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload="disable", apply_awq_mod=False, **kwargs):
         loras_to_apply = []
         
         # Process only the number of LoRAs specified by lora_count
@@ -135,12 +142,12 @@ class NunchakuQwenImageLoraStackV2:
             sys.path.insert(0, lora_loader_dir)
         
         spec = importlib.util.spec_from_file_location(
-            "wrappers.qwenimage",
-            os.path.join(lora_loader_dir, "wrappers", "qwenimage.py")
+            "wrappers.qwenimage_v2",
+            os.path.join(lora_loader_dir, "wrappers", "qwenimage_v2.py")
         )
         wrappers_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(wrappers_module)
-        ComfyQwenImageWrapper = wrappers_module.ComfyQwenImageWrapper
+        ComfyQwenImageWrapperV2 = wrappers_module.ComfyQwenImageWrapperV2
         
         from nunchaku import NunchakuQwenImageTransformer2DModel
         
@@ -153,31 +160,55 @@ class NunchakuQwenImageLoraStackV2:
         logger.info(f"🔍 Has 'model' attr? {hasattr(model_wrapper, 'model')}")
         logger.info(f"🔍 Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
         
-        # Check if it's already wrapped
-        # ComfyQwenImageWrapper has a 'model' attribute that contains the transformer
+        # Check if it's already wrapped with V2 wrapper
+        # ComfyQwenImageWrapperV2 has a 'model' attribute that contains the transformer
         # and a 'loras' list attribute
         if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
-            # Already wrapped, proceed normally
-            logger.info("✅ Model is already wrapped (detected via attributes)")
-            logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
-            # Update CPU offload setting if different
-            if model_wrapper.cpu_offload_setting != cpu_offload:
-                logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
-                model_wrapper.cpu_offload_setting = cpu_offload
-            transformer = model_wrapper.model
+            # Check if it's a V2 wrapper (has apply_awq_mod attribute)
+            if hasattr(model_wrapper, 'apply_awq_mod'):
+                # Already wrapped with V2 wrapper, proceed normally
+                logger.info("✅ Model is already wrapped with V2 wrapper (detected via attributes)")
+                logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
+                logger.info(f"📦 Current AWQ mod setting: '{model_wrapper.apply_awq_mod}'")
+                # Update CPU offload setting if different
+                if model_wrapper.cpu_offload_setting != cpu_offload:
+                    logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
+                    model_wrapper.cpu_offload_setting = cpu_offload
+                # Update AWQ mod setting if different
+                if model_wrapper.apply_awq_mod != apply_awq_mod:
+                    logger.info(f"🔄 Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to '{apply_awq_mod}'")
+                    model_wrapper.apply_awq_mod = apply_awq_mod
+                transformer = model_wrapper.model
+            else:
+                # Wrapped with V1/V3 wrapper, need to re-wrap with V2
+                logger.info("🔄 Model is wrapped with V1/V3 wrapper, re-wrapping with V2 wrapper")
+                transformer = model_wrapper.model
+                config = getattr(model_wrapper, 'config', {})
+                wrapped_model = ComfyQwenImageWrapperV2(
+                    transformer,
+                    config,
+                    None,  # customized_forward
+                    {},    # forward_kwargs
+                    cpu_offload,  # cpu_offload_setting
+                    4.0,   # vram_margin_gb
+                    apply_awq_mod,  # apply_awq_mod
+                )
+                model.model.diffusion_model = wrapped_model
+                model_wrapper = wrapped_model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuQwenImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first
-            logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
+            logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapperV2")
             
             # Create wrapper
-            logger.info(f"📦 Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}'")
-            wrapped_model = ComfyQwenImageWrapper(
+            logger.info(f"📦 Creating ComfyQwenImageWrapperV2 with cpu_offload='{cpu_offload}', apply_awq_mod={apply_awq_mod}")
+            wrapped_model = ComfyQwenImageWrapperV2(
                 model_wrapper,
                 getattr(model_wrapper, 'config', {}),
                 None,  # customized_forward
                 {},    # forward_kwargs
                 cpu_offload,  # cpu_offload_setting
                 4.0,   # vram_margin_gb
+                apply_awq_mod,  # apply_awq_mod
             )
             
             # Replace the model's diffusion_model with our wrapper

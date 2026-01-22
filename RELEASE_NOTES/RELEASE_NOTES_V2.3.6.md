@@ -253,6 +253,106 @@ No migration required. The fix is automatically applied when the custom node is 
 
 ---
 
+## Additional Fix: Z-Image-Turbo Module Resolution
+
+### Problem Discovered
+
+During the implementation of the AWQ modulation layer fix, a critical issue was discovered affecting Z-Image-Turbo (NextDiT) models. The stricter `module is None` checks introduced in the AWQ fix exposed an existing problem where **120 out of 150 LoRA keys were being silently skipped** due to module resolution failures.
+
+### Root Cause
+
+Z-Image-Turbo models use NextDiT architecture, which has different module naming conventions compared to Qwen Image models:
+
+- **Qwen Image**: `layers.N.attention.to_qkv`
+- **NextDiT**: `layers.N.attention.qkv` (no `to_` prefix)
+
+- **Qwen Image**: `layers.N.attention.to_out.0`
+- **NextDiT**: `layers.N.attention.out` (no `to_` prefix and no `.0` suffix)
+
+- **Qwen Image**: `layers.N.feed_forward.net.0.proj`
+- **NextDiT**: `layers.N.feed_forward.w13` (nunchaku-patched) or `layers.N.feed_forward.w1` (unpatched)
+
+- **Qwen Image**: `layers.N.feed_forward.net.2`
+- **NextDiT**: `layers.N.feed_forward.w2`
+
+The `_resolve_module_name` function lacked fallback paths for these NextDiT naming conventions, causing module resolution to fail and LoRA keys to be skipped.
+
+### Solution: NextDiT Fallback Mappings
+
+**Modified File**: `nunchaku_code/lora_qwen.py`
+
+**Function**: `_resolve_module_name` (lines 412-465)
+
+**Changes**:
+
+1. **Added NextDiT Attention Module Fallbacks** (lines 427-437):
+   ```python
+   # Z-Image-Turbo (NextDiT) fallback mappings
+   # NextDiT uses: layers.N.attention.qkv (not .to_qkv)
+   if ".attention.to_qkv" in name:
+       alt = name.replace(".attention.to_qkv", ".attention.qkv")
+       m = _get_module_by_name(model, alt)
+       if m is not None: return alt, m
+   # NextDiT uses: layers.N.attention.out (not .to_out.0)
+   if ".attention.to_out.0" in name:
+       alt = name.replace(".attention.to_out.0", ".attention.out")
+       m = _get_module_by_name(model, alt)
+       if m is not None: return alt, m
+   ```
+
+2. **Added NextDiT Feed Forward Module Fallbacks** (lines 438-452):
+   ```python
+   # NextDiT feed_forward: .net.0.proj -> .w13 (for GLU) or .w1/.w3 (unpatched)
+   if ".feed_forward.net.0.proj" in name:
+       # Try w13 first (nunchaku-patched)
+       alt = name.replace(".feed_forward.net.0.proj", ".feed_forward.w13")
+       m = _get_module_by_name(model, alt)
+       if m is not None: return alt, m
+       # Try w1 (unpatched, for gate)
+       alt = name.replace(".feed_forward.net.0.proj", ".feed_forward.w1")
+       m = _get_module_by_name(model, alt)
+       if m is not None: return alt, m
+   # NextDiT feed_forward: .net.2 -> .w2
+   if ".feed_forward.net.2" in name:
+       alt = name.replace(".feed_forward.net.2", ".feed_forward.w2")
+       m = _get_module_by_name(model, alt)
+       if m is not None: return alt, m
+   ```
+
+3. **Improved Error Logging** (lines 1360-1363):
+   ```python
+   # Skip if module not found
+   if module is None:
+       logger.warning(f"[MISS] Module not found: {module_name_key} (resolved: {resolved_name})")
+       skipped_modules_count += 1
+       continue
+   ```
+   
+   Changed from `logger.debug` to `logger.warning` to make module resolution failures visible, and added `skipped_modules_count += 1` to properly track skipped modules.
+
+### Impact
+
+- **Before Fix**: 150 LoRA keys → only 30 applied (120 skipped silently)
+- **After Fix**: 150 LoRA keys → all 150 applied successfully
+
+This fix ensures that Z-Image-Turbo models receive full LoRA support, matching the functionality available for Qwen Image models.
+
+### Technical Details
+
+**Module Resolution Process**:
+
+1. **Primary Resolution**: Attempts to resolve using the original key name (e.g., `layers.0.attention.to_qkv`)
+2. **Fallback Resolution**: If primary fails, attempts NextDiT naming conventions (e.g., `layers.0.attention.qkv`)
+3. **Result**: Returns the resolved module object or `None` if all attempts fail
+
+**Why This Wasn't Caught Earlier**:
+
+The issue existed before but was masked by less strict error handling. The AWQ fix introduced stricter `module is None` checks, which exposed the underlying module resolution failures. This is a positive side effect of the improved error handling, as it revealed a critical bug affecting Z-Image-Turbo users.
+
+---
+
 ## Related Issues
 
 This fix resolves noise issues when applying LoRA to AWQ quantized modulation layers, which was previously causing complete image corruption in some cases. The Runtime Monkey Patch approach ensures the fix is applied automatically without requiring any manual modifications to Nunchaku or ComfyUI core files.
+
+**Additional Issue Resolved**: [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - Module resolution failures for Z-Image-Turbo models causing 120 out of 150 LoRA keys to be skipped.

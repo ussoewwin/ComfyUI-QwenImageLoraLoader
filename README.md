@@ -21,10 +21,6 @@ This LoRA loader was extracted and modified from GavChap's fork:
 
 **Fixed**: AWQ modulation layer LoRA application - Implemented Runtime Monkey Patch with Manual Planar Injection to fix noise issues when applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`). The fix uses a runtime patch to inject LoRA weights directly into the transformer block forward pass, bypassing layout/transpose issues that caused noise.
 
-**Impact**: This fix enables all standard format LoRA keys that were previously excluded from AWQ modulation layers to be fully applied. Previously, these layers were skipped to prevent noise, but now they work correctly with the Manual Planar Injection approach.
-
-⚠️ **Warning**: **This is an experimental feature currently implemented only in V2 nodes. Please test thoroughly before using in production workflows.**
-
 For detailed technical explanation, see [v2.3.6 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.6.md)
 
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
@@ -214,6 +210,8 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.3.6
 - **Fixed**: AWQ modulation layer LoRA application - Implemented Runtime Monkey Patch with Manual Planar Injection to fix noise issues when applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`). The fix uses a runtime patch to inject LoRA weights directly into the transformer block forward pass, bypassing layout/transpose issues.
+- **Impact**: This fix enables all standard format LoRA keys that were previously excluded from AWQ modulation layers to be fully applied. Previously, these layers were skipped to prevent noise, but now they work correctly with the Manual Planar Injection approach.
+- ⚠️ **Warning**: **This is an experimental feature currently implemented only in V2 nodes. Please test thoroughly before using in production workflows.**
 - **Technical Details**: See [v2.3.6 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.6.md) for complete explanation
 
 ### v2.3.5

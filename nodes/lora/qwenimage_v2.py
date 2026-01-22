@@ -33,7 +33,7 @@ class NunchakuQwenImageLoraStackV2:
     Node for loading and applying multiple LoRAs to a Nunchaku Qwen Image model with dynamic UI.
     """
     @classmethod
-    def IS_CHANGED(cls, model, lora_count, cpu_offload="disable", **kwargs):
+    def IS_CHANGED(cls, model, lora_count, cpu_offload="disable", apply_awq_mod=False, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
@@ -43,6 +43,7 @@ class NunchakuQwenImageLoraStackV2:
         m.update(str(model).encode())
         m.update(str(lora_count).encode())
         m.update(cpu_offload.encode())
+        m.update(str(apply_awq_mod).encode())
         # Hash all LoRA parameters
         for i in range(1, 11):
             m.update(kwargs.get(f"lora_name_{i}", "").encode())

@@ -424,6 +424,33 @@ def _resolve_module_name(model: nn.Module, name: str) -> Tuple[str, Optional[nn.
         m = _get_module_by_name(model, alt)
         if m is not None: return alt, m
 
+    # Z-Image-Turbo (NextDiT) fallback mappings
+    # NextDiT uses: layers.N.attention.qkv (not .to_qkv)
+    if ".attention.to_qkv" in name:
+        alt = name.replace(".attention.to_qkv", ".attention.qkv")
+        m = _get_module_by_name(model, alt)
+        if m is not None: return alt, m
+    # NextDiT uses: layers.N.attention.out (not .to_out.0)
+    if ".attention.to_out.0" in name:
+        alt = name.replace(".attention.to_out.0", ".attention.out")
+        m = _get_module_by_name(model, alt)
+        if m is not None: return alt, m
+    # NextDiT feed_forward: .net.0.proj -> .w13 (for GLU) or .w1/.w3 (unpatched)
+    if ".feed_forward.net.0.proj" in name:
+        # Try w13 first (nunchaku-patched)
+        alt = name.replace(".feed_forward.net.0.proj", ".feed_forward.w13")
+        m = _get_module_by_name(model, alt)
+        if m is not None: return alt, m
+        # Try w1 (unpatched, for gate)
+        alt = name.replace(".feed_forward.net.0.proj", ".feed_forward.w1")
+        m = _get_module_by_name(model, alt)
+        if m is not None: return alt, m
+    # NextDiT feed_forward: .net.2 -> .w2
+    if ".feed_forward.net.2" in name:
+        alt = name.replace(".feed_forward.net.2", ".feed_forward.w2")
+        m = _get_module_by_name(model, alt)
+        if m is not None: return alt, m
+
     mapping = {
         ".ff.net.0.proj": ".mlp_fc1", ".ff.net.2": ".mlp_fc2",
         ".ff_context.net.0.proj": ".mlp_context_fc1", ".ff_context.net.2": ".mlp_context_fc2",
@@ -1031,9 +1058,13 @@ def _handle_proj_out_split(lora_dict: Dict[str, Dict[str, torch.Tensor]], base_k
 def _apply_lora_to_module(module: nn.Module, A: torch.Tensor, B: torch.Tensor, module_name: str,
                           model: nn.Module) -> None:
     """Helper to append combined LoRA weights to a module."""
+    if module is None:
+        raise ValueError(f"{module_name}: Module is None, cannot apply LoRA")
     if A.ndim != 2 or B.ndim != 2:
         raise ValueError(f"{module_name}: A/B must be 2D, got {A.shape}, {B.shape}")
     # FACT: A must match module.in_features exactly (no padding/estimation)
+    if not hasattr(module, "in_features"):
+        raise ValueError(f"{module_name}: Module does not have in_features attribute")
     if A.shape[1] != module.in_features:
         raise ValueError(f"{module_name}: A shape {A.shape} mismatch with in_features={module.in_features}")
     if B.shape[0] != module.out_features:
@@ -1323,18 +1354,13 @@ def compose_loras_v2(
         # Ah, the definition of resolve_module_name:
         # def _resolve_module_name(model, name) -> Tuple[str, Optional[nn.Module]]:
         
-        mod_res = _resolve_module_name(model, module_name_key)
-        # It could return None if failed within function logic? 
-        # Line 414: m = _get_module... if m: return name, m
-        # Line 427: mapping...
-        # Returns None implicitly if falls through? No, wait. 
-        # Check _resolve_module_name logic again. 
-        # It might return None.
+        resolved_name, module = _resolve_module_name(model, module_name_key)
         
-        if mod_res is None:
-             continue
-             
-        resolved_name, module = mod_res
+        # Skip if module not found
+        if module is None:
+            logger.warning(f"[MISS] Module not found: {module_name_key} (resolved: {resolved_name})")
+            skipped_modules_count += 1
+            continue
         
         all_A = []
         all_B_scaled = []
@@ -1353,6 +1379,11 @@ def compose_loras_v2(
                 scale *= (alpha / rank)
             
             # --- AWQ Modulation Layer Check using String Check ---
+            # Safety check: ensure module is not None before accessing attributes
+            if module is None:
+                logger.warning(f"[SKIP] Module is None for {module_name_key} in weight processing, skipping")
+                continue
+                
             is_awq_w4a16 = (
                 module.__class__.__name__ == "AWQW4A16Linear"
                 and hasattr(module, "qweight")
@@ -1403,6 +1434,11 @@ def compose_loras_v2(
         # Standard application via _apply_lora_to_module
         # Now supporting manual bundle for AWQ
         # Re-define flags for the module scope
+        # Double-check module is not None (safety)
+        if module is None:
+            logger.warning(f"[SKIP] Module is None for {module_name_key}, skipping LoRA application")
+            continue
+            
         is_awq_w4a16 = (module.__class__.__name__ == "AWQW4A16Linear" and hasattr(module, "qweight"))
         is_modulation_layer = "img_mod" in resolved_name or "txt_mod" in resolved_name
 

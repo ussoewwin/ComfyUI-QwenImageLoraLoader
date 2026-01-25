@@ -206,6 +206,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.3.7
 - **Updated**: V3 nodes - AWQ modulation layer LoRA application is now **always enabled** (no switch needed). V3 nodes (`NunchakuQwenImageLoraStackV3`) automatically apply LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) without requiring the `apply_awq_mod` toggle that was needed in V2 nodes.
+- **Reason**: After v2.3.6 implementation, no noise issues have been reported, so we determined it is safe to always enable AWQ modulation layer LoRA application in V3 nodes.
 - **Impact**: V3 users no longer need to manually enable the AWQ modulation layer toggle. The Manual Planar Injection fix is automatically applied for all LoRAs in V3 nodes.
 - **Technical Details**: See [v2.3.7 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.7.md) for complete explanation
 

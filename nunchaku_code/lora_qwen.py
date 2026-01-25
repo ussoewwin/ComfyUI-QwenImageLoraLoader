@@ -42,14 +42,14 @@ def _detect_lora_format(lora_state_dict: Dict[str, torch.Tensor]) -> Dict[str, A
     keys = list(lora_state_dict.keys())
 
     standard_patterns = (
-        ".lora_up.weight",
-        ".lora_down.weight",
-        ".lora_A.weight",
-        ".lora_B.weight",
-        ".lora.up.weight",
-        ".lora.down.weight",
-        ".lora.A.weight",
-        ".lora.B.weight",
+        ".lora_up.",
+        ".lora_down.",
+        ".lora_A.",
+        ".lora_B.",
+        ".lora.up.",
+        ".lora.down.",
+        ".lora.A.",
+        ".lora.B.",
     )
 
     def _sample(match_fn, limit: int = 8) -> List[str]:
@@ -1274,6 +1274,8 @@ def compose_loras_v2(
         _log_lora_format_detection(str(first_lora_path_or_dict)[:50], _first_detection)
 
     aggregated_weights: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    # Track names of LoRA files that contain skipped weights
+    skipped_lora_names = set()
 
     # --- 4. Main Loading Loop ---
     for idx, (lora_path_or_dict, strength) in enumerate(lora_configs):
@@ -1402,6 +1404,7 @@ def compose_loras_v2(
                      # mod_layer_applied_count += 1  <-- Removed to avoid double counting per LoRA
                 else:
                     skipped_modules_count += 1
+                    skipped_lora_names.update(w["source"] for w in weight_list)
             elif is_awq_w4a16:
                  # Standard AWQ (not modulation)
                      target_device = module.qweight.device
@@ -1472,6 +1475,14 @@ def compose_loras_v2(
             
             logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
             applied_modules_count += 1
+
+    if skipped_lora_names:
+        logger.warning("""\n⚠️  Some weights from the following LoRAs were automatically skipped 
+        because modulation layers (img_mod/txt_mod) are extremely sensitive to Nunchaku quantization. 
+        To override this and force loading, set environment variable QWENIMAGE_LORA_APPLY_AWQ_MOD=1:""")
+        for source in sorted(list(skipped_lora_names)):
+            short_name = os.path.basename(source) if os.path.sep in source else source
+            logger.warning(f"   - {short_name}")
 
     logger.info(f"Sampled LoRA composition complete. Applied: {applied_modules_count}, Mod-patched: {mod_layer_applied_count}, Skipped: {skipped_modules_count}")
     return True

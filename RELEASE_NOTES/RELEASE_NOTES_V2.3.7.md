@@ -16,10 +16,11 @@ In v2.3.6, we implemented the **Runtime Monkey Patch with Manual Planar Injectio
 
 After v2.3.6 was released and used in production:
 - **No noise issues have been reported** by users
+- **Extensive testing by the developer** confirmed the fix works correctly without noise issues
 - The Manual Planar Injection approach has proven stable
 - The fix works correctly for all tested LoRA formats
 
-Based on this validation, we determined it is safe to **always enable** AWQ modulation layer LoRA application in V3 nodes, eliminating the need for users to manually toggle the `apply_awq_mod` switch.
+Based on this validation (both user reports and developer testing), we determined it is safe to **always enable** AWQ modulation layer LoRA application in V3 nodes, eliminating the need for users to manually toggle the `apply_awq_mod` switch.
 
 ### V2 Switch Retention
 

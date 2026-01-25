@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.3.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.6)
+> Latest release: [v2.3.7 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.7)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -47,6 +47,7 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 <img src="images/qiv2_stack.png" alt="NunchakuQwenImageLoraStackV2: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible" width="400">
 
 - **NunchakuQwenImageLoraStackV3**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
+  - **AWQ Modulation Layer Support**: AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) LoRA application is **always enabled** (no switch needed). This feature uses Runtime Monkey Patch with Manual Planar Injection to fix noise issues. ✅ **V3 nodes always apply AWQ modulation layer LoRA by default.**
 
 <img src="images/qiv3_stack.png" alt="NunchakuQwenImageLoraStackV3: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible" width="400">
 
@@ -202,6 +203,11 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ## Changelog
+
+### v2.3.7
+- **Updated**: V3 nodes - AWQ modulation layer LoRA application is now **always enabled** (no switch needed). V3 nodes (`NunchakuQwenImageLoraStackV3`) automatically apply LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) without requiring the `apply_awq_mod` toggle that was needed in V2 nodes.
+- **Impact**: V3 users no longer need to manually enable the AWQ modulation layer toggle. The Manual Planar Injection fix is automatically applied for all LoRAs in V3 nodes.
+- **Technical Details**: See [v2.3.7 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.7.md) for complete explanation
 
 ### v2.3.6
 - **Fixed**: AWQ modulation layer LoRA application - Implemented Runtime Monkey Patch with Manual Planar Injection to fix noise issues when applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`). The fix uses a runtime patch to inject LoRA weights directly into the transformer block forward pass, bypassing layout/transpose issues.

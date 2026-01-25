@@ -157,7 +157,6 @@ If you prefer to continue using V2 nodes:
 
 ## Related Issues
 
-- [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - Module resolution failures for Z-Image-Turbo models (resolved in v2.3.6)
 - AWQ modulation layer noise issues (resolved in v2.3.6 with Manual Planar Injection)
 
 ---

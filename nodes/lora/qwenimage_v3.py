@@ -207,12 +207,16 @@ class NunchakuQwenImageLoraStackV2:
             if model_wrapper.cpu_offload_setting != cpu_offload:
                 logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
                 model_wrapper.cpu_offload_setting = cpu_offload
+            # V3: Always ensure apply_awq_mod is True (no switch, always enabled)
+            if hasattr(model_wrapper, "apply_awq_mod") and model_wrapper.apply_awq_mod != True:
+                logger.info(f"🔄 Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to 'True' (V3: always enabled)")
+                model_wrapper.apply_awq_mod = True
             transformer = model_wrapper.model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith(
             "NunchakuQwenImageTransformer2DModel"
         ):
             logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
-            logger.info(f"📦 Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}'")
+            logger.info(f"📦 Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}', apply_awq_mod=True (V3: always enabled)")
             wrapped_model = ComfyQwenImageWrapper(
                 model_wrapper,
                 getattr(model_wrapper, "config", {}),
@@ -220,6 +224,7 @@ class NunchakuQwenImageLoraStackV2:
                 {},  # forward_kwargs
                 cpu_offload,  # cpu_offload_setting
                 4.0,  # vram_margin_gb
+                apply_awq_mod=True,  # V3: Always enable AWQ modulation layer LoRA (no switch needed)
             )
             model.model.diffusion_model = wrapped_model
             model_wrapper = wrapped_model

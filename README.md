@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.3.7 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.7)
+> Latest release: [v2.6.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.6)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -203,6 +203,13 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ## Changelog
+
+### v2.6.6
+- **Fixed**: Fixed `AttributeError: 'Logger' object has no attribute 'mgpu_mm_log'` error in `ComfyUI-nunchaku-unofficial-loader` that was causing prompt execution to crash. The error occurred when the system attempted to log memory management operations using a non-existent custom logging method.
+- **Solution**: Replaced all instances of `logger.mgpu_mm_log()` with `logger.info()` across 3 files (`model_management_mgpu.py`, `device_utils.py`, `wrappers.py`). This ensures compatibility with Python's standard logging infrastructure while maintaining all logging functionality.
+- **Impact**: Prompt execution now works correctly without crashes. Memory management, monitoring, and cleanup operations function properly with standard logging methods.
+- **Related Repository**: This fix was applied to [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader) repository.
+- **Technical Details**: See [MGPU_MM_LOG_ATTRIBUTE_ERROR_FIX.md](md/MGPU_MM_LOG_ATTRIBUTE_ERROR_FIX.md) for complete explanation
 
 ### v2.3.7
 - **Updated**: V3 nodes - AWQ modulation layer LoRA application is now **always enabled** (no switch needed). V3 nodes (`NunchakuQwenImageLoraStackV3`) automatically apply LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) without requiring the `apply_awq_mod` toggle that was needed in V2 nodes.

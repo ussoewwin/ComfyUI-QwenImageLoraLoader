@@ -177,6 +177,12 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
       - `lora_A.weight` / `lora_B.weight`
       - `lora.A.weight` / `lora.B.weight`
     - These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.
+  - ✅ **PEFT Format LoRA** (v2.3.8+):
+    - Supported weight keys:
+      - `lora_A.default.weight` / `lora_B.default.weight`
+      - `lora.up.default.weight` / `lora.down.default.weight`
+      - Other PEFT format variations with additional tags (e.g., `.default`, `.base`, etc.)
+    - These formats are produced by Hugging Face PEFT library. PEFT format support was added in v2.3.8 (PR #48).
   - ❌ **LoKR (Lycoris)**: Not supported (Keys like `lokr_w1`, `lokr_w2`)
   - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
   - ❌ **IA3**: Not supported

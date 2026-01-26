@@ -171,7 +171,7 @@ This document contains release notes for versions v1.6.0 through v2.2.8 of Comfy
 
 **v1.63 CPU Offload Setting**
 
-<img src="images/v1.63_cpu_offload_setting.png" alt="v1.63 CPU Offload Setting" width="50%">
+<img src="../images/v1.63_cpu_offload_setting.png" alt="v1.63 CPU Offload Setting" width="50%">
 
 ---
 

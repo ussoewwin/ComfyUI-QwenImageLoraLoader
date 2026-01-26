@@ -169,6 +169,8 @@ This document contains release notes for versions v1.6.0 through v2.2.8 of Comfy
 - **Solution**: Added `cpu_offload` parameter to `INPUT_TYPES` allowing users to select from `["auto", "enable", "disable"]` with default `"disable"` for performance
 - **Technical Details**: See [v1.63 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v1.63) for complete explanation
 
+**v1.63 CPU Offload Setting**
+
 <img src="images/v1.63_cpu_offload_setting.png" alt="v1.63 CPU Offload Setting" width="50%">
 
 ---

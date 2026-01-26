@@ -205,9 +205,8 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ## Changelog
 
 ### v2.3.8
-- **Fixed**: PEFT format LoRA detection - Fixed issue where LoRA files created with Hugging Face PEFT library (e.g., `.lora_A.default.weight` format) were incorrectly detected as "unsupported" and skipped. Changed pattern matching from suffix exact match (`.lora_A.weight`) to partial match (`.lora_A.`) to support PEFT format while maintaining backward compatibility.
-- **Added**: Warning log for skipped LoRA weights - Added logging to display which LoRA files had weights automatically skipped for AWQ modulation layers, with instructions on how to override using environment variable `QWENIMAGE_LORA_APPLY_AWQ_MOD=1`.
-- **Impact**: PEFT format LoRAs (such as [qwen-image-edit-lowres-fix-input-image-repair](https://civitai.com/models/1889350/qwen-image-edit-lowres-fix-input-image-repair)) can now be loaded correctly without being skipped.
+- **Fixed**: PEFT format LoRA detection - Fixed issue where LoRA files created with Hugging Face PEFT library (`.lora_A.default.weight` format) were incorrectly detected as "unsupported" and skipped. Changed pattern matching to support PEFT format while maintaining backward compatibility.
+- **Added**: Warning log for skipped LoRA weights - Added logging to display which LoRA files had weights automatically skipped for AWQ modulation layers.
 - **Related Issues**: [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44)
 - **Technical Details**: See [v2.3.8 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.8.md) for complete explanation
 

@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.6.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.6)
+> Latest release: [v2.3.8 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.8)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -204,12 +204,12 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.6.6
-- **Fixed**: Fixed `AttributeError: 'Logger' object has no attribute 'mgpu_mm_log'` error in `ComfyUI-nunchaku-unofficial-loader` that was causing prompt execution to crash. The error occurred when the system attempted to log memory management operations using a non-existent custom logging method.
-- **Solution**: Replaced all instances of `logger.mgpu_mm_log()` with `logger.info()` across 3 files (`model_management_mgpu.py`, `device_utils.py`, `wrappers.py`). This ensures compatibility with Python's standard logging infrastructure while maintaining all logging functionality.
-- **Impact**: Prompt execution now works correctly without crashes. Memory management, monitoring, and cleanup operations function properly with standard logging methods.
-- **Related Repository**: This fix was applied to [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader) repository.
-- **Technical Details**: See [MGPU_MM_LOG_ATTRIBUTE_ERROR_FIX.md](md/MGPU_MM_LOG_ATTRIBUTE_ERROR_FIX.md) for complete explanation
+### v2.3.8
+- **Fixed**: PEFT format LoRA detection - Fixed issue where LoRA files created with Hugging Face PEFT library (e.g., `.lora_A.default.weight` format) were incorrectly detected as "unsupported" and skipped. Changed pattern matching from suffix exact match (`.lora_A.weight`) to partial match (`.lora_A.`) to support PEFT format while maintaining backward compatibility.
+- **Added**: Warning log for skipped LoRA weights - Added logging to display which LoRA files had weights automatically skipped for AWQ modulation layers, with instructions on how to override using environment variable `QWENIMAGE_LORA_APPLY_AWQ_MOD=1`.
+- **Impact**: PEFT format LoRAs (such as [qwen-image-edit-lowres-fix-input-image-repair](https://civitai.com/models/1889350/qwen-image-edit-lowres-fix-input-image-repair)) can now be loaded correctly without being skipped.
+- **Related Issues**: [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44)
+- **Technical Details**: See [v2.3.8 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.8.md) for complete explanation
 
 ### v2.3.7
 - **Updated**: V3 nodes - AWQ modulation layer LoRA application is now **always enabled** (no switch needed). V3 nodes (`NunchakuQwenImageLoraStackV3`) automatically apply LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) without requiring the `apply_awq_mod` toggle that was needed in V2 nodes.

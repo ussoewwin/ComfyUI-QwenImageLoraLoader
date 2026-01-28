@@ -75,3 +75,9 @@ PR34_COMFYUI_V0.6.0_COMPATIBILITY.md
 
 # Ignore log adjustment guide
 md/log_adjustment_guide.md
+
+# Temporary files
+*.restore
+lora_keys.txt
+main_version.txt
+pr48_*.txt

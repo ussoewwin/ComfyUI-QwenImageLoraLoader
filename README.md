@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.3.8 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.8)
+> Latest release: [v2.3.9 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.9)
 > 
 > ⚠️ **Note for v2.0+ users**: If you encounter `TypeError: got multiple values for argument 'guidance'` errors, see [troubleshooting section](#issue-30-typeerror-got-multiple-values-for-argument-guidance-v20) below.
 
@@ -204,6 +204,10 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ## Changelog
+
+### v2.3.9
+- **Added**: Key Diffusion (key analysis logging) - Added detailed key analysis logging to all Qwen Image LoRA nodes (Loader, Legacy Stack, V2 Stack, V3 Stack). When enabled via `nunchaku_log=1` environment variable, displays key mapping information (`Key: <original key> -> Mapped to: <mapped target> (Group: <group>)`) for debugging and verification purposes. This feature matches the functionality already available in Z-Image Turbo LoRA nodes.
+- **Technical Details**: See [v2.3.9 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.9) for complete explanation
 
 ### v2.3.8
 - **Fixed**: PEFT format LoRA detection - Fixed issue where LoRA files created with Hugging Face PEFT library (`.lora_A.default.weight` format) were incorrectly detected as "unsupported" and skipped. Changed pattern matching to support PEFT format while maintaining backward compatibility.

@@ -31,6 +31,10 @@ If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku
 
 ## Usage
 
+### Debug logs (optional)
+
+By default, detailed debug logs are **muted**. If you want detailed debug output (Key Diffusion / key mapping inspection, `[APPLY]`, `[AWQ_MOD]`, etc.), set the environment variable `nunchaku_log=1` before starting ComfyUI.
+
 ### Available Nodes
 
 - **NunchakuQwenImageLoraLoader**: Single LoRA loader

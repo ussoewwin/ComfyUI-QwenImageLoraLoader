@@ -20,6 +20,11 @@ from nunchaku.lora.flux.nunchaku_converter import (
 
 logger = logging.getLogger(__name__)
 
+# Log control switch:
+# Set environment variable nunchaku_log=1 to enable Key Diffusion, [APPLY], and [AWQ_MOD] logs.
+# Default is muted (only "1" enables logging).
+NUNCHAKU_LOG_ENABLED = str(os.getenv("nunchaku_log", "0")).strip() == "1"
+
 # Safety switch:
 # QwenImage's modulation linears (`img_mod.1` / `txt_mod.1`) are extremely sensitive because their
 # output is reshaped into shift/scale/gate parameters. With AWQ quantization (AWQW4A16Linear),
@@ -1450,7 +1455,8 @@ def compose_loras_v2(
         # and manually compute/add the LoRA term in the TransformerBlock forward pass (models/qwenimage.py).
         # This avoids all layout/transpose issues by operating on the clean Planar output.
         if is_awq_w4a16 and is_modulation_layer:
-            logger.info(f"[AWQ_MOD] {resolved_name}: Storing LoRA weights for manual Planar injection")
+            if NUNCHAKU_LOG_ENABLED:
+                logger.info(f"[AWQ_MOD] {resolved_name}: Storing LoRA weights for manual Planar injection")
             
             mod = module
             
@@ -1473,7 +1479,8 @@ def compose_loras_v2(
             if is_awq_w4a16 and is_modulation_layer:
                 module._is_modulation_layer = True
             
-            logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
+            if NUNCHAKU_LOG_ENABLED:
+                logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
             applied_modules_count += 1
 
     if skipped_lora_names:

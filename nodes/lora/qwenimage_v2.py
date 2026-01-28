@@ -133,15 +133,40 @@ class NunchakuQwenImageLoraStackV2:
         if not loras_to_apply:
             return (model,)
 
-        model_wrapper = model.model.diffusion_model
-
-        # Dynamic import with explicit path manipulation
+        # ZIT zimageturbo_v4.py lines 201-241: load -> detect -> log -> key inspection (exact same block, logger -> print)
+        # Controlled by nunchaku_log env var (0 = mute)
         import sys
         import importlib.util
         lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         if lora_loader_dir not in sys.path:
             sys.path.insert(0, lora_loader_dir)
-        
+        from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format, _log_lora_format_detection, NUNCHAKU_LOG_ENABLED
+        _fn, _fs = loras_to_apply[0]
+        lora_path = folder_paths.get_full_path_or_raise("loras", _fn)
+        lora_state_dict = _load_lora_state_dict(lora_path)
+        if lora_state_dict and NUNCHAKU_LOG_ENABLED:
+            detection = _detect_lora_format(lora_state_dict)
+            _log_lora_format_detection(str(_fn), detection)
+            # First LoRA: Detailed key inspection (same as zimageturbo_v4.py lines 219-240)
+            print(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {_fs}) ---")
+            _first_detection = _detect_lora_format(lora_state_dict)
+            if _first_detection["has_standard"]:
+                for key in lora_state_dict.keys():
+                    parsed_res = _classify_and_map_key(key)
+                    if parsed_res:
+                        group, base_key, comp, ab = parsed_res
+                        mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
+                        print(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
+                    else:
+                        print(f"Key: {key} -> UNMATCHED (Ignored)")
+            else:
+                print("⚠️  Unsupported LoRA format detected (No standard keys).")
+                print(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
+                print("   Note: This LoRA will likely have no effect or will be skipped entirely.")
+            print("--- DEBUG: End key inspection ---")
+
+        model_wrapper = model.model.diffusion_model
+
         # V2 node uses V2-specific wrapper to ensure isolation from v1/v3 nodes
         spec = importlib.util.spec_from_file_location(
             "wrappers.qwenimage_v2",

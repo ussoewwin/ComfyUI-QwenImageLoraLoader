@@ -177,12 +177,6 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
       - `lora_A.weight` / `lora_B.weight`
       - `lora.A.weight` / `lora.B.weight`
     - These are the standard formats produced by Kohya-ss, Diffusers, and most training scripts.
-  - ✅ **PEFT Format LoRA** (v2.3.8+):
-    - Supported weight keys:
-      - `lora_A.default.weight` / `lora_B.default.weight`
-      - `lora.up.default.weight` / `lora.down.default.weight`
-      - Other PEFT format variations with additional tags (e.g., `.default`, `.base`, etc.)
-    - These formats are produced by Hugging Face PEFT library. PEFT format support was added in v2.3.8 (PR #48).
   - ❌ **LoKR (Lycoris)**: Not supported (Keys like `lokr_w1`, `lokr_w2`)
   - ❌ **LoHa**: Not supported (Keys like `hada_w1`, `hada_w2`)
   - ❌ **IA3**: Not supported
@@ -216,7 +210,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **Added**: Warning log for skipped LoRA weights - Added logging to display which LoRA files had weights automatically skipped for AWQ modulation layers.
 - **Merged**: [PR #48](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/48) - feat(lora_qwen): improve format detection and add safety skip logs (proposed by [avan06](https://github.com/avan06))
 - **Related Issues**: [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - Module resolution failures and unsupported LoRA format issues
-- **Technical Details**: See [v2.3.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.8) for complete explanation
+- **Technical Details**: See [v2.3.8 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.8.md) for complete explanation
 
 ### v2.3.7
 - **Updated**: V3 nodes - AWQ modulation layer LoRA application is now **always enabled** (no switch needed). V3 nodes (`NunchakuQwenImageLoraStackV3`) automatically apply LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) without requiring the `apply_awq_mod` toggle that was needed in V2 nodes.

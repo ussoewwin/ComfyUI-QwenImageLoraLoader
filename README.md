@@ -217,7 +217,11 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.4.0 (latest)
+### v2.4.1 (latest)
+- **Added**: Nunchaku Z-Image-Turbo LoRA Stack V1 with rgthree-style UI - Same layout as Qwen Image LoRA Stack V1: toggle, LoRA name, and strength per row. For official Nunchaku Z-Image loader only. Uses compose_loras_v2. Does not work properly with ComfyUI Nodes 2.0; when using with Nodes 2.0, pressing F5 to refresh will reflect changes.
+- **Related Issues**: [Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12) - Request for better LoRA option (rgthree-style UI), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36) - Request for enabling/disabling LoRA function
+
+### v2.4.0
 - **Added**: Nunchaku Qwen Image LoRA Stack V1 with rgthree-style UI - Clean, minimalist interface inspired by Power Lora Loader (rgthree-comfy). Toggle, LoRA name, and strength per row.
 - **Merged**: [PR #49](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/49) - feat(qwen_lora): add Nunchaku Qwen Image LoRA Stack V4 with rgthree-style UI (proposed by [avan06](https://github.com/avan06))
 - **Note**: Does not work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas.

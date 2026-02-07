@@ -46,7 +46,7 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 - **NunchakuQwenImageLoraStackV1**: Multi LoRA stacker with rgthree-style UI
   - Clean, minimalist design inspired by [Power Lora Loader (rgthree-comfy)](https://github.com/rgthree/rgthree-comfy). Toggle, LoRA name, and strength per row.
-  - ⚠️ **Note**: Does **not** work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas.
+  - ⚠️ **Note**: Does **not** work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas. ⚠️ **When using with ComfyUI Nodes 2.0, pressing F5 to refresh will reflect changes.**
 
 <img src="images/qiv1_stack.png" alt="NunchakuQwenImageLoraStackV1: Multi LoRA stacker with rgthree-style UI" width="400">
 

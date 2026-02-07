@@ -1,5 +1,5 @@
 """
-This module provides the :class:`NunchakuQwenImageLoraStackV4` node
+This module provides the :class:`NunchakuQwenImageLoraStackV1` node
 for applying LoRA weights to Nunchaku Qwen Image models within ComfyUI.
 The interface completely mimics the Power Lora Loader from rgthree-comfy(https://github.com/rgthree/rgthree-comfy ),
 supporting dynamic additions and custom widgets.
@@ -39,11 +39,11 @@ class FlexibleOptionalInputType(dict):
     def __getitem__(self, key):
         return (any_type, {})
 
-class NunchakuQwenImageLoraStackV4:
+class NunchakuQwenImageLoraStackV1:
     """
     Node for loading and applying multiple LoRAs to a Nunchaku Qwen Image model with dynamic UI.
-    Built upon V3, V4 not only supports the ComfyUI Nodes 2.0 UI but also pays full homage
-    to the clean and minimalist design of the Power Lora Loader from the rgthree-comfy project.
+    Built upon V3, pays full homage to the clean and minimalist design of the
+    Power Lora Loader from the rgthree-comfy project.
     """
 
     @classmethod
@@ -76,7 +76,7 @@ class NunchakuQwenImageLoraStackV4:
                     },
                 ),
             },
-            "optional": FlexibleOptionalInputType(), 
+            "optional": FlexibleOptionalInputType(),
             # Use 'hidden' here to let JS pass dynamic LoRA data
             "hidden": {
                 "prompt": "PROMPT",
@@ -89,7 +89,7 @@ class NunchakuQwenImageLoraStackV4:
     RETURN_TYPES = ("MODEL",)
     OUTPUT_TOOLTIPS = ("The modified diffusion model with all LoRAs applied.",)
     FUNCTION = "load_lora_stack"
-    TITLE = "Nunchaku Qwen Image LoRA Stack V4"
+    TITLE = "Nunchaku Qwen Image LoRA Stack V1"
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control."
 
@@ -107,7 +107,7 @@ class NunchakuQwenImageLoraStackV4:
         logger.info(f"[LoRA Stack Status] apply_awq_mod: {apply_awq_mod}")
         logger.info(f"[LoRA Stack Status] stack_enabled: {stack_enabled}")
         logger.info(f"[LoRA Stack Status] Processing {lora_count} LoRA slot(s):")
-        
+
         for i, key in enumerate(lora_keys):
             value = kwargs[key]
             if not isinstance(value, dict):
@@ -179,12 +179,12 @@ class NunchakuQwenImageLoraStackV4:
             if model_wrapper.cpu_offload_setting != cpu_offload:
                 logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
                 model_wrapper.cpu_offload_setting = cpu_offload
-            
+
             # Dynamically update the apply_awq_mod setting.
             if hasattr(model_wrapper, "apply_awq_mod") and model_wrapper.apply_awq_mod != apply_awq_mod:
                 logger.info(f"🔄 Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to '{apply_awq_mod}'")
                 model_wrapper.apply_awq_mod = apply_awq_mod
-            
+
             transformer = model_wrapper.model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith(
             "NunchakuQwenImageTransformer2DModel"
@@ -239,11 +239,9 @@ class NunchakuQwenImageLoraStackV4:
 
 
 GENERATED_NODES = {
-    "NunchakuQwenImageLoraStackV4": NunchakuQwenImageLoraStackV4,
+    "NunchakuQwenImageLoraStackV1": NunchakuQwenImageLoraStackV1,
 }
 
 GENERATED_DISPLAY_NAMES = {
-    "NunchakuQwenImageLoraStackV4": "Nunchaku Qwen Image LoRA Stack V4",
+    "NunchakuQwenImageLoraStackV1": "Nunchaku Qwen Image LoRA Stack V1",
 }
-
-

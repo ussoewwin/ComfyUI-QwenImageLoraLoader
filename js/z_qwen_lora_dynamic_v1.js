@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-console.log("★★★ z_qwen_lora_dynamic_v4.js: Qwen Image LoRA Stack V4 ★★★");
+console.log("★★★ z_qwen_lora_dynamic_v1.js: Qwen Image LoRA Stack V1 ★★★");
 
 // Use LiteGraph built-in colors to ensure Light/Dark Mode compatibility
 const getColors = () => ({
@@ -178,10 +178,10 @@ class NunchakuLoraWidget {
 }
 
 app.registerExtension({
-  name: "nunchaku.qwen_lora_dynamic_v4",
+  name: "nunchaku.qwen_lora_dynamic_v1",
 
   async beforeRegisterNodeDef(nodeType, nodeData, app) {
-    if (nodeData.name !== "NunchakuQwenImageLoraStackV4") return;
+    if (nodeData.name !== "NunchakuQwenImageLoraStackV1") return;
 
     // Save original onNodeCreated
     const onNodeCreated = nodeType.prototype.onNodeCreated;
@@ -340,5 +340,3 @@ app.registerExtension({
     };
   }
 });
-
-

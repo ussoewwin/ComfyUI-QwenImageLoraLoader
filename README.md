@@ -61,6 +61,13 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/qiv3_stack.png" alt="NunchakuQwenImageLoraStackV3: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible" width="400">
 
+- **NunchakuZImageTurboLoraStackV1**: Z-Image-Turbo LoRA stacker with rgthree-style UI
+  - Clean, minimalist design inspired by [Power Lora Loader (rgthree-comfy)](https://github.com/rgthree/rgthree-comfy). Toggle, LoRA name, and strength per row. For official Nunchaku Z-Image loader only. Uses compose_loras_v2.
+  - ⚠️ **Note**: Does **not** work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas.
+  - ⚠️ **When using with ComfyUI Nodes 2.0, pressing F5 to refresh will reflect changes.**
+
+<img src="images/zitlorav1.png" alt="NunchakuZImageTurboLoraStackV1: Z-Image-Turbo LoRA stacker with rgthree-style UI" width="400">
+
 - **NunchakuZImageTurboLoraStackV4**: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible
 
 <img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">

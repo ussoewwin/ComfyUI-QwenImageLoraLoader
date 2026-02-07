@@ -6,8 +6,15 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.3.9 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.9)
+> Latest release: [v2.4.0 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.0)
 > 
+
+## v2.4.0 - Nunchaku Qwen Image LoRA Stack V1 (rgthree-style UI)
+
+Added **Nunchaku Qwen Image LoRA Stack V1** with a clean, minimalist interface inspired by Power Lora Loader (rgthree-comfy). Toggle, LoRA name, and strength per row.
+
+- **PR**: [PR #49 - feat(qwen_lora): add Nunchaku Qwen Image LoRA Stack V4 with rgthree-style UI](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/49)
+- **Note**: Does not work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas.
 
 ## Source
 

@@ -44,6 +44,11 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/legacy_stack.png" alt="NunchakuQwenImageLoraStack: Multi LoRA stacker with dynamic UI (Legacy)" width="400">
 
+- **NunchakuQwenImageLoraStackV1**: Multi LoRA stacker with rgthree-style UI - ComfyUI Nodes 2.0 compatible
+  - Clean, minimalist design inspired by [Power Lora Loader (rgthree-comfy)](https://github.com/rgthree/rgthree-comfy). Toggle, LoRA name, and strength per row.
+
+<img src="images/qiv1_stack.png" alt="NunchakuQwenImageLoraStackV1: Multi LoRA stacker with rgthree-style UI - ComfyUI Nodes 2.0 compatible" width="400">
+
 - **NunchakuQwenImageLoraStackV2**: Multi LoRA stacker with dynamic UI - ComfyUI Nodes 2.0 (Beta) compatible
   - **AWQ Modulation Layer Support**: Includes experimental support for applying LoRA to AWQ quantized modulation layers (`img_mod.1` / `txt_mod.1`) via the "Apply AWQ Mod" toggle. This feature uses Runtime Monkey Patch with Manual Planar Injection to fix noise issues. ⚠️ **Warning**: **This is an experimental feature currently implemented only in V2 nodes.** If no issues are found, this feature will be applied to V1 and V3 nodes as well.
 

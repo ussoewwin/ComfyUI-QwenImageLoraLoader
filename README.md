@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.4.0 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.0)
+> Latest release: [v2.3.9 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.9)
 > 
 
 ## Source
@@ -71,7 +71,7 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 **For Nunchaku Qwen Image models:**
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
-2. Add a LoRA node: `NunchakuQwenImageLoraLoader`, `Nunchaku Qwen Image LoRA Stack V1` (rgthree-style), `NunchakuQwenImageLoraStack` (Legacy), or Stack V2/V3
+2. Add either `NunchakuQwenImageLoraLoader` or `NunchakuQwenImageLoraStack` node
 3. Select your LoRA file and set the strength
 4. Connect to your workflow
 
@@ -206,13 +206,6 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
   - [Issue #8](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/8) - RES4LYF sampler compatibility issue
 
 ## Changelog
-
-### v2.4.0
-- **BREAKING**: Renamed Qwen Image LoRA Stack V4 to **V1** (rgthree-style UI)
-  - **Node**: `NunchakuQwenImageLoraStackV4` → `NunchakuQwenImageLoraStackV1`
-  - **Files**: `qwenimage_v4.py` → `qwenimage_v1.py`, `z_qwen_lora_dynamic_v4.js` → `z_qwen_lora_dynamic_v1.js`
-  - **Reason**: V1 indicates the first rgthree-style UI variant; V4 was a temporary placeholder from PR #49
-  - ⚠️ **Migration**: Existing workflows using `NunchakuQwenImageLoraStackV4` must be updated. Replace the node with `Nunchaku Qwen Image LoRA Stack V1` (node ID changed; re-add the node and reconfigure).
 
 ### v2.3.9
 - **Added**: Key Diffusion (key analysis logging) - Added detailed key analysis logging to all Qwen Image LoRA nodes (Loader, Legacy Stack, V2 Stack, V3 Stack). When enabled via `nunchaku_log=1` environment variable, displays key mapping information (`Key: <original key> -> Mapped to: <mapped target> (Group: <group>)`) for debugging and verification purposes. This feature matches the functionality already available in Z-Image Turbo LoRA nodes. **Note**: Logs are muted by default and only displayed when `nunchaku_log=1` is set.

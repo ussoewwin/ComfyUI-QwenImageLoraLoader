@@ -213,6 +213,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **Added**: Nunchaku Qwen Image LoRA Stack V1 with rgthree-style UI - Clean, minimalist interface inspired by Power Lora Loader (rgthree-comfy). Toggle, LoRA name, and strength per row.
 - **Merged**: [PR #49](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/49) - feat(qwen_lora): add Nunchaku Qwen Image LoRA Stack V4 with rgthree-style UI (proposed by [avan06](https://github.com/avan06))
 - **Note**: Does not work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas.
+- **Technical Details**: See [v2.4.0 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.4.0.md) for complete explanation
 
 ### v2.3.9
 - **Added**: Key Diffusion (key analysis logging) - Added detailed key analysis logging to all Qwen Image LoRA nodes (Loader, Legacy Stack, V2 Stack, V3 Stack). When enabled via `nunchaku_log=1` environment variable, displays key mapping information (`Key: <original key> -> Mapped to: <mapped target> (Group: <group>)`) for debugging and verification purposes. This feature matches the functionality already available in Z-Image Turbo LoRA nodes. **Note**: Logs are muted by default and only displayed when `nunchaku_log=1` is set.

@@ -66,6 +66,34 @@ class ComfyQwenImageWrapper(nn.Module):
         # Track last seen device to detect CPU/GPU moves that require re-compose
         self._last_device = None
 
+    def process_img(self, x, index=0, h_offset=0, w_offset=0):
+        """
+        Delegate to the inner model so Qwen Image ControlNet (e.g. Fun ControlNet)
+        can call base_model.process_img(x). Required when using Union CN with
+        Nunchaku Qwen Image model wrapped by this wrapper.
+        """
+        if self.model is None:
+            raise RuntimeError("Model has been unloaded. Cannot call process_img.")
+        return self.model.process_img(x, index=index, h_offset=h_offset, w_offset=w_offset)
+
+    def __getattr__(self, name):
+        """
+        Forward attribute access to the inner model so Qwen Image ControlNet
+        (e.g. Fun ControlNet) can access patch_size, pe_embedder, img_in,
+        txt_norm, txt_in, time_text_embed, etc. when base_model is this wrapper.
+        Use _modules to get the inner model to avoid recursion: inside this
+        __getattr__, accessing self.model would trigger __getattr__ again.
+        """
+        try:
+            inner = object.__getattribute__(self, "_modules").get("model")
+        except (AttributeError, KeyError):
+            inner = None
+        if inner is None:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        if name == "model":
+            return inner
+        return getattr(inner, name)
+
     def to_safely(self, device):
         """Safely move the model to the specified device."""
         if self.model is None:

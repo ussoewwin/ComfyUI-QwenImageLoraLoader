@@ -81,3 +81,6 @@ md/log_adjustment_guide.md
 lora_keys.txt
 main_version.txt
 pr48_*.txt
+
+# Local/tool tracking list (do not track in repo)
+.tracking

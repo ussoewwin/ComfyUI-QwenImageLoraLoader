@@ -6,7 +6,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.4.1 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.1)
+> Latest release: [v2.4.2 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.2)
 > 
 
 ## Source
@@ -217,7 +217,12 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.4.1 (latest)
+### v2.4.2 (latest)
+- **Fixed**: Qwen Image ControlNet (e.g. Fun ControlNet) with Nunchaku Qwen Image model — `ComfyQwenImageWrapper` now exposes `process_img` and forwards ControlNet-required attributes (`patch_size`, `pe_embedder`, `img_in`, `txt_norm`, `txt_in`, `time_text_embed`) to the inner model so Union ControlNet works when the base model is the wrapper.
+- **Fixed**: RecursionError when accessing `model_wrapper.model` (e.g. in NunchakuQwenImageLoraStackV3) — `__getattr__` now obtains the inner model via `_modules` instead of `self.model` to avoid infinite recursion.
+- **Technical Details**: See [v2.4.2 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.4.2.md) for complete explanation
+
+### v2.4.1
 - **Added**: Nunchaku Z-Image-Turbo LoRA Stack V1 with rgthree-style UI - Same layout as Qwen Image LoRA Stack V1: toggle, LoRA name, and strength per row. For official Nunchaku Z-Image loader only. Uses compose_loras_v2. Does not work properly with ComfyUI Nodes 2.0; when using with Nodes 2.0, pressing F5 to refresh will reflect changes.
 - **Related Issues**: [Issue #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12) - Request for better LoRA option (rgthree-style UI), [Issue #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36) - Request for enabling/disabling LoRA function
 

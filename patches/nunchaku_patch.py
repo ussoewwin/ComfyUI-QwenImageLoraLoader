@@ -1,9 +1,154 @@
 
-import torch
-from typing import Tuple, Optional
 import logging
+import sys
+import types
+from typing import Optional, Tuple
+
+import torch
 
 logger = logging.getLogger(__name__)
+
+_svdq_from_linear_patched: bool = False
+
+
+def _torch_device_fallback() -> torch.device:
+    try:
+        import comfy.model_management as mm
+
+        return mm.get_torch_device()
+    except Exception:
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def _patched_svdqw4a4_from_linear(cls, linear: torch.nn.Linear, **kwargs):
+    """
+    Replacement for SVDQW4A4Linear.from_linear that works when linear.weight is None
+    (ComfyUI disable_weight_init.Linear on Windows + AIMDO before load_model_weights).
+
+    Also avoids ``kwargs.pop("torch_dtype", linear.weight.dtype)``: in Python the default
+    is always evaluated, so it crashed even when torch_dtype was passed in kwargs.
+    """
+    in_features = kwargs.pop("in_features", linear.in_features)
+    if "torch_dtype" in kwargs:
+        torch_dtype = kwargs.pop("torch_dtype")
+    elif linear.weight is not None:
+        torch_dtype = linear.weight.dtype
+    else:
+        raise TypeError(
+            "SVDQW4A4Linear.from_linear: linear.weight is None; pass torch_dtype= "
+            "(ComfyUI lazy Linear before state dict load)."
+        )
+    if "device" in kwargs:
+        device = kwargs.pop("device")
+    elif linear.weight is not None:
+        device = linear.weight.device
+    else:
+        device = _torch_device_fallback()
+    return cls(
+        in_features=in_features,
+        out_features=linear.out_features,
+        bias=linear.bias is not None,
+        torch_dtype=torch_dtype,
+        device=device,
+        **kwargs,
+    )
+
+
+def _make_patched_fuse_to_svdquant_linear(zimage_module: types.ModuleType):
+    """Build fuse_to_svdquant_linear with the same lazy-Linear / pop-default fix."""
+    from nunchaku.models.linear import SVDQW4A4Linear
+
+    add_comfy_cast_weights_attr = zimage_module.add_comfy_cast_weights_attr
+
+    def fuse_to_svdquant_linear(comfy_linear1: torch.nn.Linear, comfy_linear2: torch.nn.Linear, **kwargs):
+        assert comfy_linear1.in_features == comfy_linear2.in_features
+        assert comfy_linear1.bias is None and comfy_linear2.bias is None
+        if "torch_dtype" in kwargs:
+            torch_dtype = kwargs.pop("torch_dtype")
+        elif comfy_linear1.weight is not None:
+            torch_dtype = comfy_linear1.weight.dtype
+        else:
+            raise TypeError(
+                "fuse_to_svdquant_linear: linear.weight is None; pass torch_dtype= "
+                "(ComfyUI lazy Linear before state dict load)."
+            )
+        if "device" in kwargs:
+            device = kwargs.pop("device")
+        elif comfy_linear1.weight is not None:
+            device = comfy_linear1.weight.device
+        else:
+            device = _torch_device_fallback()
+        svdq_linear = SVDQW4A4Linear(
+            comfy_linear1.in_features,
+            comfy_linear1.out_features + comfy_linear2.out_features,
+            bias=False,
+            torch_dtype=torch_dtype,
+            device=device,
+            **kwargs,
+        )
+        add_comfy_cast_weights_attr(svdq_linear, comfy_linear1)
+        return svdq_linear
+
+    return fuse_to_svdquant_linear
+
+
+def apply_svdqw4a4_lazy_linear_patch() -> bool:
+    """Patch nunchaku SVDQW4A4Linear.from_linear for ComfyUI lazy Linear + eager pop default bug."""
+    global _svdq_from_linear_patched
+    if _svdq_from_linear_patched:
+        return True
+    try:
+        from nunchaku.models.linear import SVDQW4A4Linear
+    except ImportError:
+        logger.warning("nunchaku.models.linear.SVDQW4A4Linear not importable; lazy-Linear patch skipped.")
+        return False
+
+    SVDQW4A4Linear.from_linear = classmethod(_patched_svdqw4a4_from_linear)
+    _svdq_from_linear_patched = True
+    logger.info("Patched SVDQW4A4Linear.from_linear for ComfyUI lazy Linear (Windows AIMDO / pre-weight load).")
+    return True
+
+
+def apply_nunchaku_zimage_fuse_lazy_linear_patch() -> bool:
+    """
+    Patch ComfyUI-nunchaku ``fuse_to_svdquant_linear`` if that module is already loaded
+    (same pop-default and weight-None issues as from_linear).
+    """
+    for _name, mod in list(sys.modules.items()):
+        if mod is None:
+            continue
+        if not (
+            hasattr(mod, "fuse_to_svdquant_linear")
+            and hasattr(mod, "ComfyNunchakuZImageAttention")
+            and hasattr(mod, "add_comfy_cast_weights_attr")
+        ):
+            continue
+        fn = mod.fuse_to_svdquant_linear
+        if getattr(fn, "_qwen_lora_loader_lazy_linear_patch", False):
+            return True
+        patched = _make_patched_fuse_to_svdquant_linear(mod)
+        patched._qwen_lora_loader_lazy_linear_patch = True
+        mod.fuse_to_svdquant_linear = patched
+        logger.info("Patched fuse_to_svdquant_linear in %s for ComfyUI lazy Linear.", getattr(mod, "__name__", "?"))
+        return True
+    return False
+
+
+def schedule_nunchaku_zimage_fuse_patch_retries() -> None:
+    """
+    ComfyUI-QwenImageLoraLoader often loads before ComfyUI-nunchaku (folder name order).
+    Then ``models.zimage`` is not in sys.modules yet; retry briefly after startup.
+    """
+    import threading
+
+    def try_once(attempt: int = 0) -> None:
+        if apply_nunchaku_zimage_fuse_lazy_linear_patch():
+            return
+        if attempt < 24:
+            threading.Timer(0.25, lambda: try_once(attempt + 1)).start()
+
+    threading.Timer(0.05, lambda: try_once(0)).start()
+
 
 def forward_with_manual_planar_injection(
     self,
@@ -90,45 +235,44 @@ def forward_with_manual_planar_injection(
 
 
 def apply_nunchaku_patch():
+    """
+    Apply ComfyUI-nunchaku compatibility patches (LoRA planar injection + lazy Linear fixes).
+    Returns True if at least one patch was applied or was already active.
+    """
+    lazy_from = apply_svdqw4a4_lazy_linear_patch()
+    lazy_fuse = apply_nunchaku_zimage_fuse_lazy_linear_patch()
+    if not lazy_fuse:
+        schedule_nunchaku_zimage_fuse_patch_retries()
+
+    planar_ok = False
     try:
-        # Try importing from the expected package structure
-        # Assuming ComfyUI-nunchaku is loaded as a custom node and its models directory handles imports
-        # We need to find the NunchakuQwenImageTransformerBlock class
-        
-        # Strategy: Look for the module in sys.modules first, or try standard import paths
-        import sys
-        
-        # Check if we can import directly if it's in python path
-        # Or if we have to go through custom_nodes
-        
         target_class = None
-        
-        # 1. Try importing nunchaku.models.qwenimage (if standard install or adjusted path)
+
         try:
             from nunchaku.models.qwenimage import NunchakuQwenImageTransformerBlock
+
             target_class = NunchakuQwenImageTransformerBlock
         except ImportError:
             pass
-            
-        # 2. Try importing via custom_nodes path mechanism if above failed
-        # This is strictly environment dependent but common in Comfy
+
         if target_class is None:
-             # Often custom nodes are not importable as top level packages unless they add themselves
-             # We can try to walk sys.modules to find it
-             for module_name, module in sys.modules.items():
-                 if "qwenimage" in module_name and hasattr(module, "NunchakuQwenImageTransformerBlock"):
-                     target_class = getattr(module, "NunchakuQwenImageTransformerBlock")
-                     logger.info(f"Found NunchakuQwenImageTransformerBlock in {module_name}")
-                     break
+            for module_name, module in sys.modules.items():
+                if "qwenimage" in module_name and hasattr(module, "NunchakuQwenImageTransformerBlock"):
+                    target_class = getattr(module, "NunchakuQwenImageTransformerBlock")
+                    logger.info("Found NunchakuQwenImageTransformerBlock in %s", module_name)
+                    break
 
         if target_class:
             logger.info("Applying Manual Planar Injection Monkey Patch to NunchakuQwenImageTransformerBlock")
             target_class.forward = forward_with_manual_planar_injection
-            return True
+            planar_ok = True
         else:
-            logger.warning("Could not find NunchakuQwenImageTransformerBlock to patch. Manual Planar Injection logic will not work if the original file is reverted.")
-            return False
+            logger.warning(
+                "Could not find NunchakuQwenImageTransformerBlock to patch. "
+                "Manual Planar Injection logic will not work if the original file is reverted."
+            )
 
     except Exception as e:
-        logger.error(f"Failed to apply Nunchaku patch: {e}")
-        return False
+        logger.error("Failed to apply Nunchaku planar patch: %s", e)
+
+    return planar_ok or lazy_from

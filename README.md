@@ -219,7 +219,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.4.3 (latest)
 - **Fixed**: Z-Image / SVDQ crash with ComfyUI deferred (lazy) `Linear` weights (`AttributeError: 'NoneType' object has no attribute 'dtype'`) by patching `SVDQW4A4Linear.from_linear` and `fuse_to_svdquant_linear`, including startup retries for load-order variance.
-- **Technical Details**: See [v2.4.3 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.4.3.md) for complete explanation
+- **Technical Details**: See [v2.4.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.3) for complete explanation
 
 ### v2.4.2 (latest)
 - **Fixed**: Qwen Image ControlNet (e.g. Fun ControlNet) with Nunchaku Qwen Image model — `ComfyQwenImageWrapper` now exposes `process_img` and forwards ControlNet-required attributes (`patch_size`, `pe_embedder`, `img_in`, `txt_norm`, `txt_in`, `time_text_embed`) to the inner model so Union ControlNet works when the base model is the wrapper.

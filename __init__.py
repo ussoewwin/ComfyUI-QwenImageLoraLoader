@@ -31,9 +31,14 @@ ZIMAGETURBO_V4_NAMES = {}
 try:
     from .patches.nunchaku_patch import apply_nunchaku_patch
     if apply_nunchaku_patch():
-        logger.info("Successfully applied Nunchaku Manual Planar Injection monkey patch.")
+        logger.info(
+            "Successfully applied Nunchaku monkey patches (Qwen LoRA planar injection; "
+            "Z-Image/SVDQ lazy Linear compat when ComfyUI defers Linear weights)."
+        )
     else:
-        logger.warning("Failed to apply Nunchaku Manual Planar Injection monkey patch.")
+        logger.warning(
+            "No Nunchaku patches applied (nunchaku / NunchakuQwenImageTransformerBlock not found)."
+        )
 except Exception as e:
     logger.error(f"Error importing/applying Nunchaku monkey patch: {e}")
 # -----------------------------------------

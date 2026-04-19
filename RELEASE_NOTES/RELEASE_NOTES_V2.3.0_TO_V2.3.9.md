@@ -27,7 +27,7 @@ This document contains release notes for versions v2.3.0 through v2.3.9 of Comfy
 - **Reason**: After v2.3.6 implementation, no noise issues have been reported, so we determined it is safe to always enable AWQ modulation layer LoRA application in V3 nodes.
 - **Note**: The `apply_awq_mod` switch in V2 nodes is **currently retained** for backward compatibility and user preference. V2 users can still manually control AWQ modulation layer LoRA application via the toggle.
 - **Impact**: V3 users no longer need to manually enable the AWQ modulation layer toggle. The Manual Planar Injection fix is automatically applied for all LoRAs in V3 nodes.
-- **Technical Details**: See [v2.3.7 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.7.md) for complete explanation
+- **Technical Details**: See [v2.3.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.7) for complete explanation
 
 ---
 
@@ -37,7 +37,7 @@ This document contains release notes for versions v2.3.0 through v2.3.9 of Comfy
 - **Impact**: This fix enables all standard format LoRA keys that were previously excluded from AWQ modulation layers to be fully applied. Previously, these layers were skipped to prevent noise, but now they work correctly with the Manual Planar Injection approach.
 - ⚠️ **Warning**: **This is an experimental feature currently implemented only in V2 nodes.** If no issues are found, this feature will be applied to V1 and V3 nodes as well.
 - **Related Issues**: [Issue #44](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/44) - Module resolution failures and unsupported LoRA format issues
-- **Technical Details**: See [v2.3.6 Release Notes](RELEASE_NOTES/RELEASE_NOTES_V2.3.6.md) for complete explanation
+- **Technical Details**: See [v2.3.6 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.3.6) for complete explanation
 
 ---
 

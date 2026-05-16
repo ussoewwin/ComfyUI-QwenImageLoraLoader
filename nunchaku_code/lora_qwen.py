@@ -1270,10 +1270,13 @@ def compose_loras_v2(
         logger.info("⚠️  AWQ Modulation Layer LoRA Injection ENABLED (via override).")
 
     # --- 3. Debug Inspection (First LoRA) ---
+    # OPTIMIZATION: Cache first LoRA state dict for reuse in processing loop
+    _cached_first_lora_state_dict = None
     if lora_configs:
         first_lora_path_or_dict, first_lora_strength = lora_configs[0]
         first_lora_state_dict = _load_lora_state_dict_robust(first_lora_path_or_dict)
-        
+        _cached_first_lora_state_dict = first_lora_state_dict  # Cache for reuse
+
         # Simple logging of format detection
         _first_detection = _detect_lora_format(first_lora_state_dict)
         _log_lora_format_detection(str(first_lora_path_or_dict)[:50], _first_detection)
@@ -1290,8 +1293,12 @@ def compose_loras_v2(
         lora_name = str(lora_path_or_dict)
         if isinstance(lora_path_or_dict, dict):
             lora_name = f"lora_{idx}"
-        
-        lora_state_dict = _load_lora_state_dict_robust(lora_path_or_dict)
+
+        # OPTIMIZATION: Reuse cached first LoRA state dict to avoid duplicate file I/O
+        if idx == 0 and _cached_first_lora_state_dict is not None:
+            lora_state_dict = _cached_first_lora_state_dict
+        else:
+            lora_state_dict = _load_lora_state_dict_robust(lora_path_or_dict)
         if not lora_state_dict:
             continue
 

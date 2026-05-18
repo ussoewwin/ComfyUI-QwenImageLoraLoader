@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_DIR = ROOT / "RELEASE_NOTES"
 ZHMD_DIR = ROOT / "zhmd"
-EN_BODY_SRC = ROOT / "_release_v2.4.4_body_en.md"
+EN_BODY_SRC = ROOT / "release" / "_release_v2.4.4_body_en.md"
 
 EN_SWITCHER = """<table align="center">
   <tr>

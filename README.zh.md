@@ -1,6 +1,8 @@
 # ComfyUI-Nunchaku QwenImage＆ZImageTurboLoraStack
 
-[English](README.md) | **中文**
+<p align="center">
+  <a href="README.md">English</a> | <strong>中文</strong>
+</p>
 
 用于 Nunchaku Qwen Image 和 Z-ImageTurbo 模型的 ComfyUI 自定义节点，支持加载和应用 LoRA（低秩适配）。兼容 ComfyUI Nodes 2.0。**v4 功能需要 Nunchaku 1.2.0+ 和 ComfyUI-Nunchaku 1.2.0+。**
 

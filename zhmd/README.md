@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.4.4 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.4)
+> 最新版本: [v2.4.5 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.5)
 >
 
 ## 来源
@@ -226,6 +226,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.4.5 (最新)
 - **已添加**: 在 `zhmd/` 目录下新增中文文档页面（README 与发行说明），并在英文与中文 README 及发行说明页面提供双语语言切换。
+- **技术详情**: 请参阅 [v2.4.5 发行说明](v2.4.5.md) 获取完整说明
 
 ### v2.4.4
 - **已修复**: 在 `compose_loras_v2` 中恢复 v2.2.7 的首个 LoRA 重复文件读取消除功能（v2.3.0 AWQ 重构中的回归）。首个 LoRA 只加载一次并在主循环中重用，为 Qwen Image 和 Z-Image-Turbo 加载器减少了 50% 的重复文件 I/O、反序列化和密钥分类。与 AWQ 调制层猴子补丁完全兼容。

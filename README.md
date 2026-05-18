@@ -13,7 +13,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.4.4 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.4)
+> Latest release: [v2.4.5 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.5)
 > 
 
 ## Source
@@ -226,6 +226,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.4.5 (latest)
 - **Added**: Chinese documentation pages under `zhmd/` (README and release notes), with bilingual language switchers on the English and Chinese README and release note pages.
+- **Technical Details**: See [v2.4.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.5) for complete explanation
 
 ### v2.4.4
 - **Fixed**: Restored v2.2.7 first LoRA duplicate file read elimination in `compose_loras_v2` (regression from v2.3.0 AWQ restructuring). The first LoRA is loaded once and reused in the main loop, cutting duplicate file I/O, deserialization, and key classification by 50% for Qwen Image and Z-Image-Turbo loaders. Fully compatible with the AWQ modulation layer monkey patch.

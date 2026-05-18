@@ -45,39 +45,39 @@
 
 - **NunchakuQwenImageLoraLoader**: 单 LoRA 加载器
 
-<img src="images/single_loader.png" alt="NunchakuQwenImageLoraLoader: 单 LoRA 加载器" width="400">
+<img src="../images/single_loader.png" alt="NunchakuQwenImageLoraLoader: 单 LoRA 加载器" width="400">
 
 - **NunchakuQwenImageLoraStack**: 多 LoRA 堆叠器，带动态 UI（旧版）
 
-<img src="images/legacy_stack.png" alt="NunchakuQwenImageLoraStack: 多 LoRA 堆叠器，带动态 UI（旧版）" width="400">
+<img src="../images/legacy_stack.png" alt="NunchakuQwenImageLoraStack: 多 LoRA 堆叠器，带动态 UI（旧版）" width="400">
 
 - **NunchakuQwenImageLoraStackV1**: 多 LoRA 堆叠器，rgthree 风格 UI
   - 简洁、极简的设计，灵感来自 [Power Lora Loader (rgthree-comfy)](https://github.com/rgthree/rgthree-comfy)。每行包含切换、LoRA 名称和强度。
   - ⚠️ **注意**: **无法**与 ComfyUI Nodes 2.0 正常工作。请使用标准 (LiteGraph) 画布。
   - ⚠️ **与 ComfyUI Nodes 2.0 一起使用时，按 F5 刷新将反映更改。**
 
-<img src="images/qiv1_stack.png" alt="NunchakuQwenImageLoraStackV1: 多 LoRA 堆叠器，rgthree 风格 UI" width="400">
+<img src="../images/qiv1_stack.png" alt="NunchakuQwenImageLoraStackV1: 多 LoRA 堆叠器，rgthree 风格 UI" width="400">
 
 - **NunchakuQwenImageLoraStackV2**: 多 LoRA 堆叠器，带动态 UI - 兼容 ComfyUI Nodes 2.0 (Beta)
   - **AWQ 调制层支持**: 包含通过 "Apply AWQ Mod" 切换将 LoRA 应用于 AWQ 量化调制层 (`img_mod.1` / `txt_mod.1`) 的实验性支持。此功能使用运行时猴子补丁和手动平面注入来修复噪声问题。⚠️ **警告**: **这是一个实验性功能，目前仅在 V2 节点中实现。** 如果没有发现问题，此功能也将应用于 V1 和 V3 节点。
 
-<img src="images/qiv2_stack.png" alt="NunchakuQwenImageLoraStackV2: 多 LoRA 堆叠器，带动态 UI - 兼容 ComfyUI Nodes 2.0 (Beta)" width="400">
+<img src="../images/qiv2_stack.png" alt="NunchakuQwenImageLoraStackV2: 多 LoRA 堆叠器，带动态 UI - 兼容 ComfyUI Nodes 2.0 (Beta)" width="400">
 
 - **NunchakuQwenImageLoraStackV3**: 多 LoRA 堆叠器，带动态 UI - 兼容 ComfyUI Nodes 2.0 (Beta)
   - **AWQ 调制层支持**: AWQ 量化调制层 (`img_mod.1` / `txt_mod.1`) LoRA 应用**始终启用**（无需切换）。此功能使用运行时猴子补丁和手动平面注入来修复噪声问题。✅ **V3 节点默认始终应用 AWQ 调制层 LoRA。**
 
-<img src="images/qiv3_stack.png" alt="NunchakuQwenImageLoraStackV3: 多 LoRA 堆叠器，带动态 UI - 兼容 ComfyUI Nodes 2.0 (Beta)" width="400">
+<img src="../images/qiv3_stack.png" alt="NunchakuQwenImageLoraStackV3: 多 LoRA 堆叠器，带动态 UI - 兼容 ComfyUI Nodes 2.0 (Beta)" width="400">
 
 - **NunchakuZImageTurboLoraStackV1**: Z-Image-Turbo LoRA 堆叠器，rgthree 风格 UI
   - 简洁、极简的设计，灵感来自 [Power Lora Loader (rgthree-comfy)](https://github.com/rgthree/rgthree-comfy)。每行包含切换、LoRA 名称和强度。仅用于官方 Nunchaku Z-Image 加载器。使用 compose_loras_v2。
   - ⚠️ **注意**: **无法**与 ComfyUI Nodes 2.0 正常工作。请使用标准 (LiteGraph) 画布。
   - ⚠️ **与 ComfyUI Nodes 2.0 一起使用时，按 F5 刷新将反映更改。**
 
-<img src="images/zitlorav1.png" alt="NunchakuZImageTurboLoraStackV1: Z-Image-Turbo LoRA 堆叠器，rgthree 风格 UI" width="400">
+<img src="../images/zitlorav1.png" alt="NunchakuZImageTurboLoraStackV1: Z-Image-Turbo LoRA 堆叠器，rgthree 风格 UI" width="400">
 
 - **NunchakuZImageTurboLoraStackV4**: Z-Image-Turbo LoRA 堆叠器，带动态 UI - 标准 ComfyUI LoRA 加载器格式 (CLIP 输入/输出) - 兼容 ComfyUI Nodes 2.0
 
-<img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA 堆叠器，带动态 UI - 标准 ComfyUI LoRA 加载器格式 (CLIP 输入/输出) - 兼容 ComfyUI Nodes 2.0" width="400">
+<img src="../images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA 堆叠器，带动态 UI - 标准 ComfyUI LoRA 加载器格式 (CLIP 输入/输出) - 兼容 ComfyUI Nodes 2.0" width="400">
 
 - **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA 堆叠器，带动态 UI - **仅非官方加载器** - 兼容 ComfyUI Nodes 2.0
   - ⚠️ **警告**: 此节点**仅兼容**来自 [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader) 的非官方 Nunchaku Z-Image-Turbo DiT 加载器

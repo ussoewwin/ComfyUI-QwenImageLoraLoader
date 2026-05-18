@@ -1,6 +1,8 @@
 # ComfyUI-Nunchaku QwenImage＆ZImageTurboLoraStack
 
-**English** | [中文](README.zh.md)
+<p align="center">
+  <strong>English</strong> | <a href="README.zh.md">中文</a>
+</p>
 
 A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image and Z-ImageTurbo models. ComfyUI Nodes 2.0 compatible. **Requires Nunchaku 1.2.0+ and ComfyUI-Nunchaku 1.2.0+ for v4 functionality.**
 

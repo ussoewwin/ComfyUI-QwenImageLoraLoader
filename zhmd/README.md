@@ -2,7 +2,7 @@
 
 <table align="center">
   <tr>
-    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="README.md"><font color="#4b5563"><b>EN</b></font></a></td>
+    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="../README.md"><font color="#4b5563"><b>EN</b></font></a></td>
     <td align="center" bgcolor="#d4465e" width="88" height="36"><font color="#ffffff"><b>中文</b></font></td>
   </tr>
 </table>
@@ -29,11 +29,11 @@
 
 ## 🎉 重大更新: v1.60 - 简化安装（无需集成！）
 
-有关安装说明、功能和要求，请参阅 [安装指南](md/installation.md)。
+有关安装说明、功能和要求，请参阅 [安装指南](../md/installation.md)。
 
 ## v1.57 及更早版本用户的升级指南
 
-如果您安装了 v1.57 或更早版本，并且在 ComfyUI-nunchaku 的 `__init__.py` 中有集成代码，请参阅 [UPGRADE_GUIDE_V1.57.md](md/UPGRADE_GUIDE_V1.57.md) 了解详细的升级说明。
+如果您安装了 v1.57 或更早版本，并且在 ComfyUI-nunchaku 的 `__init__.py` 中有集成代码，请参阅 [UPGRADE_GUIDE_V1.57.md](../md/UPGRADE_GUIDE_V1.57.md) 了解详细的升级说明。
 
 ## 使用方法
 
@@ -139,7 +139,7 @@
 ### 问题 #25: ComfyUI 0.4.0+ 模型管理错误
 - **状态**: ⚠️ **取决于环境** - 可能需要 ComfyUI 核心修复
 
-详细信息，请参阅 [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](md/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md)。
+详细信息，请参阅 [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](../md/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md)。
 
 - **相关问题**:
   - [问题 #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25) - `AttributeError: 'NunchakuModelPatcher' object has no attribute 'pinned'` 和 `model_config` 的深拷贝错误
@@ -226,7 +226,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.4.4 (最新)
 - **已修复**: 在 `compose_loras_v2` 中恢复 v2.2.7 的首个 LoRA 重复文件读取消除功能（v2.3.0 AWQ 重构中的回归）。首个 LoRA 只加载一次并在主循环中重用，为 Qwen Image 和 Z-Image-Turbo 加载器减少了 50% 的重复文件 I/O、反序列化和密钥分类。与 AWQ 调制层猴子补丁完全兼容。
-- **技术详情**: 请参阅 [v2.4.4 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.4) 获取完整说明
+- **技术详情**: 请参阅 [v2.4.4 发行说明](v2.4.4.md) 获取完整说明
 
 ### v2.4.3
 - **已修复**: 修复了 Z-Image / SVDQ 与 ComfyUI 延迟（惰性）`Linear` 权重的崩溃问题（`AttributeError: 'NoneType' object has no attribute 'dtype'`），通过修补 `SVDQW4A4Linear.from_linear` 和 `fuse_to_svdquant_linear`，包括加载顺序差异的启动重试。
@@ -250,19 +250,19 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### 先前版本 (v2.3.0 到 v2.3.9)
 
-有关 v2.3.0 到 v2.3.9 的详细发行说明，请参阅 [RELEASE_NOTES_V2.3.0_TO_V2.3.9.md](RELEASE_NOTES/RELEASE_NOTES_V2.3.0_TO_V2.3.9.md)。
+有关 v2.3.0 到 v2.3.9 的详细发行说明，请参阅 [RELEASE_NOTES_V2.3.0_TO_V2.3.9.md](../RELEASE_NOTES/RELEASE_NOTES_V2.3.0_TO_V2.3.9.md)。
 
 此文档包含有关这些版本的所有错误修复、功能和技术细节的全面信息。
 
 ### 先前版本 (v1.6.0 到 v2.2.8)
 
-有关 v1.6.0 到 v2.2.8 的详细发行说明，请参阅 [RELEASE_NOTES_V1.6.0_TO_V2.2.8.md](RELEASE_NOTES/RELEASE_NOTES_V1.6.0_TO_V2.2.8.md)。
+有关 v1.6.0 到 v2.2.8 的详细发行说明，请参阅 [RELEASE_NOTES_V1.6.0_TO_V2.2.8.md](../RELEASE_NOTES/RELEASE_NOTES_V1.6.0_TO_V2.2.8.md)。
 
 此文档包含有关这些版本的所有错误修复、功能和技术细节的全面信息。
 
 ### 先前版本 (v1.0.0 到 v1.57)
 
-有关 v1.0.0 到 v1.57 的详细发行说明，请参阅 [RELEASE_NOTES_V1.0.0_TO_V1.57.md](RELEASE_NOTES/RELEASE_NOTES_V1.0.0_TO_V1.57.md)。
+有关 v1.0.0 到 v1.57 的详细发行说明，请参阅 [RELEASE_NOTES_V1.0.0_TO_V1.57.md](../RELEASE_NOTES/RELEASE_NOTES_V1.0.0_TO_V1.57.md)。
 
 此文档包含有关这些版本的所有错误修复、功能和技术细节的全面信息。
 

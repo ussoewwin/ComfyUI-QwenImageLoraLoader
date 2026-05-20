@@ -33,7 +33,7 @@
 
 ## v1.57 及更早版本用户的升级指南
 
-如果您安装了 v1.57 或更早版本，并且在 ComfyUI-nunchaku 的 `__init__.py` 中有集成代码，请参阅 [UPGRADE_GUIDE_V1.57.md](UPGRADE_GUIDE_V1.57.md) 了解详细的升级说明（[English](../md/UPGRADE_GUIDE_V1.57.md)）。
+若您已安装 v1.57 或更早版本，且曾在 ComfyUI-nunchaku 的 `__init__.py` 中使用过集成代码，请参阅 [v1.57 升级指南](UPGRADE_GUIDE_V1.57.md) 了解详细升级说明。
 
 ## 使用方法
 

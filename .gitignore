@@ -85,3 +85,6 @@ pr48_*.txt
 
 # Local/tool tracking list (do not track in repo)
 .tracking
+
+# Ignore scripts folder
+scripts/

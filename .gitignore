@@ -88,3 +88,7 @@ pr48_*.txt
 
 # Ignore scripts folder
 scripts/
+
+# Ignore backups
+backups/
+backup/

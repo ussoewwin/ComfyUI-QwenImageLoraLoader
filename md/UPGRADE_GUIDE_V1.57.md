@@ -1,6 +1,6 @@
 # Upgrade Guide for v1.57 and Earlier Users
 
-If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku's `__init__.py`, you have three options:
+If you have v1.57 or earlier installed with integration code in ComfyUI-nunchaku's `__init__.py`, you have four options:
 
 ## Option 1: Keep Everything As-Is (Recommended for Most Users)
 

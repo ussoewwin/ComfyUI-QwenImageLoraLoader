@@ -1,5 +1,12 @@
 # Issue #25: ComfyUI 0.4.0 Model Management Errors
 
+<table align="center">
+  <tr>
+    <td align="center" bgcolor="#d4465e" width="88" height="36"><font color="#ffffff"><b>EN</b></font></td>
+    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/zhmd/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md"><font color="#4b5563"><b>中文</b></font></a></td>
+  </tr>
+</table>
+
 - **Issue**: After the ComfyUI 0.4.0 update, multiple nodes (including this one in some environments) experienced errors such as `TypeError: 'NoneType' object is not callable` and `AttributeError: 'NoneType' object has no attribute`. In our environment, we resolved these errors by modifying ComfyUI's core `model_management.py`. Note that in our environment, these errors did not occur with this node (ComfyUI-QwenImageLoraLoader). Nunchaku library and ComfyUI-Nunchaku nodes should use the latest versions. If errors persist even after applying the latest version of this node (ComfyUI-QwenImageLoraLoader), modification of ComfyUI's core `model_management.py` may be necessary.
 - **Root Cause**: In ComfyUI 0.4.0, ComfyUI's core `model_management.py` lacks sufficient None checks, causing `TypeError` and `AttributeError` when accessing methods or attributes on objects that became `None` after models were unloaded or garbage collected. This problem is not a bug in individual nodes, but rather a structural issue in ComfyUI 0.4.0's model management (`model_management.py`).
 - **GC Changes in ComfyUI 0.4.0**: Compared to ComfyUI 0.3.x, automatic model unloading occurs earlier, making the following flow more likely:

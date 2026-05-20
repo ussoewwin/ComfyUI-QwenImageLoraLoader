@@ -25,7 +25,7 @@
 
 ## 🎉 重大更新: v2.2.0 - 新增 Nunchaku Z Image Turbo LoRA 支持！
 
-详细技术说明，请参阅 [v2.2.0 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.2.0)
+详细技术说明，请参阅 [v2.2.0 发行说明](v2.2.0.md)
 
 ## 🎉 重大更新: v1.60 - 简化安装（无需集成！）
 

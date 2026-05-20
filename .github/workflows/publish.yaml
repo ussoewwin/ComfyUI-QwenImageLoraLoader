@@ -1,10 +1,9 @@
 name: Publish to Comfy Registry
 
+# Registry publish only when you explicitly run this workflow.
+# Do NOT run on push to main (e.g. zhmd/ docs-only commits).
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths: [ 'pyproject.toml' ]
 
 jobs:
   publish:

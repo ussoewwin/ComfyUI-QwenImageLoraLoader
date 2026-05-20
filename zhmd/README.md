@@ -139,7 +139,7 @@
 ### 问题 #25: ComfyUI 0.4.0+ 模型管理错误
 - **状态**: ⚠️ **取决于环境** - 可能需要 ComfyUI 核心修复
 
-详细信息，请参阅 [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](../md/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md)。
+详细信息，请参阅 [COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md](COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md)。
 
 - **相关问题**:
   - [问题 #25](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/25) - `AttributeError: 'NunchakuModelPatcher' object has no attribute 'pinned'` 和 `model_config` 的深拷贝错误

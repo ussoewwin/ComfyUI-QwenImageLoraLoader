@@ -7,13 +7,13 @@
   </tr>
 </table>
 
-若您安装的是 **v1.57 或更早版本**，且曾在 ComfyUI-nunchaku 的 `__init__.py` 中写入过集成代码，可按下列方式之一处理（共四种选项）。
+若您在 ComfyUI-nunchaku 的 `__init__.py` 中安装过 **v1.57 或更早版本** 的集成代码，可按下列四种方式之一处理。
 
 ## 选项 1：保持现状（推荐大多数用户）
 
 **旧集成代码可继续工作，无需额外操作：**
 
-1. 将 ComfyUI-QwenImageLoraLoader 更新到 v1.60 或更高版本：
+1. 将 ComfyUI-QwenImageLoraLoader 更新到 **v1.60**：
    ```bash
    cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
    git pull origin main
@@ -33,7 +33,7 @@
 
 ### Windows 用户
 
-1. 先更新到 v1.60 或更高版本：
+1. 先更新到 **v1.60**：
    ```bash
    cd ComfyUI/custom_nodes/ComfyUI-QwenImageLoraLoader
    git pull origin main
@@ -57,7 +57,7 @@
 
 4. 重启 ComfyUI
 
-**卸载旧集成代码后，节点仍可正常工作** — v1.60 起使用独立加载机制，不依赖 nunchaku 内的集成块。
+**卸载 旧集成代码后，节点仍可正常工作** — v1.60 起使用独立加载机制，不依赖 nunchaku 内的集成块。
 
 ## 选项 3：手动清理（macOS / Linux，或偏好手动编辑的用户）
 
@@ -114,7 +114,7 @@ except ImportError:
 
 3. 重启 ComfyUI
 
-官方 `__init__.py` 不含 ComfyUI-QwenImageLoraLoader 集成代码。v1.60 及更高版本仍可正常工作，因其使用独立加载机制。
+官方 `__init__.py` 不含 ComfyUI-QwenImageLoraLoader 集成代码。v1.60 仍可正常工作，因其使用独立加载机制。
 
 ## 为何不再需要集成代码
 

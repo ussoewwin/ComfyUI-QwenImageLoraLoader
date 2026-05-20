@@ -239,7 +239,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ### v2.4.2
 - **已修复**: 修复了 Nunchaku Qwen Image 模型的 Qwen Image ControlNet（例如 Fun ControlNet）问题 — `ComfyQwenImageWrapper` 现在暴露 `process_img` 并将 ControlNet 所需的属性（`patch_size`, `pe_embedder`, `img_in`, `txt_norm`, `txt_in`, `time_text_embed`）转发到内部模型，以便当基础模型是包装器时 Union ControlNet 可以工作。
 - **已修复**: 修复了访问 `model_wrapper.model` 时的 RecursionError（例如在 NunchakuQwenImageLoraStackV3 中）— `__getattr__` 现在通过 `_modules` 而不是 `self.model` 获取内部模型，以避免无限递归。
-- **技术详情**: 请参阅 [v2.4.2 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.2) 获取完整说明
+- **技术详情**: 请参阅 [v2.4.2 发行说明](v2.4.2.md) 获取完整说明
 
 ### v2.4.1
 - **已添加**: Nunchaku Z-Image-Turbo LoRA Stack V1，rgthree 风格 UI - 与 Qwen Image LoRA Stack V1 相同的布局：每行包含切换、LoRA 名称和强度。仅用于官方 Nunchaku Z-Image 加载器。使用 compose_loras_v2。无法与 ComfyUI Nodes 2.0 正常工作；与 Nodes 2.0 一起使用时，按 F5 刷新将反映更改。

@@ -2,7 +2,7 @@
 
 <table align="center">
   <tr>
-    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="../md/UPGRADE_GUIDE_V1.57.md"><font color="#4b5563"><b>EN</b></font></a></td>
+    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/md/UPGRADE_GUIDE_V1.57.md"><font color="#4b5563"><b>EN</b></font></a></td>
     <td align="center" bgcolor="#d4465e" width="88" height="36"><font color="#ffffff"><b>中文</b></font></td>
   </tr>
 </table>

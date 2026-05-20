@@ -1,5 +1,12 @@
 # Installation and Features
 
+<table align="center">
+  <tr>
+    <td align="center" bgcolor="#3478ca" width="88" height="36"><font color="#ffffff"><b>EN</b></font></td>
+    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/zhmd/installation.md"><font color="#4b5563"><b>中文</b></font></a></td>
+  </tr>
+</table>
+
 ## 🎉 MAJOR UPDATE: v1.60 - Simplified Installation (No Integration Required!)
 
 **As of v1.60, manual integration with ComfyUI-nunchaku's `__init__.py` is completely unnecessary.**

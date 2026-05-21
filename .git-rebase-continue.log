@@ -1,0 +1,720 @@
+Rebasing (520/871)Rebasing (521/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c113968] Fix Issue #44: Prevent freeze on unsupported LoRA and optimize loading performance
+ Date: Thu Jan 8 03:40:53 2026 +0900
+ 6 files changed, 460 insertions(+), 25 deletions(-)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.2.7.md
+ create mode 100644 issue_44_fix_report.md
+ create mode 100644 md/log_adjustment_guide.md
+Rebasing (522/871)Rebasing (523/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3750ec2] Update README for v2.2.8
+ Date: Thu Jan 8 03:42:23 2026 +0900
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+Rebasing (524/871)Rebasing (525/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4ff6964] Update LoKR section with development history and add Issue #44 link
+ Date: Thu Jan 8 03:45:44 2026 +0900
+ 1 file changed, 2 insertions(+)
+Rebasing (526/871)Rebasing (527/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 7464926] Fix wording: change freeze to slowdown and remove SD1.5 references
+ Date: Thu Jan 8 03:57:22 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (528/871)Rebasing (529/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD fe9b0c9] Remove internal documentation files
+ Date: Thu Jan 8 05:04:22 2026 +0900
+ 2 files changed, 180 deletions(-)
+ delete mode 100644 issue_44_fix_report.md
+ delete mode 100644 optimization_report_lora_loading.md
+Rebasing (530/871)Rebasing (531/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 80bb81e] Remove deleted file references from v2.2.7 release notes
+ Date: Thu Jan 8 05:06:12 2026 +0900
+ 1 file changed, 4 deletions(-)
+Rebasing (532/871)Rebasing (533/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD f7d840d] Fix v2.2.7 release notes link
+ Date: Thu Jan 8 05:19:06 2026 +0900
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+Rebasing (534/871)Rebasing (535/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6a2db44] Remove unauthorized v2.2.6 link from v2.2.7 section
+ Date: Thu Jan 8 05:22:05 2026 +0900
+ 1 file changed, 2 deletions(-)
+Rebasing (536/871)Rebasing (537/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 543d889] Remove speed_improvement_proposal.md
+ Date: Thu Jan 8 05:24:49 2026 +0900
+ 1 file changed, 305 deletions(-)
+ delete mode 100644 speed_improvement_proposal.md
+Rebasing (538/871)Rebasing (539/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6566eeb] Fix release notes links: add v prefix to v2.2.x release notes links
+ Date: Thu Jan 8 05:42:27 2026 +0900
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+Rebasing (540/871)Rebasing (541/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD cb41173] Fix all v2.2.2-v2.2.6 release notes links
+ Date: Thu Jan 8 05:46:12 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (542/871)Rebasing (543/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e4b8093] Fix v2.2.2 release notes link: remove v prefix
+ Date: Thu Jan 8 06:04:26 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (544/871)Rebasing (545/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (546/871)Rebasing (547/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0d08644] Add md/log_adjustment_guide.md to .gitignore
+ Date: Thu Jan 8 06:49:07 2026 +0900
+ 2 files changed, 4 insertions(+), 42 deletions(-)
+ delete mode 100644 md/log_adjustment_guide.md
+Rebasing (548/871)Rebasing (549/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b6f12b1] Update version to 2.2.8 in pyproject.toml
+ Date: Thu Jan 8 06:56:46 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (550/871)Rebasing (551/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c6800ee] Update README title and remove Z-ImageTurbo Loader v3 registration
+ Date: Tue Jan 13 04:20:49 2026 +0900
+ 2 files changed, 14 insertions(+), 5 deletions(-)
+Rebasing (552/871)Rebasing (553/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD f7075f3] Update README description and pyproject.toml display name to reflect UniversalLoraStack
+ Date: Tue Jan 13 04:26:23 2026 +0900
+ 2 files changed, 2 insertions(+), 6 deletions(-)
+Rebasing (554/871)Rebasing (555/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b6e130f] Update README for v2.3.0 release
+ Date: Tue Jan 13 04:28:20 2026 +0900
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+Rebasing (556/871)Rebasing (557/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9e628aa] Add Z-ImageTurbo v3 removal to v2.3.0 changelog
+ Date: Tue Jan 13 04:31:10 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (558/871)Rebasing (559/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 94af7a4] Update pyproject.toml version to 2.3.0
+ Date: Tue Jan 13 04:38:03 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (560/871)Rebasing (561/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6f707e3] Resolve merge conflict in __init__.py
+ Date: Tue Jan 13 06:11:36 2026 +0900
+ 2 files changed, 82 insertions(+), 88 deletions(-)
+Rebasing (562/871)Rebasing (563/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD dafcdce] Revert README description to Z-ImageTurbo
+ Date: Tue Jan 13 06:16:10 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (564/871)Rebasing (565/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD a971846] Fix README title to ZImageTurboLoraStack
+ Date: Tue Jan 13 06:17:48 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (566/871)Rebasing (567/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 1d8022c] Update v2.3.0 changelog to reflect v4 standard format compliance
+ Date: Tue Jan 13 06:24:09 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (568/871)Rebasing (569/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 06fcaf2] Move v2.2.0 MAJOR UPDATE section above v2.0
+ Date: Tue Jan 13 06:27:01 2026 +0900
+ 1 file changed, 4 insertions(+)
+Rebasing (570/871)Rebasing (571/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3d22ca3] Update Available Nodes list: v3 to v4
+ Date: Tue Jan 13 07:14:57 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (572/871)Rebasing (573/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD fdbda42] Update pyproject.toml version to 2.3.1
+ Date: Tue Jan 13 07:16:08 2026 +0900
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+Rebasing (574/871)Rebasing (575/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9806aa3] Update Basic Usage section: v3 to v4 with CLIP input
+ Date: Tue Jan 13 07:18:53 2026 +0900
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+Rebasing (576/871)Rebasing (577/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b04ea09] Remove obsolete troubleshooting sections from README
+ Date: Tue Jan 13 07:21:44 2026 +0900
+ 1 file changed, 29 deletions(-)
+Rebasing (578/871)Rebasing (579/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 12015f8] Remove diffsynth references from README title and description
+ Date: Tue Jan 13 07:41:51 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (580/871)Rebasing (581/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 1641ee7] Remove v2.0 Diffsynth ControlNet Support section from README
+ Date: Tue Jan 13 07:43:14 2026 +0900
+ 1 file changed, 14 deletions(-)
+Rebasing (582/871)Rebasing (583/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e974374] Remove NunchakuQI&ZITDiffsynthControlnet from Available Nodes list
+ Date: Tue Jan 13 07:45:21 2026 +0900
+ 1 file changed, 1 deletion(-)
+Rebasing (584/871)Rebasing (585/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD d3de889] Remove Diffsynth ControlNet Usage section from README
+ Date: Tue Jan 13 07:46:26 2026 +0900
+ 1 file changed, 10 deletions(-)
+Rebasing (586/871)Rebasing (587/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4eae187] Remove diffsynth ControlNet node registration from __init__.py
+ Date: Tue Jan 13 07:47:53 2026 +0900
+ 1 file changed, 15 deletions(-)
+Rebasing (588/871)Rebasing (589/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 25dbb65] Add v2.3.1 changelog: Remove diffsynth ControlNet support (now supported by ComfyUI-Nunchaku)
+ Date: Tue Jan 13 07:50:19 2026 +0900
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+Rebasing (590/871)Rebasing (591/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4600a90] Move v2.3.1 changes to v2.3.0 changelog entry
+ Date: Tue Jan 13 07:51:19 2026 +0900
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+Rebasing (592/871)Rebasing (593/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4834ef7] Update pyproject.toml: version 2.3.2, update DisplayName and description
+ Date: Tue Jan 13 07:56:29 2026 +0900
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+Rebasing (594/871)Rebasing (595/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD de78305] Fix: Initialize ZIMAGETURBO_V4_NAMES and QWEN_V3_NAMES to prevent NameError on import failure
+ Date: Tue Jan 13 09:18:48 2026 +0900
+ 1 file changed, 4 insertions(+)
+Rebasing (596/871)Rebasing (597/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 7491074] Update README: Add v2.3.1 changelog entry with Issue #46 link
+ Date: Tue Jan 13 09:23:01 2026 +0900
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+Rebasing (598/871)Rebasing (599/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD f67be66] Bump version to 2.3.3
+ Date: Tue Jan 13 09:25:31 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (600/871)Rebasing (601/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 5f14660] Add missing zimageturbo_v4.py file (Issue #47)
+ Date: Tue Jan 13 09:27:54 2026 +0900
+ 1 file changed, 416 insertions(+)
+ create mode 100644 nodes/lora/zimageturbo_v4.py
+Rebasing (602/871)Rebasing (603/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0133c98] Update README v2.3.1: Add Issue #47 link and fix description
+ Date: Tue Jan 13 09:29:07 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (604/871)Rebasing (605/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 5bd4cdc] Add missing zimageturbo_lora_dynamic_v4.js file (Issue #47)
+ Date: Tue Jan 13 09:31:07 2026 +0900
+ 1 file changed, 204 insertions(+)
+ create mode 100644 js/zimageturbo_lora_dynamic_v4.js
+Rebasing (606/871)Rebasing (607/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b0998b7] Add missing RELEASE_NOTES files for v2.2.8 and v2.3.0
+ Date: Tue Jan 13 09:33:33 2026 +0900
+ 2 files changed, 673 insertions(+)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.2.8.md
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.0.md
+Rebasing (608/871)Rebasing (609/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 52c21a7] Update README v2.3.1: Add details about missing v4 files fix (Issue #47)
+ Date: Tue Jan 13 09:36:21 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (610/871)Rebasing (611/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 2459510] Bump version to 2.3.4
+ Date: Tue Jan 13 09:44:02 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (612/871)Rebasing (613/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (614/871)Rebasing (615/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 2c931c4] Update README: Add Nunchaku 1.2.0+ and ComfyUI-Nunchaku 1.2.0+ requirement notice
+ Date: Tue Jan 13 09:53:34 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (616/871)Rebasing (617/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 565ebad] Update RELEASE_NOTES_V2.3.0: Change wording from blaming ComfyUI-Nunchaku to describing standard LoRA loader limitation
+ Date: Tue Jan 13 11:28:46 2026 +0900
+ 1 file changed, 129 insertions(+), 5 deletions(-)
+Rebasing (618/871)Rebasing (619/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c6a179b] Update RELEASE_NOTES_V2.3.0: Clarify that perfect mapping is impossible for LoKR/LoHa/IA3 formats
+ Date: Tue Jan 13 11:30:57 2026 +0900
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+Rebasing (620/871)Rebasing (621/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD add66fa] Update RELEASE_NOTES_V2.3.0: Reorder Updated section to clarify perfect mapping is for Standard LoRA format only
+ Date: Tue Jan 13 11:32:46 2026 +0900
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+Rebasing (622/871)Rebasing (623/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD bfef21c] Update RELEASE_NOTES_V2.3.0: Remove Note on Other Formats section
+ Date: Tue Jan 13 11:35:33 2026 +0900
+ 1 file changed, 2 deletions(-)
+Rebasing (624/871)Rebasing (625/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD eb2a284] Update RELEASE_NOTES_V2.3.0: Change comparison from Official Implementation to Standard ComfyUI LoRA Loader
+ Date: Tue Jan 13 11:37:07 2026 +0900
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+Rebasing (626/871)Rebasing (627/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c6dc503] Update RELEASE_NOTES_V2.3.0: Change Z-ImageTurbo Loader to Z-ImageTurbo LoRA Stack
+ Date: Tue Jan 13 11:44:06 2026 +0900
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+Rebasing (628/871)Rebasing (629/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD d9041ab] Update RELEASE_NOTES_V2.3.0: Remove Related Documentation section
+ Date: Tue Jan 13 11:50:10 2026 +0900
+ 1 file changed, 5 deletions(-)
+Rebasing (630/871)Rebasing (631/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (632/871)Rebasing (633/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD f16292e] Update RELEASE_NOTES_V2.3.0: Add complete detailed implementation documentation matching md file
+ Date: Tue Jan 13 11:55:58 2026 +0900
+ 1 file changed, 685 insertions(+), 44 deletions(-)
+Rebasing (634/871)Rebasing (635/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3ff20ff] Update V4_DEVELOPMENT_EXPLANATION.md to match v2.3.0 release notes
+ Date: Tue Jan 13 12:10:29 2026 +0900
+ 1 file changed, 940 insertions(+)
+ create mode 100644 md/V4_DEVELOPMENT_EXPLANATION.md
+Rebasing (636/871)Rebasing (637/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 772d0f3] Remove RELEASE_NOTES_V2.3.0.md
+ Date: Tue Jan 13 12:10:56 2026 +0900
+ 1 file changed, 940 deletions(-)
+ delete mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.0.md
+Rebasing (638/871)Rebasing (639/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 5acb538] Update README: Change latest release link from v2.3.1 to v2.3.0
+ Date: Tue Jan 13 13:09:56 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (640/871)Rebasing (641/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (642/871)Rebasing (643/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 8af705d] Fix LoKR support description: Standard LoRA loader also not supported for Nunchaku
+ Date: Wed Jan 14 03:38:24 2026 +0900
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+Rebasing (644/871)Rebasing (645/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (646/871)Rebasing (647/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3fe325a] Remove v3 references from V4_DEVELOPMENT_EXPLANATION.md: v3 registration has been removed
+ Date: Wed Jan 14 03:46:28 2026 +0900
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+Rebasing (648/871)Rebasing (649/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD d26f4f5] Add single loader and legacy stack node images to README
+ Date: Wed Jan 14 05:14:10 2026 +0900
+ 3 files changed, 7 insertions(+)
+ create mode 100644 images/legacy_stack.png
+ create mode 100644 images/single_loader.png
+Rebasing (650/871)Rebasing (651/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 44cafe7] Remove Dynamic UI Control section from README
+ Date: Wed Jan 14 05:15:22 2026 +0900
+ 1 file changed, 7 deletions(-)
+Rebasing (652/871)Rebasing (653/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 03846a9] Add Qwen Image V2 and V3 stack node images to README
+ Date: Wed Jan 14 05:19:05 2026 +0900
+ 3 files changed, 6 insertions(+)
+ create mode 100644 images/qiv2_stack.png
+ create mode 100644 images/qiv3_stack.png
+Rebasing (654/871)Rebasing (655/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0078b5e] Add Z-Image-Turbo V4 stack node image to README
+ Date: Wed Jan 14 05:20:47 2026 +0900
+ 2 files changed, 2 insertions(+)
+ create mode 100644 images/zitv4_stack.png
+Rebasing (656/871)Rebasing (657/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 7bc966e] Restore zimageturbo_v2 node registration
+ Date: Thu Jan 15 09:09:51 2026 +0900
+ 1 file changed, 7 insertions(+), 9 deletions(-)
+Rebasing (658/871)Rebasing (659/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0abac40] Fix nn.Module attribute access issues and translate Japanese comments to English
+ Date: Thu Jan 15 10:13:14 2026 +0900
+ 2 files changed, 85 insertions(+), 22 deletions(-)
+Rebasing (660/871)Rebasing (661/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 21a9286] Update README for v2.3.2: Add V2 node restoration and compatibility warnings
+ Date: Thu Jan 15 10:30:04 2026 +0900
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+Rebasing (662/871)Rebasing (663/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (664/871)Rebasing (665/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3117915] Update changelog: Change v2.3.2 to v2.3.5
+ Date: Tue Jan 20 21:15:03 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (666/871)Rebasing (667/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 47a6f08] Bump version to 2.3.5
+ Date: Tue Jan 20 21:17:23 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (668/871)Rebasing (669/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (670/871)Rebasing (671/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 05a9ccc] feat: add AWQ enable switch to V2 node
+ Date: Thu Jan 22 09:53:15 2026 +0900
+ 2 files changed, 350 insertions(+), 17 deletions(-)
+Rebasing (672/871)Rebasing (673/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 1eb610f] feat: add V2 wrapper (wrappers/qwenimage_v2.py)
+ Date: Thu Jan 22 10:11:06 2026 +0900
+ 1 file changed, 397 insertions(+)
+ create mode 100644 wrappers/qwenimage_v2.py
+Rebasing (674/871)Rebasing (675/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b3911ec] Update JS and Python files, add temp files and PNG images
+ Date: Thu Jan 22 10:28:38 2026 +0900
+ 11 files changed, 949 insertions(+), 2 deletions(-)
+ create mode 100644 _temp_nunchaku_lora.py
+ create mode 100644 _temp_zimage_copy.py
+ create mode 100644 _temp_zimage_patcher.py
+ create mode 100644 png/legacy.png
+ create mode 100644 png/qiv2.png
+ create mode 100644 png/qiv3.png
+ create mode 100644 png/single.png
+ create mode 100644 png/zitv4.png
+ create mode 100644 temp_release_notes_v2.2.7.txt
+Rebasing (676/871)Rebasing (677/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD ed3f830] Update qiv2.png
+ Date: Thu Jan 22 10:31:10 2026 +0900
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+Rebasing (678/871)Rebasing (679/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6498929] Implement AWQ modulation layer LoRA fix with Runtime Monkey Patch
+ Date: Thu Jan 22 14:56:42 2026 +0900
+ 6 files changed, 461 insertions(+), 664 deletions(-)
+ create mode 100644 patches/nunchaku_patch.py
+Rebasing (680/871)Rebasing (681/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6c01603] Update README for v2.3.6: Add AWQ modulation layer LoRA fix overview and release notes link
+ Date: Thu Jan 22 14:59:09 2026 +0900
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+Rebasing (682/871)Rebasing (683/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 623b303] Update qiv2_stack.png image
+ Date: Thu Jan 22 15:01:03 2026 +0900
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+Rebasing (684/871)Rebasing (685/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6079097] Update README v2.3.6: Add impact note and experimental feature warning
+ Date: Thu Jan 22 15:09:26 2026 +0900
+ 1 file changed, 4 insertions(+)
+Rebasing (686/871)Rebasing (687/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD d45d606] Fix README: Move v2.3.6 impact and warning to Changelog section
+ Date: Thu Jan 22 15:12:08 2026 +0900
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+Rebasing (688/871)Rebasing (689/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD be0fc3b] Remove LATEST UPDATE v2.3.6 section from README
+ Date: Thu Jan 22 15:14:06 2026 +0900
+ 1 file changed, 6 deletions(-)
+Rebasing (690/871)Rebasing (691/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 13af7fa] Remove unnecessary test warning from v2.3.6 changelog
+ Date: Thu Jan 22 15:15:47 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (692/871)Rebasing (693/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e58107f] Add Issue #44 link to v2.3.6 changelog
+ Date: Thu Jan 22 15:39:39 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (694/871)Rebasing (695/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 35fa3ef] Fix V2 node isolation and zimageturbo_v4 compatibility: Use V2-specific wrapper, add compose_loras_v2_v2 function, fix apply_awq_mod handling, add comfy import
+ Date: Thu Jan 22 16:40:43 2026 +0900
+ 5 files changed, 353 insertions(+), 26 deletions(-)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.6.md
+Rebasing (696/871)Rebasing (697/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 1e23478] Fix: Add Z-Image-Turbo (NextDiT) module resolution fallback paths
+ Date: Thu Jan 22 16:56:49 2026 +0900
+ 1 file changed, 47 insertions(+), 11 deletions(-)
+Rebasing (698/871)Rebasing (699/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e146618] docs: Add detailed Z-Image-Turbo module resolution fix to v2.3.6 release notes
+ Date: Thu Jan 22 17:06:14 2026 +0900
+ 1 file changed, 100 insertions(+)
+Rebasing (700/871)Rebasing (701/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9f94ead] chore: Update version to 2.3.6 in pyproject.toml
+ Date: Thu Jan 22 18:19:46 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (702/871)Rebasing (703/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD acd0282] docs: Remove 'test thoroughly before using in production workflows' from README usage section
+ Date: Thu Jan 22 19:13:21 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (704/871)Rebasing (705/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD bbbe4d2] Update README.md: Add note about V1/V3 application in v2.3.6 changelog
+ Date: Thu Jan 22 20:20:52 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (706/871)Rebasing (707/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (708/871)Rebasing (709/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 19bec5f] V3: Always enable AWQ modulation layer LoRA (no switch needed)
+ Date: Sun Jan 25 18:11:57 2026 +0900
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+Rebasing (710/871)Rebasing (711/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0bc1e43] Update README for v2.3.7: V3 nodes always enable AWQ modulation layer LoRA
+ Date: Sun Jan 25 18:14:26 2026 +0900
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+Rebasing (712/871)Rebasing (713/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 93b072c] Add reason for v2.3.7: No noise issues reported after v2.3.6
+ Date: Sun Jan 25 18:15:50 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (714/871)Rebasing (715/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6a9111e] Add note: V2 switch retained for backward compatibility
+ Date: Sun Jan 25 18:18:01 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (716/871)Rebasing (717/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3700622] Add v2.3.7 release notes
+ Date: Sun Jan 25 18:20:12 2026 +0900
+ 1 file changed, 175 insertions(+)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.7.md
+Rebasing (718/871)Rebasing (719/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 573f85c] Add developer testing note to v2.3.7 release notes
+ Date: Sun Jan 25 18:21:29 2026 +0900
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+Rebasing (720/871)Rebasing (721/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD ae80c28] Remove Issue #44 reference from v2.3.7 release notes
+ Date: Sun Jan 25 18:23:03 2026 +0900
+ 1 file changed, 1 deletion(-)
+Rebasing (722/871)Rebasing (723/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4aea5e9] Remove temp_release_notes_v2.2.7.txt
+ Date: Sun Jan 25 18:24:01 2026 +0900
+ 1 file changed, 6 deletions(-)
+ delete mode 100644 temp_release_notes_v2.2.7.txt
+Rebasing (724/871)Rebasing (725/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 8936cde] Remove unused temp files
+ Date: Sun Jan 25 18:25:39 2026 +0900
+ 3 files changed, 928 deletions(-)
+ delete mode 100644 _temp_nunchaku_lora.py
+ delete mode 100644 _temp_zimage_copy.py
+ delete mode 100644 _temp_zimage_patcher.py
+Rebasing (726/871)Rebasing (727/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD fa4b36d] Update version to 2.3.7
+ Date: Sun Jan 25 18:29:42 2026 +0900
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+Rebasing (728/871)Rebasing (729/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9196e34] Update README for v2.6.6: Add mgpu_mm_log AttributeError fix
+ Date: Sun Jan 25 19:09:51 2026 +0900
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+Rebasing (730/871)Rebasing (731/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (732/871)Rebasing (733/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (734/871)Rebasing (735/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD ce77144] Update README for v2.3.8: Add PEFT format LoRA detection fix
+ Date: Mon Jan 26 11:32:06 2026 +0900
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+Rebasing (736/871)Rebasing (737/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 5ef4e7f] Simplify v2.3.8 changelog entry
+ Date: Mon Jan 26 11:36:49 2026 +0900
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+Rebasing (738/871)Rebasing (739/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 3489ee6] Add PR #48 merge info to v2.3.8 changelog
+ Date: Mon Jan 26 11:37:23 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (740/871)Rebasing (741/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 93e7970] Add PR #48 thanks message to Features section
+ Date: Mon Jan 26 11:39:18 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (742/871)Rebasing (743/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 222f277] Update Issue #44 link in v2.3.6 changelog
+ Date: Mon Jan 26 11:41:13 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (744/871)Rebasing (745/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 168271d] Update v2.3.8 Issue #44 link to match v2.3.6 format
+ Date: Mon Jan 26 11:44:23 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (746/871)Rebasing (747/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9d1ec66] Add Previous Releases (v1.6.0 to v2.2.8) release notes
+ Date: Mon Jan 26 11:47:45 2026 +0900
+ 1 file changed, 199 insertions(+)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V1.6.0_TO_V2.2.8.md
+Rebasing (748/871)Rebasing (749/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9f1d5bb] Replace detailed changelog (v1.60-v2.2.8) with link to release notes
+ Date: Mon Jan 26 11:50:06 2026 +0900
+ 1 file changed, 5 insertions(+), 115 deletions(-)
+Rebasing (750/871)Rebasing (751/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0210dc3] Add v1.63 CPU Offload Setting text before image
+ Date: Mon Jan 26 11:53:25 2026 +0900
+ 1 file changed, 2 insertions(+)
+Rebasing (752/871)Rebasing (753/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 2a3bd2f] Fix image path in v1.63 release notes
+ Date: Mon Jan 26 11:53:43 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (754/871)Rebasing (755/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 8372e92] Translate pr48_peft_lora_format_fix.md to English
+ Date: Mon Jan 26 11:55:52 2026 +0900
+ 1 file changed, 295 insertions(+)
+ create mode 100644 md/pr48_peft_lora_format_fix.md
+Rebasing (756/871)Rebasing (757/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c27e3b5] Update version to 2.3.8
+ Date: Mon Jan 26 12:09:24 2026 +0900
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+Rebasing (758/871)Rebasing (759/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 66865c7] Fix v2.3.8 release notes link to GitHub release
+ Date: Mon Jan 26 12:13:44 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (760/871)Rebasing (761/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 04837c9] Add PEFT format LoRA support to Supported Formats section
+ Date: Mon Jan 26 12:25:32 2026 +0900
+ 1 file changed, 6 insertions(+)
+Rebasing (762/871)Rebasing (763/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (764/871)Rebasing (765/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 13e12d1] Translate Japanese MD files to English
+ Date: Thu Jan 29 03:40:23 2026 +0900
+ 2 files changed, 310 insertions(+)
+ create mode 100644 md/GIT_AUTH_FIX.md
+ create mode 100644 md/KEY_DIFFUSION_RESTORE_QI_LORA_LOADER.md
+Rebasing (766/871)Rebasing (767/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD d9030a2] Key Diffusion implementation: Add key analysis logging to QI LoRA nodes
+ Date: Thu Jan 29 03:42:52 2026 +0900
+ 6 files changed, 145 insertions(+), 26 deletions(-)
+Rebasing (768/871)Rebasing (769/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9797710] Add temporary files to .gitignore
+ Date: Thu Jan 29 03:44:36 2026 +0900
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+Rebasing (770/871)Rebasing (771/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 73b3c25] Update README for v2.3.9: Add Key Diffusion feature summary
+ Date: Thu Jan 29 03:46:24 2026 +0900
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+Rebasing (772/871)Rebasing (773/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD a43a268] Update v2.3.9 changelog: Add note about default log muting
+ Date: Thu Jan 29 03:47:23 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (774/871)Rebasing (775/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 669f72f] Update version to 2.3.9
+ Date: Thu Jan 29 03:50:33 2026 +0900
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+Rebasing (776/871)Rebasing (777/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e268bed] Docs: note nunchaku_log enables detailed debug logs
+ Date: Thu Jan 29 04:05:14 2026 +0900
+ 1 file changed, 4 insertions(+)
+Rebasing (778/871)Rebasing (779/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0d45735] Docs: remove Issue #30 guidance troubleshooting section
+ Date: Thu Jan 29 04:21:15 2026 +0900
+ 1 file changed, 13 deletions(-)
+Rebasing (780/871)Rebasing (781/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (782/871)Rebasing (783/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 91c4e1b] Docs: restore PEFT format note in Supported Formats
+ Date: Thu Jan 29 04:25:00 2026 +0900
+ 1 file changed, 6 insertions(+)
+Rebasing (784/871)Rebasing (785/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (786/871)Rebasing (787/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (788/871)Rebasing (789/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e709689] feat: rename V4 to V1 (rgthree-style UI), add qiv1_stack.png to README
+ Date: Sat Feb 7 21:23:20 2026 +0900
+ 5 files changed, 25 insertions(+), 22 deletions(-)
+ create mode 100644 images/qiv1_stack.png
+ rename js/{z_qwen_lora_dynamic_v4.js => z_qwen_lora_dynamic_v1.js} (98%)
+ rename nodes/lora/{qwenimage_v4.py => qwenimage_v1.py} (94%)
+Rebasing (790/871)Rebasing (791/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c9960b6] docs: v2.4.0 - document V4 to V1 rename (breaking change), update Basic Usage, bump version
+ Date: Sat Feb 7 21:25:13 2026 +0900
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+Rebasing (792/871)Rebasing (793/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4cf2334] Revert changelog/version changes (py node changes already in 44763a3)
+ Date: Sat Feb 7 21:26:48 2026 +0900
+ 2 files changed, 3 insertions(+), 10 deletions(-)
+Rebasing (794/871)Rebasing (795/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD ec8ddc6] docs: add note that V1 node does not work properly with ComfyUI Nodes 2.0
+ Date: Sat Feb 7 21:28:33 2026 +0900
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+Rebasing (796/871)Rebasing (797/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c918d8d] docs: add PR #49 thanks and maintainer note on UI capability
+ Date: Sat Feb 7 21:30:39 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (798/871)Rebasing (799/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 5a3f058] docs: add v2.4.0 to PR #49 in Features
+ Date: Sat Feb 7 21:31:49 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (800/871)Rebasing (801/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 497bd51] docs: remove Honest note, revert We/I
+ Date: Sat Feb 7 21:34:49 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (802/871)Rebasing (803/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD eab1b92] docs: restore Honest note with We, unify subject
+ Date: Sat Feb 7 21:36:36 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (804/871)Rebasing (805/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c7f9ee4] docs: remove Honest note prefix
+ Date: Sat Feb 7 21:37:27 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (806/871)Rebasing (807/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 95347ac] docs: remove 'own' from technical skills
+ Date: Sat Feb 7 21:39:17 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (808/871)Rebasing (809/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 7926dee] docs: add v2.4.0 overview and PR #49 link
+ Date: Sat Feb 7 21:42:51 2026 +0900
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+Rebasing (810/871)Rebasing (811/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 1cf6fad] docs: add v2.4.0 to Changelog, update Latest release
+ Date: Sat Feb 7 21:48:51 2026 +0900
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+Rebasing (812/871)Rebasing (813/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 9d9dbd5] docs: add v2.4.0 release notes link to Changelog
+ Date: Sat Feb 7 21:50:19 2026 +0900
+ 1 file changed, 1 insertion(+)
+Rebasing (814/871)Rebasing (815/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 4034558] chore: bump version to 2.4.0
+ Date: Sat Feb 7 22:21:15 2026 +0900
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+Rebasing (816/871)Rebasing (817/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 1f4c28b] feat: Z-Image-Turbo LoRA Stack V1 (rgthree-style), Issue #12 link in changelog, v2.4.0 release notes
+ Date: Sat Feb 7 23:18:12 2026 +0900
+ 6 files changed, 1336 insertions(+)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.4.0.md
+ create mode 100644 js/zimageturbo_lora_dynamic_v1.js
+ create mode 100644 md/V2.4.0_V1_RENAME_COMPLETE_EXPLANATION.md
+ create mode 100644 nodes/lora/zimageturbo_v1.py
+Rebasing (818/871)Rebasing (819/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 241991b] docs: point v2.4.0 Technical Details to GitHub release
+ Date: Sat Feb 7 23:22:03 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (820/871)Rebasing (821/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 29770f3] docs: add Issue #36 link to v2.4.0 changelog
+ Date: Sat Feb 7 23:24:53 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (822/871)Rebasing (823/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0a8d36d] docs: add F5 refresh note for Nodes 2.0 (warning + bold)
+ Date: Sun Feb 8 00:40:32 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (824/871)Rebasing (825/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 08948b4] docs: line break for Qwen V1 Nodes 2.0 / F5 note
+ Date: Sun Feb 8 00:41:40 2026 +0900
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+Rebasing (826/871)Rebasing (827/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 0a9807f] docs: add ZIT V1 node description and F5/Nodes 2.0 note
+ Date: Sun Feb 8 00:48:59 2026 +0900
+ 1 file changed, 7 insertions(+)
+Rebasing (828/871)Rebasing (829/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 20a3717] docs: add ZIT V1 node screenshot (zitlorav1.png)
+ Date: Sun Feb 8 00:49:33 2026 +0900
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 images/zitlorav1.png
+Rebasing (830/871)Rebasing (831/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD fad4672] docs: add v2.4.1 changelog with ZIT V1 overview and Related Issues
+ Date: Sun Feb 8 00:52:51 2026 +0900
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+Rebasing (832/871)Rebasing (833/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD c9b5fa9] docs: update Latest release to v2.4.1. Refs #12, #36
+ Date: Sun Feb 8 00:58:13 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (834/871)Rebasing (835/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD d377c99] Bump version to 2.4.1
+ Date: Sun Feb 8 01:14:00 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (836/871)Rebasing (837/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 23605b7] Fix v2.3.8 release notes link to GitHub releases URL
+ Date: Thu Feb 19 08:58:17 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (838/871)Rebasing (839/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD ae46ce3] Docs: Add English Qwen Image ControlNet and __getattr__ fix; misc updates
+ Date: Wed Feb 25 11:11:26 2026 +0900
+ 4 files changed, 326 insertions(+), 1 deletion(-)
+ create mode 100644 md/QWEN_IMAGE_CONTROLNET_AND_GETATTR_FIX.md
+Rebasing (840/871)Rebasing (841/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD a7c7f3c] Remove .tracking from repo; add to .gitignore
+ Date: Wed Feb 25 11:13:21 2026 +0900
+ 2 files changed, 4 insertions(+), 82 deletions(-)
+ delete mode 100644 .tracking
+Rebasing (842/871)Rebasing (843/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 962b883] Revert v2.3.8 link to GitHub releases URL
+ Date: Wed Feb 25 11:16:43 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (844/871)Rebasing (845/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 179a8d1] Changelog: add v2.4.2 (ControlNet + __getattr__ fix), update latest release
+ Date: Wed Feb 25 11:22:53 2026 +0900
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+Rebasing (846/871)Rebasing (847/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b952430] Bump version to 2.4.2 in pyproject.toml
+ Date: Wed Feb 25 11:25:51 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (848/871)Rebasing (849/871)Executing: sh .git-fix-one-commit.sh
+Rebasing (850/871)Rebasing (851/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 45c94e4] Add RELEASE_NOTES_V2.3.0_TO_V2.3.9.md
+ Date: Wed Feb 25 11:29:38 2026 +0900
+ 1 file changed, 64 insertions(+)
+ create mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.0_TO_V2.3.9.md
+Rebasing (852/871)Rebasing (853/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6e335f3] Changelog: replace v2.3.0–v2.3.9 entries with link to RELEASE_NOTES_V2.3.0_TO_V2.3.9.md
+ Date: Wed Feb 25 11:41:12 2026 +0900
+ 1 file changed, 5 insertions(+), 39 deletions(-)
+Rebasing (854/871)Rebasing (855/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 6620f5a] fix: Nunchaku SVDQ lazy-Linear patches and docs
+ Date: Thu Mar 26 10:11:48 2026 +0900
+ 8 files changed, 1551 insertions(+), 36 deletions(-)
+ create mode 100644 do_checkout_pr49.ps1
+ create mode 100644 do_merge_pr49.ps1
+ create mode 100644 md/COMFYUI_0.7.0_MODEL_MANAGEMENT_ERRORS.md
+ create mode 100644 md/MGPU_MM_LOG_ATTRIBUTE_ERROR_FIX.md
+ create mode 100644 md/ZIMAGE_SVDQ_LAZY_LINEAR_AND_POP_DEFAULT_FIX.md
+Rebasing (856/871)Rebasing (857/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD f5e31d5] docs: add v2.4.3 changelog entry
+ Date: Thu Mar 26 10:15:35 2026 +0900
+ 1 file changed, 4 insertions(+)
+Rebasing (858/871)Rebasing (859/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 765d9d8] chore: bump version to v2.4.3
+ Date: Thu Mar 26 10:23:37 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (860/871)Rebasing (861/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD db8dcc0] docs: link v2.4.3 release notes to GitHub
+ Date: Thu Mar 26 10:50:22 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (862/871)Rebasing (863/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD fdc3fec] docs: bump latest release banner to v2.4.3
+ Date: Thu Mar 26 13:26:02 2026 +0900
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+Rebasing (864/871)Rebasing (865/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD b8fc97b] docs: fix v2.4.2 release notes link (GitHub release)
+ Date: Sun Apr 19 23:17:00 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (866/871)Rebasing (867/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 70393b2] docs: fix v2.3.6/v2.3.7 release links in consolidated notes
+ Date: Sun Apr 19 23:22:11 2026 +0900
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+Rebasing (868/871)Rebasing (869/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD 5820a94] docs: consolidate v2.3.0-v2.3.9 changelog into RELEASE_NOTES link
+ Date: Sun Apr 19 23:24:04 2026 +0900
+ 1 file changed, 5 insertions(+), 39 deletions(-)
+Rebasing (870/871)Rebasing (871/871)Executing: sh .git-fix-one-commit.sh
+[detached HEAD e2bbc44] chore: remove superseded per-version RELEASE_NOTES (v2.2.7, v2.2.8, v2.3.6, v2.3.7, v2.4.0)
+ Date: Sun Apr 19 23:30:31 2026 +0900
+ 5 files changed, 1365 deletions(-)
+ delete mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.2.7.md
+ delete mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.2.8.md
+ delete mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.6.md
+ delete mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.3.7.md
+ delete mode 100644 RELEASE_NOTES/RELEASE_NOTES_V2.4.0.md
+Successfully rebased and updated refs/heads/main.

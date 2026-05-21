@@ -2,8 +2,8 @@
 
 <table align="center">
   <tr>
-    <td align="center" bgcolor="#d4465e" width="88" height="36"><font color="#ffffff"><b>EN</b></font></td>
-    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/zhmd/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md"><font color="#4b5563"><b>中文</b></font></a></td>
+    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><font color="#4b5563"><b>EN</b></font></td>
+    <td align="center" bgcolor="#3478ca" width="88" height="36"><a href="https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/zhmd/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md"><font color="#ffffff"><b>中文</b></font></a></td>
   </tr>
 </table>
 

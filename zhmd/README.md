@@ -250,7 +250,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 - **已合并**: [PR #49](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/49) - feat(qwen_lora): 添加 Nunchaku Qwen Image LoRA Stack V4，rgthree 风格 UI (由 [avan06](https://github.com/avan06) 提出)
 - **注意**: 无法与 ComfyUI Nodes 2.0 正常工作。请使用标准 (LiteGraph) 画布。
 - **相关问题**: [问题 #12](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/12) - 请求更好的 LoRA 选项 (rgthree 风格 UI), [问题 #36](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/36) - 请求启用/禁用 LoRA 功能
-- **技术详情**: 请参阅 [v2.4.0 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.0) 获取完整说明
+- **技术详情**: 请参阅 [v2.4.0 发行说明](v2.4.0.md) 获取完整说明
 
 ### 先前版本 (v2.3.0 到 v2.3.9)
 

@@ -299,4 +299,4 @@ Exclude models where `shift_model.model` is `None` from `can_unload` (already ga
 
 These fixes stabilize ComfyUI's model management and reduce VRAM-related errors.
 
-For background on symptoms and Nunchaku / node updates, see [Issue #25: ComfyUI 0.4.0 model management errors (Chinese)](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/zhmd/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md).
+For background on symptoms and Nunchaku / node updates, see [Issue #25: ComfyUI 0.4.0 model management errors](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/md/COMFYUI_0.4.0_MODEL_MANAGEMENT_ERRORS.md).

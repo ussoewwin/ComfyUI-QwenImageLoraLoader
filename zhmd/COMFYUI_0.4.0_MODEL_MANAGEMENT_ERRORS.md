@@ -52,4 +52,4 @@ def __init__(self, model, load_device, offload_device, size=0, weight_inplace_up
 - **建议**：
   1. 将 Nunchaku 库与 ComfyUI-Nunchaku 节点更新到最新版本（可缓解 `model_config` 相关问题）
   2. 考虑对 ComfyUI 核心的 `model_management.py` 应用 None 检查类修复（可能从根因上缓解）
-- **说明**：这是第一层支持措施。我们已在环境中对 ComfyUI 核心的 `model_management.py` 所应用的修复技术细节已单独整理发布。详见 [COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md](../md/COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md)。请注意，这些修复是在特定环境中实施的，未必适用于所有环境；也可能同时缓解 `copy.deepcopy` 与 `pinned` 属性相关错误。
+- **说明**：这是第一层支持措施。我们已在环境中对 ComfyUI 核心的 `model_management.py` 所应用的修复技术细节已单独整理发布。详见 [COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md](../zhmd/COMFYUI_0.4.0_UPDATE_ERROR_FIXES.md)。请注意，这些修复是在特定环境中实施的，未必适用于所有环境；也可能同时缓解 `copy.deepcopy` 与 `pinned` 属性相关错误。

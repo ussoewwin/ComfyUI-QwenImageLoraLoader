@@ -1,8 +1,10 @@
 
 import logging
+import os
+import re
 import sys
 import types
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import torch
 
@@ -11,25 +13,112 @@ logger = logging.getLogger(__name__)
 _svdq_from_linear_patched: bool = False
 _qwen_apply_rotary_emb_compat_applied: bool = False
 
+_ROTARY_SHIM_TAG = "_qwen_lora_loader_rotary_shim"
+_NUNCHAKU_QWENIMAGE_APPLY_ROTARY_PATTERNS = (
+    re.compile(
+        r"from\s+comfy\.ldm\.qwen_image\.model\s+import\s+\([^)]*\bapply_rotary_emb\b",
+        re.MULTILINE | re.DOTALL,
+    ),
+    re.compile(
+        r"from\s+comfy\.ldm\.qwen_image\.model\s+import\s+[^\n#]*\bapply_rotary_emb\b",
+    ),
+)
+
+
+def _rotary_compat_disabled_by_env() -> bool:
+    value = os.environ.get("QWENIMAGE_ROTARY_COMPAT", "").strip().lower()
+    return value in ("0", "false", "no", "off", "disable", "disabled")
+
+
+def _mark_rotary_shim(fn: Callable) -> Callable:
+    setattr(fn, _ROTARY_SHIM_TAG, True)
+    return fn
+
+
+def _rotary_shim_installed_on(qwen_image_model) -> bool:
+    fn = getattr(qwen_image_model, "apply_rotary_emb", None)
+    return fn is not None and getattr(fn, _ROTARY_SHIM_TAG, False)
+
+
+def _comfyui_has_native_apply_rotary_emb(qwen_image_model) -> bool:
+    return (
+        getattr(qwen_image_model, "apply_rotary_emb", None) is not None
+        and not _rotary_shim_installed_on(qwen_image_model)
+    )
+
+
+def _find_nunchaku_qwenimage_py() -> Optional[str]:
+    custom_nodes = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+    )
+    for folder in ("ComfyUI-nunchaku", "ComfyUI_Nunchaku", "comfyui-nunchaku"):
+        path = os.path.join(custom_nodes, folder, "models", "qwenimage.py")
+        if os.path.isfile(path):
+            return path
+    return None
+
+
+def _nunchaku_qwenimage_still_imports_apply_rotary_emb() -> Optional[bool]:
+    """
+    True: nunchaku still imports apply_rotary_emb (compat may be needed).
+    False: nunchaku source no longer imports it (skip shim).
+    None: qwenimage.py not found (apply only if symbol missing).
+    """
+    path = _find_nunchaku_qwenimage_py()
+    if path is None:
+        return None
+
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            text = handle.read()
+    except OSError as exc:
+        logger.debug("Could not read %s for rotary compat probe: %s", path, exc)
+        return None
+
+    for pattern in _NUNCHAKU_QWENIMAGE_APPLY_ROTARY_PATTERNS:
+        if pattern.search(text):
+            return True
+    return False
+
 
 def apply_qwen_image_apply_rotary_emb_compat() -> bool:
     """
     ComfyUI >= 0.24 removed comfy.ldm.qwen_image.model.apply_rotary_emb.
-    ComfyUI-nunchaku still imports it; alias to comfy.ldm.flux.math.apply_rope1.
+    ComfyUI-nunchaku still imports it; alias to comfy.ldm.flux.math.apply_rope1
+    only when the import is still required and ComfyUI has not restored the symbol.
     """
     global _qwen_apply_rotary_emb_compat_applied
     if _qwen_apply_rotary_emb_compat_applied:
         return True
 
+    if _rotary_compat_disabled_by_env():
+        logger.info(
+            "apply_rotary_emb compat skipped (QWENIMAGE_ROTARY_COMPAT is disabled)"
+        )
+        return False
+
     try:
         import comfy.ldm.qwen_image.model as qwen_image_model
         from comfy.ldm.flux.math import apply_rope1
 
-        if hasattr(qwen_image_model, "apply_rotary_emb"):
+        if _rotary_shim_installed_on(qwen_image_model):
             _qwen_apply_rotary_emb_compat_applied = True
+            return True
+
+        if _comfyui_has_native_apply_rotary_emb(qwen_image_model):
+            logger.info(
+                "apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb"
+            )
             return False
 
-        qwen_image_model.apply_rotary_emb = apply_rope1
+        nunchaku_needs = _nunchaku_qwenimage_still_imports_apply_rotary_emb()
+        if nunchaku_needs is False:
+            logger.info(
+                "apply_rotary_emb compat skipped: ComfyUI-nunchaku no longer imports apply_rotary_emb"
+            )
+            return False
+
+        qwen_image_model.apply_rotary_emb = _mark_rotary_shim(apply_rope1)
         _qwen_apply_rotary_emb_compat_applied = True
         logger.info(
             "Patched comfy.ldm.qwen_image.model.apply_rotary_emb -> apply_rope1 "

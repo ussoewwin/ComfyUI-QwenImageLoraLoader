@@ -12,7 +12,18 @@ This document records the error, root cause, modified files, full patched code, 
 | Python | 3.13 (embedded) |
 | PyTorch | 2.12.0+cu132 |
 
-**Design constraint:** Do **not** edit `ComfyUI-nunchaku` upstream files. Apply the shim only from **ComfyUI-QwenImageLoraLoader**.
+**Design constraint:** Do **not** edit `ComfyUI-nunchaku` upstream files. Apply the shim only from **ComfyUI-QwenImageLoraLoader**, and **only when still needed**.
+
+The compat layer is **conditional and upstream-safe**:
+
+| Condition | Action |
+|-----------|--------|
+| ComfyUI already exports `apply_rotary_emb` (native restore) | **Skip** — never overwrite |
+| ComfyUI-nunchaku `models/qwenimage.py` no longer imports `apply_rotary_emb` | **Skip** — upstream fixed the import |
+| Symbol missing **and** nunchaku still imports it | **Apply** — alias `apply_rope1`, tagged `_qwen_lora_loader_rotary_shim` |
+| `QWENIMAGE_ROTARY_COMPAT=0` (or `false` / `off`) | **Skip** — manual opt-out |
+
+When upstream fixes land, the shim stops patching automatically; no nunchaku file edits and no permanent module mutation.
 
 ---
 
@@ -194,40 +205,15 @@ except Exception:
     logger.exception("ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat failed")
 ```
 
-### 4.2 Added to `patches/nunchaku_patch.py` — module flag and compat function
+### 4.2 Added to `patches/nunchaku_patch.py` — conditional compat function
 
-```python
-_qwen_apply_rotary_emb_compat_applied: bool = False
+See `patches/nunchaku_patch.py` for the full implementation. Summary:
 
-
-def apply_qwen_image_apply_rotary_emb_compat() -> bool:
-    """
-    ComfyUI >= 0.24 removed comfy.ldm.qwen_image.model.apply_rotary_emb.
-    ComfyUI-nunchaku still imports it; alias to comfy.ldm.flux.math.apply_rope1.
-    """
-    global _qwen_apply_rotary_emb_compat_applied
-    if _qwen_apply_rotary_emb_compat_applied:
-        return True
-
-    try:
-        import comfy.ldm.qwen_image.model as qwen_image_model
-        from comfy.ldm.flux.math import apply_rope1
-
-        if hasattr(qwen_image_model, "apply_rotary_emb"):
-            _qwen_apply_rotary_emb_compat_applied = True
-            return False
-
-        qwen_image_model.apply_rotary_emb = apply_rope1
-        _qwen_apply_rotary_emb_compat_applied = True
-        logger.info(
-            "Patched comfy.ldm.qwen_image.model.apply_rotary_emb -> apply_rope1 "
-            "(ComfyUI-nunchaku Qwen Image compat)"
-        )
-        return True
-    except Exception as e:
-        logger.error("Failed to apply apply_rotary_emb compat patch: %s", e)
-        return False
-```
+1. **Probe** sibling `ComfyUI-nunchaku/models/qwenimage.py` for `from comfy.ldm.qwen_image.model import ... apply_rotary_emb`.
+2. **Skip** if ComfyUI already exports native `apply_rotary_emb` (not our tagged shim).
+3. **Skip** if nunchaku no longer imports `apply_rotary_emb`.
+4. **Apply** only when the symbol is missing and nunchaku still needs it — assign `apply_rope1` with `_qwen_lora_loader_rotary_shim` marker.
+5. **Opt-out** via env `QWENIMAGE_ROTARY_COMPAT=0`.
 
 ### 4.3 Modified in `patches/nunchaku_patch.py` — `apply_nunchaku_patch()` entry and return
 
@@ -310,25 +296,26 @@ sequenceDiagram
 
 ### 5.2 What the shim does (step by step)
 
-1. Import `comfy.ldm.qwen_image.model` as a module object (not only symbols from `__init__` if any).
-2. If `apply_rotary_emb` **already exists** (future ComfyUI or another patcher), do nothing and return `False`.
-3. Otherwise assign `qwen_image_model.apply_rotary_emb = apply_rope1`.
-4. Python’s `from comfy.ldm.qwen_image.model import apply_rotary_emb` binds the name at import time to whatever attribute exists on the module **at that moment**. Injecting the attribute on the module **before** nunchaku’s import is sufficient.
+1. Import `comfy.ldm.qwen_image.model` as a module object.
+2. If our tagged shim is already on the module, return `True` (idempotent).
+3. If ComfyUI **natively** exports `apply_rotary_emb`, log skip and return `False` (never overwrite).
+4. Read `ComfyUI-nunchaku/models/qwenimage.py`; if it no longer imports `apply_rotary_emb`, log skip and return `False`.
+5. Only if the symbol is still missing and nunchaku still imports it: assign `apply_rope1` with shim tag.
+6. Python’s `from comfy.ldm.qwen_image.model import apply_rotary_emb` binds at import time; prestartup injection remains sufficient when step 5 runs.
 
 ### 5.3 Idempotency and double execution
 
 - `prestartup_script.py` loads `nunchaku_patch.py` via `importlib` under a **unique module name** (`comfyui_qwenimageloraloader_nunchaku_patch_prestartup`).
 - Later, `__init__.py` imports `patches.nunchaku_patch` as a normal package submodule (second module object, separate `_qwen_apply_rotary_emb_compat_applied` flag).
-- That is acceptable: the **real effect** is on `comfy.ldm.qwen_image.model`, which is a singleton module. The second call sees `hasattr(qwen_image_model, "apply_rotary_emb")` as true and skips re-patching.
+- That is acceptable: the **real effect** is on `comfy.ldm.qwen_image.model`, which is a singleton module. The second call detects the tagged shim (or native export) and does not re-patch.
 - Startup logs therefore show the INFO lines **once** (from prestartup), not twice.
 
 ### 5.4 Return values of `apply_qwen_image_apply_rotary_emb_compat()`
 
 | Return | Meaning |
 |--------|---------|
-| `True` | Shim was applied in this call (attribute was missing and was added). |
-| `False` | Shim not needed (`apply_rotary_emb` already present) or apply failed (logged as error). |
-| `True` (immediate) | Already applied in **this** module instance’s prior call (`_qwen_apply_rotary_emb_compat_applied` flag). |
+| `True` | Shim applied this call, or already applied in this module instance (flag / tagged shim on singleton). |
+| `False` | Skipped: native ComfyUI export, nunchaku no longer imports `apply_rotary_emb`, env disabled, or apply failed (error logged). |
 
 ### 5.5 Risk assessment
 
@@ -336,7 +323,7 @@ sequenceDiagram
 |-------|------------|
 | Correctness vs ComfyUI 0.24 native path | **Aligned** — same function the core model uses (`apply_rope1`). |
 | Effect on other custom nodes | **Low** — only adds a name on `comfy.ldm.qwen_image.model` if missing; does not replace ComfyUI core files. |
-| Upstream nunchaku fix | Eventually nunchaku may switch imports to `apply_rope1`; then `hasattr` branch skips shim (harmless). |
+| Upstream nunchaku fix | Probe of `models/qwenimage.py` detects removed import → shim skipped automatically. ComfyUI native restore → also skipped without overwrite. |
 | Performance | **None** — alias only, no extra wrapper. |
 
 ### 5.6 Unrelated warning: `nunchaku_versions.json`
@@ -385,7 +372,7 @@ Run a minimal Qwen Image + Nunchaku workflow (load `NunchakuQwenImageDiTLoader`,
 2. Revert changes in `patches/nunchaku_patch.py` (remove `apply_qwen_image_apply_rotary_emb_compat` and its call in `apply_nunchaku_patch`).
 3. Restart ComfyUI.
 
-Alternatively, upgrade **ComfyUI-nunchaku** to a release that imports `apply_rope1` directly (when upstream publishes one), then remove this shim.
+Alternatively, upgrade **ComfyUI-nunchaku** to a release that no longer imports `apply_rotary_emb` (or upgrade ComfyUI if it restores the symbol). The shim should **skip by itself**; you can remove `prestartup_script.py` / compat code later for a cleaner tree, or set `QWENIMAGE_ROTARY_COMPAT=0` to force-disable.
 
 ---
 
@@ -395,7 +382,7 @@ Alternatively, upgrade **ComfyUI-nunchaku** to a release that imports `apply_rop
 |----------|--------|
 | What broke? | `ImportError: cannot import name 'apply_rotary_emb'` during ComfyUI-nunchaku load. |
 | Why? | ComfyUI 0.24 removed `apply_rotary_emb`; nunchaku still imports it; LoraLoader `__init__` runs too late. |
-| Fix? | Early `prestartup_script.py` + `apply_rope1` alias on `comfy.ldm.qwen_image.model`; duplicate guard in `apply_nunchaku_patch()`. |
+| Fix? | Early `prestartup_script.py` + **conditional** `apply_rope1` alias (only when nunchaku still imports missing symbol); auto-skip when ComfyUI or nunchaku upstream fixes land. |
 | Files? | `prestartup_script.py` (new), `patches/nunchaku_patch.py` (modified). |
 | nunchaku touched? | **No.** |
 

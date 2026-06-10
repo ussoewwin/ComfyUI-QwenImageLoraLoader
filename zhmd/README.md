@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.4.5 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.5)
+> 最新版本: [v2.4.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.6)
 >
 
 ## 来源
@@ -224,7 +224,11 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## 更新日志
 
-### v2.4.5 (最新)
+### v2.4.6 (最新)
+- **已修复**: ComfyUI **0.24.x** 启动时 **ComfyUI-nunchaku** 导入 Qwen Image 节点失败的问题（`ImportError: cannot import name 'apply_rotary_emb' from 'comfy.ldm.qwen_image.model'`）。通过本自定义节点的早期 `prestartup_script.py` 垫片，将 `apply_rotary_emb` 别名为 ComfyUI 的 `apply_rope1`（无需修改 ComfyUI-nunchaku 文件）。
+- **技术详情**: 请参阅 [v2.4.6 发行说明](v2.4.6.md) 获取完整说明
+
+### v2.4.5
 - **已添加**: 在 `zhmd/` 目录下新增中文文档页面（README 与发行说明），并在英文与中文 README 及发行说明页面提供双语语言切换。
 - **技术详情**: 请参阅 [v2.4.5 发行说明](v2.4.5.md) 获取完整说明
 

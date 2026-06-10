@@ -9,6 +9,36 @@ import torch
 logger = logging.getLogger(__name__)
 
 _svdq_from_linear_patched: bool = False
+_qwen_apply_rotary_emb_compat_applied: bool = False
+
+
+def apply_qwen_image_apply_rotary_emb_compat() -> bool:
+    """
+    ComfyUI >= 0.24 removed comfy.ldm.qwen_image.model.apply_rotary_emb.
+    ComfyUI-nunchaku still imports it; alias to comfy.ldm.flux.math.apply_rope1.
+    """
+    global _qwen_apply_rotary_emb_compat_applied
+    if _qwen_apply_rotary_emb_compat_applied:
+        return True
+
+    try:
+        import comfy.ldm.qwen_image.model as qwen_image_model
+        from comfy.ldm.flux.math import apply_rope1
+
+        if hasattr(qwen_image_model, "apply_rotary_emb"):
+            _qwen_apply_rotary_emb_compat_applied = True
+            return False
+
+        qwen_image_model.apply_rotary_emb = apply_rope1
+        _qwen_apply_rotary_emb_compat_applied = True
+        logger.info(
+            "Patched comfy.ldm.qwen_image.model.apply_rotary_emb -> apply_rope1 "
+            "(ComfyUI-nunchaku Qwen Image compat)"
+        )
+        return True
+    except Exception as e:
+        logger.error("Failed to apply apply_rotary_emb compat patch: %s", e)
+        return False
 
 
 def _torch_device_fallback() -> torch.device:
@@ -239,6 +269,7 @@ def apply_nunchaku_patch():
     Apply ComfyUI-nunchaku compatibility patches (LoRA planar injection + lazy Linear fixes).
     Returns True if at least one patch was applied or was already active.
     """
+    rotary_compat = apply_qwen_image_apply_rotary_emb_compat()
     lazy_from = apply_svdqw4a4_lazy_linear_patch()
     lazy_fuse = apply_nunchaku_zimage_fuse_lazy_linear_patch()
     if not lazy_fuse:
@@ -275,4 +306,4 @@ def apply_nunchaku_patch():
     except Exception as e:
         logger.error("Failed to apply Nunchaku planar patch: %s", e)
 
-    return planar_ok or lazy_from
+    return planar_ok or lazy_from or rotary_compat

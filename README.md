@@ -13,7 +13,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.4.5 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.5)
+> Latest release: [v2.4.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.6)
 > 
 
 ## Source
@@ -224,7 +224,11 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.4.5 (latest)
+### v2.4.6 (latest)
+- **Fixed**: ComfyUI **0.24.x** startup failure when **ComfyUI-nunchaku** imports Qwen Image nodes (`ImportError: cannot import name 'apply_rotary_emb' from 'comfy.ldm.qwen_image.model'`). Adds an early `prestartup_script.py` shim that aliases `apply_rotary_emb` to ComfyUI's `apply_rope1` from this custom node only (no ComfyUI-nunchaku file edits).
+- **Technical Details**: See [v2.4.6 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.6) for complete explanation
+
+### v2.4.5
 - **Added**: Chinese documentation pages under `zhmd/` (README and release notes), with bilingual language switchers on the English and Chinese README and release note pages.
 - **Technical Details**: See [v2.4.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.5) for complete explanation
 

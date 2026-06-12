@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.4.6 on GitHub Releases](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.6)
+> 最新版本: [v2.4.6 发行说明](v2.4.6.md)
 >
 
 ## 来源

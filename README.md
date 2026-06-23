@@ -225,9 +225,9 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 ## Changelog
 
 ### v2.4.7 (latest)
-- **Fixed**: ComfyUI startup `[ERROR] loss` / `[ERROR] logits` messages from Hugging Face `transformers` `@auto_docstring` when importing Qwen3 VL / Qwen2.5 VL `*CausalLMOutputWithPast`. Early `prestartup_script.py` wraps `get_args_doc_from_source` inside this custom node only (no `site-packages` edits, no stderr filtering).
-- **Upstream auto-disable (fully automatic)**: On every ComfyUI start, probes upstream `ModelOutputArgs` and runs a subprocess Qwen VL import test. The wrapper is installed **only while** upstream still triggers those docstring errors; when Hugging Face fixes `transformers`, the patch **skips itself** on the next start. **No environment variables or user toggles** (unlike v2.4.6 `apply_rotary_emb` compat, which still allows `QWENIMAGE_ROTARY_COMPAT` opt-out).
-- **Note**: This is **not** a defect in this node's LoRA loading logic. The root cause is upstream `transformers` Qwen VL `@auto_docstring` validation when those `ModelOutput` classes are imported (often via other custom nodes or workflows). LoRA behavior is unchanged.
+- **Fixed**: ComfyUI startup `[ERROR] loss` / `[ERROR] logits` messages from Hugging Face `transformers` `@auto_docstring` when importing Qwen3 VL / Qwen2.5 VL `*CausalLMOutputWithPast`. This is **not a defect in this node's LoRA loading logic**. Because it is unclear when Hugging Face will address this upstream, this node absorbs the issue by wrapping `get_args_doc_from_source` inside `prestartup_script.py` only (no `site-packages` edits, no stderr filtering).
+- **Upstream auto-disable (fully automatic)**: On every ComfyUI start, the patch probes upstream `ModelOutputArgs` and runs a subprocess Qwen VL import test. Once `transformers` is fixed upstream, the patch **skips itself** automatically on the next start. **No environment variables or user toggles** (unlike v2.4.6 `apply_rotary_emb` compat, which still allows `QWENIMAGE_ROTARY_COMPAT` opt-out).
+- **Note**: LoRA behavior is unchanged. The root cause is upstream `transformers` Qwen VL `@auto_docstring` validation when those `ModelOutput` classes are imported (often via other custom nodes or workflows).
 - **Technical Details**: [TRANSFORMERS_QWEN_VL_CAUSAL_LM_DOCSTRING_PATCH.md](md/TRANSFORMERS_QWEN_VL_CAUSAL_LM_DOCSTRING_PATCH.md) · [v2.4.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.7)
 
 ### v2.4.6

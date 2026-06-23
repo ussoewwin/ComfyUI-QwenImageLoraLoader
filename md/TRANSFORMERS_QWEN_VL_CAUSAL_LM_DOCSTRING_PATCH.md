@@ -253,6 +253,8 @@ The wrapper sets `_qwen_lora_loader_causal_lm_docstring_patch = True`. A second 
 
 ## 6. Automatic upstream disable (same idea as v2.4.6 rotary patch)
 
+This is **not a bug in this node's LoRA loading logic**. The `[ERROR] loss` / `[ERROR] logits` messages come from upstream `transformers` Qwen VL `@auto_docstring` validation. Because it is unclear when Hugging Face will fix the upstream code, this node absorbs the problem locally and removes the workaround automatically once the upstream fix is available.
+
 **Fully automatic on every ComfyUI start.** No user configuration. The wrapper is installed **only while upstream `transformers` still triggers `[ERROR] loss` / `[ERROR] logits`**, and **is not installed** once Hugging Face fixes `ModelOutputArgs` or a clean subprocess import probe shows zero errors.
 
 | Scenario | Behavior |

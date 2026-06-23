@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.4.6 发行说明](v2.4.6.md)
+> 最新版本: [v2.4.7 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.7)
 >
 
 ## 来源
@@ -224,7 +224,13 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## 更新日志
 
-### v2.4.6 (最新)
+### v2.4.7 (最新)
+- **已修复**: ComfyUI 启动时，导入 Qwen3 VL / Qwen2.5 VL `*CausalLMOutputWithPast` 会触发 Hugging Face `transformers` 的 `@auto_docstring`，在控制台输出 `[ERROR] loss` / `[ERROR] logits`。**这不是本节点 LoRA 加载逻辑的缺陷**。由于上游何时修复尚不确定，本节点仅在 `prestartup_script.py` 内包装 `get_args_doc_from_source` 来吸收该问题（不修改 `site-packages`，不过滤 stderr）。
+- **上游自动禁用（全自动）**: 每次 ComfyUI 启动时，补丁会探测上游 `ModelOutputArgs` 并运行子进程 Qwen VL 导入测试。一旦上游 `transformers` 修复，下次启动时将**自动跳过**补丁。**无需环境变量或用户开关**（与仍允许通过 `QWENIMAGE_ROTARY_COMPAT` 退出的 v2.4.6 `apply_rotary_emb` 兼容垫片不同）。
+- **说明**: LoRA 行为未变。根因是导入这些 `ModelOutput` 类时（常由其他自定义节点或工作流触发）上游 `transformers` 对 Qwen VL `@auto_docstring` 的校验。
+- **技术详情**: [TRANSFORMERS_QWEN_VL_CAUSAL_LM_DOCSTRING_PATCH.md](../md/TRANSFORMERS_QWEN_VL_CAUSAL_LM_DOCSTRING_PATCH.md) · [v2.4.7 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.7)
+
+### v2.4.6
 - **已修复**: ComfyUI **0.24.x** 启动时 **ComfyUI-nunchaku** 导入 Qwen Image 节点失败的问题（`ImportError: cannot import name 'apply_rotary_emb' from 'comfy.ldm.qwen_image.model'`）。通过本自定义节点的早期 `prestartup_script.py` 垫片，将 `apply_rotary_emb` 别名为 ComfyUI 的 `apply_rope1`（无需修改 ComfyUI-nunchaku 文件）。
 - **技术详情**: 请参阅 [v2.4.6 发行说明](v2.4.6.md) 获取完整说明
 

@@ -253,16 +253,6 @@ or
 
 Full startup should show **zero** lines containing `[ERROR] \`loss\`` or `[ERROR] \`logits\`` for the Qwen VL output classes.
 
-### 7.2 In-process check (optional)
-
-From the extension root, with ComfyUI’s Python:
-
-```bat
-cmd /c "cd /d D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-QwenImageLoraLoader && D:\USERFILES\ComfyUI\python_embeded\python.exe _verify_docstring_patch.py"
-```
-
-Expected when upstream is still broken: patch applies and Qwen VL imports report zero `[ERROR] loss/logits` markers.
-
 ---
 
 ## 8. Summary

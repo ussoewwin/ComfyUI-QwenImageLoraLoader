@@ -5,14 +5,14 @@ When Hugging Face transformers merges CausalLMOutputWithPast docs into Qwen VL
 ModelOutput subclasses, validation falls back to ModelOutputArgs — which lacks
 loss/logits — and prints [ERROR] at import time.
 
-Upstream self-disable (same pattern as v2.4.6 apply_rotary_emb compat):
+Fully automatic at ComfyUI prestartup (no user env vars):
   - Probe upstream ModelOutputArgs before installing any wrapper.
-  - If upstream already documents loss/logits, skip (no wrapper, harmless).
-  - If import probe shows clean stdout, skip.
-  - Disable via TRANSFORMERS_CAUSAL_LM_DOCSTRING_PATCH=0|false|off|no|disable|disabled
+  - If upstream already documents loss/logits, skip (no wrapper).
+  - If a subprocess import probe shows clean stdout, skip.
+  - Otherwise install the wrapper (default when upstream is still broken).
 
 Fix: wrap get_args_doc_from_source to merge loss/logits into the returned dict
-only while upstream ModelOutputArgs still omits those fields.
+while upstream ModelOutputArgs still omits those fields.
 """
 
 from __future__ import annotations
@@ -36,11 +36,6 @@ _QWEN_VL_MODELING_MODULES = (
 
 _patch_applied: bool = False
 _original_get_args_doc_from_source: Optional[Callable[..., dict]] = None
-
-
-def _patch_disabled_by_env() -> bool:
-    value = os.environ.get("TRANSFORMERS_CAUSAL_LM_DOCSTRING_PATCH", "").strip().lower()
-    return value in ("0", "false", "no", "off", "disable", "disabled")
 
 
 def _qwen_vl_modeling_already_imported() -> bool:
@@ -155,7 +150,6 @@ def _import_probe_reports_clean() -> Optional[bool]:
             capture_output=True,
             text=True,
             timeout=120,
-            env={**os.environ, "TRANSFORMERS_CAUSAL_LM_DOCSTRING_PATCH": "0"},
         )
     except (OSError, subprocess.SubprocessError) as exc:
         logger.debug("CausalLM docstring import probe failed: %s", exc)
@@ -190,13 +184,6 @@ def apply_transformers_causal_lm_docstring_patch() -> bool:
 
     if _patch_applied:
         return True
-
-    if _patch_disabled_by_env():
-        logger.info(
-            "CausalLM ModelOutput docstring patch skipped: "
-            "TRANSFORMERS_CAUSAL_LM_DOCSTRING_PATCH is disabled"
-        )
-        return False
 
     if _qwen_vl_modeling_already_imported():
         logger.warning(

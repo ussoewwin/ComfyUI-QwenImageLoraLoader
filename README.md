@@ -226,6 +226,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ### v2.4.7 (latest)
 - **Fixed**: ComfyUI startup `[ERROR] loss` / `[ERROR] logits` messages from Hugging Face `transformers` `@auto_docstring` when importing Qwen3 VL / Qwen2.5 VL `*CausalLMOutputWithPast`. Applies an early `prestartup_script.py` patch that extends `ModelOutputArgs` in `get_args_doc_from_source` inside this custom node only (no `site-packages` edits, no stderr filtering).
+- **Note**: This is **not** a defect in this node's LoRA loading logic. The root cause is upstream `transformers` Qwen VL `@auto_docstring` validation when those `ModelOutput` classes are imported (often via other custom nodes or workflows). v2.4.7 **follows** that upstream behavior with a local prestartup workaround so startup logs stay clean; LoRA behavior is unchanged.
 - **Technical Details**: See [v2.4.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.7) for complete explanation
 
 ### v2.4.6

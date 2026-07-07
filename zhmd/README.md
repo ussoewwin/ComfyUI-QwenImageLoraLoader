@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.4.7 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.4.7)
+> 最新版本: [v2.5.0 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
 >
 
 ## 来源
@@ -82,6 +82,8 @@
 - **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA 堆叠器，带动态 UI - **仅非官方加载器** - 兼容 ComfyUI Nodes 2.0
   - ⚠️ **警告**: 此节点**仅兼容**来自 [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader) 的非官方 Nunchaku Z-Image-Turbo DiT 加载器
   - ⚠️ **不兼容**: 此节点**不兼容**来自 ComfyUI-Nunchaku 的官方 Nunchaku Z-Image-Turbo DiT 加载器
+
+- **NunchakuQI&ZITDiffsynthControlnet**: 用于 Nunchaku Qwen Image & Z-ImageTurbo 的 DiffSynth ControlNet 支持节点
 
 ### 基本用法
 
@@ -224,7 +226,12 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## 更新日志
 
-### v2.4.7 (最新)
+### v2.5.0 (最新)
+- **已添加**: 恢复了以前未注册的 `NunchakuQI&ZITDiffsynthControlnet` 节点。
+- **已修复**: 修复了由于自定义前向循环跳过动态调整大小而导致 ControlNet 无法应用于 Nunchaku Qwen Image 模型的问题。
+- **技术详情**: 请参阅 [v2.5.0 发行说明](v2.5.0.md) 获取完整说明
+
+### v2.4.7
 - **已修复**: ComfyUI 启动时，导入 Qwen3 VL / Qwen2.5 VL `*CausalLMOutputWithPast` 会触发 Hugging Face `transformers` 的 `@auto_docstring`，在控制台输出 `[ERROR] loss` / `[ERROR] logits`。**这不是本节点 LoRA 加载逻辑的缺陷**。由于上游何时修复尚不确定，本节点仅在 `prestartup_script.py` 内包装 `get_args_doc_from_source` 来吸收该问题（不修改 `site-packages`，不过滤 stderr）。
 - **上游自动禁用（全自动）**: 每次 ComfyUI 启动时，补丁会探测上游 `ModelOutputArgs` 并运行子进程 Qwen VL 导入测试。一旦上游 `transformers` 修复，下次启动时将**自动跳过**补丁。**无需环境变量或用户开关**（与仍允许通过 `QWENIMAGE_ROTARY_COMPAT` 退出的 v2.4.6 `apply_rotary_emb` 兼容垫片不同）。
 - **说明**: LoRA 行为未变。根因是导入这些 `ModelOutput` 类时（常由其他自定义节点或工作流触发）上游 `transformers` 对 Qwen VL `@auto_docstring` 的校验。

@@ -23,12 +23,12 @@ This LoRA loader was extracted and modified from GavChap's fork:
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
 
-## 🎉 MAJOR UPDATE: v2.5.0 - ControlNet Support Revived!
+## v2.5.0 Update
 
-- **Revived NunchakuQI&ZITDiffsynthControlnet Node**: The previously unregistered `NunchakuQI&ZITDiffsynthControlnet` node has been brought back and is fully functional.
-- **Fixed Nunchaku Qwen Image Compatibility**: Resolved the critical issue where ControlNet failed to apply to Nunchaku Qwen Image models. Condition images are now properly dynamically resized even within Nunchaku's custom forward loops.
+- **NunchakuQI&ZITDiffsynthControlnet Node**: Revived the previously unregistered `NunchakuQI&ZITDiffsynthControlnet` node.
+- **Fixed Nunchaku Qwen Image Compatibility**: Resolved an issue where ControlNet failed to apply to Nunchaku Qwen Image models.
 
-For detailed technical explanation, see [v2.5.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
+For details, see [v2.5.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
 
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
 

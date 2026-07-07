@@ -85,6 +85,8 @@
 
 - **NunchakuQI&ZITDiffsynthControlnet**: 用于 Nunchaku Qwen Image & Z-ImageTurbo 的 DiffSynth ControlNet 支持节点
 
+<img src="../png/diffsynth.png" alt="Diffsynth ControlNet 使用方法" width="400">
+
 ### 基本用法
 
 **对于 Nunchaku Qwen Image 模型：**
@@ -101,8 +103,6 @@
 5. 连接到您的工作流
 
 ### Diffsynth ControlNet 使用方法
-
-<img src="../png/diffsynth.png" alt="Diffsynth ControlNet 使用方法" width="400">
 
 1. 使用 [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker) 中的 `Model Patch Loader` 加载您的 diffsynth ControlNet 模型补丁
 2. `Model Patch Loader`（即 `ModelPatchLoaderCustom` 节点）支持 CPU 卸载，允许您将 ControlNet 补丁加载到 CPU 内存以节省 VRAM

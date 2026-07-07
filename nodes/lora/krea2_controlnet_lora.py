@@ -1,38 +1,43 @@
 import logging
-from pathlib import Path
 
-import comfy.sd
+import comfy.model_management
+import comfy.model_patcher
+import comfy.ops
 import comfy.utils
+import folder_paths
 
 
 logger = logging.getLogger(__name__)
 
 
+class _Krea2LoraAsModelPatch:
+    """
+    Minimal MODEL_PATCH backend to carry Krea2 Control LoRA weights.
+    Control execution stays in controlnet patcher side.
+    """
+
+    def __init__(self, state_dict):
+        self.state_dict = state_dict
+
+
 class Krea2ControlNetLoraLoader:
     """
-    Apply a Krea2 Control LoRA (.safetensors) to a MODEL_PATCH.
-
-    This node is intentionally separate from existing Qwen/Z-Image LoRA loaders.
-    It performs a lightweight key sanity check before patching, to reduce the
-    risk of applying an unrelated LoRA by mistake.
+    Krea2 ControlNet LoRA file loader (MODEL_PATCH output only).
+    Follows existing controlnet model loader style: select file and output model_patch.
     """
-
-    DEFAULT_LORA_PATH = r"D:\USERFILES\StableDiffusion\models\ControlNet\krea2-depth-control-lora.safetensors"
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_patch": ("MODEL_PATCH",),
-                "lora_path": ("STRING", {"default": cls.DEFAULT_LORA_PATH, "multiline": False}),
-                "strength_model": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "name": (folder_paths.get_filename_list("controlnet"),),
             }
         }
 
     RETURN_TYPES = ("MODEL_PATCH",)
-    FUNCTION = "load_krea2_controlnet_lora"
+    FUNCTION = "load_model_patch"
     CATEGORY = "advanced/loaders/krea2"
-    DESCRIPTION = "Load and apply a Krea2 Control LoRA to MODEL_PATCH."
+    DESCRIPTION = "Load a Krea2 controlnet LoRA file and output MODEL_PATCH."
 
     def _is_krea2_like_lora(self, state_dict: dict) -> bool:
         if not state_dict:
@@ -55,17 +60,12 @@ class Krea2ControlNetLoraLoader:
         )
         return any(any(token in k for token in krea2_tokens) for k in keys)
 
-    def load_krea2_controlnet_lora(self, model_patch, lora_path: str, strength_model: float):
-        lora_file = Path(lora_path)
-        if not lora_file.exists():
-            raise FileNotFoundError(f"Krea2 LoRA file not found: {lora_file}")
-        if lora_file.suffix.lower() != ".safetensors":
-            raise ValueError(f"Krea2 LoRA must be a .safetensors file: {lora_file}")
-
-        logger.info(f"[Krea2ControlNetLoraLoader] Loading LoRA: {lora_file}")
-        lora_state_dict = comfy.utils.load_torch_file(str(lora_file), safe_load=True)
+    def load_model_patch(self, name):
+        lora_file = folder_paths.get_full_path_or_raise("controlnet", name)
+        logger.info(f"[Krea2ControlNetLoraLoader] Loading controlnet LoRA: {lora_file}")
+        lora_state_dict = comfy.utils.load_torch_file(lora_file, safe_load=True)
         if not isinstance(lora_state_dict, dict) or len(lora_state_dict) == 0:
-            raise ValueError(f"Invalid or empty LoRA state dict: {lora_file}")
+            raise ValueError(f"Invalid or empty state dict: {lora_file}")
 
         if not self._is_krea2_like_lora(lora_state_dict):
             raise ValueError(
@@ -73,16 +73,13 @@ class Krea2ControlNetLoraLoader:
                 f"Refusing to apply: {lora_file}"
             )
 
-        patched_model_patch, _ = comfy.sd.load_lora_for_models(
-            model=model_patch,
-            clip=None,
-            lora=lora_state_dict,
-            strength_model=strength_model,
-            strength_clip=0.0,
+        model = _Krea2LoraAsModelPatch(lora_state_dict)
+        model_patcher = comfy.model_patcher.CoreModelPatcher(
+            model,
+            load_device=comfy.model_management.get_torch_device(),
+            offload_device=comfy.model_management.unet_offload_device(),
+            inplace_update=True,
         )
-        if patched_model_patch is None:
-            raise RuntimeError(f"Failed to apply Krea2 LoRA: {lora_file}")
-
-        logger.info(f"[Krea2ControlNetLoraLoader] Applied successfully (strength={strength_model})")
-        return (patched_model_patch,)
+        logger.info("[Krea2ControlNetLoraLoader] Loaded successfully")
+        return (model_patcher,)
 

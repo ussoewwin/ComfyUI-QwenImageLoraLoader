@@ -87,6 +87,10 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 - **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
 
+- **Krea2ControlNetLoraLoader**: Krea2 depth ControlNet-LoRA loader (`MODEL_PATCH` output for Krea2 route)
+
+<img src="images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader: Krea2 depth ControlNet-LoRA loader" width="420">
+
 ### Basic Usage
 
 **For Nunchaku Qwen Image models:**
@@ -111,6 +115,13 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
+
+**Krea2 depth controlnet-lora support:**
+1. Load your Krea2 model in ComfyUI.
+2. Use `Krea2ControlNetLoraLoader` and select your Krea2 depth controlnet-lora file (for example: `krea2-depth-control-lora.safetensors`).
+3. Connect the loader `MODEL_PATCH` output to `model_patch` of `NunchakuQI&ZITDiffsynthControlnet`.
+4. Provide VAE and control image, then run with `route=krea2` (auto-selected by model family).
+5. Adjust ControlNet strength based on visual effect.
 
 ## Features
 

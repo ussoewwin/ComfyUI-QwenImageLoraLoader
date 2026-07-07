@@ -23,9 +23,7 @@ This LoRA loader was extracted and modified from GavChap's fork:
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
 
-## 🎉 MAJOR UPDATE: v2.5.0 - NunchakuQI&ZITDiffsynthControlnet Revived & Nunchaku Qwen Image ControlNet Support Fixed!
 
-For detailed technical explanation, see [v2.5.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
 
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
 
@@ -230,7 +228,12 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-### v2.4.7 (latest)
+### v2.5.0 (latest)
+- **Added**: Revived the previously unregistered `NunchakuQI&ZITDiffsynthControlnet` node.
+- **Fixed**: Resolved an issue where ControlNet failed to apply to Nunchaku Qwen Image models due to custom forward loop skipping dynamic resizing.
+- **Technical Details**: See [v2.5.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0) for complete explanation
+
+### v2.4.7
 - **Fixed**: ComfyUI startup `[ERROR] loss` / `[ERROR] logits` messages from Hugging Face `transformers` `@auto_docstring` when importing Qwen3 VL / Qwen2.5 VL `*CausalLMOutputWithPast`. This is **not a defect in this node's LoRA loading logic**. Because it is unclear when Hugging Face will address this upstream, this node absorbs the issue by wrapping `get_args_doc_from_source` inside `prestartup_script.py` only (no `site-packages` edits, no stderr filtering).
 - **Upstream auto-disable (fully automatic)**: On every ComfyUI start, the patch probes upstream `ModelOutputArgs` and runs a subprocess Qwen VL import test. Once `transformers` is fixed upstream, the patch **skips itself** automatically on the next start. **No environment variables or user toggles** (unlike v2.4.6 `apply_rotary_emb` compat, which still allows `QWENIMAGE_ROTARY_COMPAT` opt-out).
 - **Note**: LoRA behavior is unchanged. The root cause is upstream `transformers` Qwen VL `@auto_docstring` validation when those `ModelOutput` classes are imported (often via other custom nodes or workflows).

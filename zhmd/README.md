@@ -100,6 +100,16 @@
 4. 选择您的 LoRA 文件并设置强度
 5. 连接到您的工作流
 
+### Diffsynth ControlNet 使用方法
+
+<img src="../png/diffsynth.png" alt="Diffsynth ControlNet 使用方法" width="400">
+
+1. 使用 [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker) 中的 `Model Patch Loader` 加载您的 diffsynth ControlNet 模型补丁
+2. `Model Patch Loader`（即 `ModelPatchLoaderCustom` 节点）支持 CPU 卸载，允许您将 ControlNet 补丁加载到 CPU 内存以节省 VRAM
+3. 将 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 节点的 `model_patch` 输入端
+4. 连接您的 Nunchaku Qwen Image 模型、VAE 和控制图像
+5. 设置 ControlNet 强度并连接到您的工作流
+
 ## 功能
 
 - **易于安装**: 简单的 git clone 安装

@@ -51,7 +51,6 @@ class Krea2ControlNetLoraLoader:
             model,
             load_device=comfy.model_management.get_torch_device(),
             offload_device=comfy.model_management.unet_offload_device(),
-            inplace_update=True,
         )
         logger.info("[Krea2ControlNetLoraLoader] Loaded successfully")
         return (model_patcher,)

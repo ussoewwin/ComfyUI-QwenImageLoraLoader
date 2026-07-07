@@ -166,7 +166,16 @@ class DiffSynthCnetBlockReplace:
 
         # Apply DiffSynth ControlNet residual
         img = out["img"]
+        
+        # Call the original patch's logic to handle dynamic resizing if necessary
+        # We need to construct the kwargs expected by DiffSynthCnetPatch.__call__
+        # args contains "img", "txt", "vec", "pe". Nunchaku doesn't pass "x" to patches_replace.
+        # But we need "x" shape for dynamic resizing in the original patch.
+        # Let's see if we can deduce x.shape from img or just use the current encoded_image.
+        
         encoded_image = self.cnet_patch.encoded_image
+        logger.info(f"[ControlNet Block {self.block_index}] block_replace called! img shape: {img.shape}, encoded_image shape: {encoded_image.shape if encoded_image is not None else None}")
+        
         if encoded_image is not None:
             control_residual = self.cnet_patch.model_patch.model.control_block(
                 img[:, :encoded_image.shape[1]],

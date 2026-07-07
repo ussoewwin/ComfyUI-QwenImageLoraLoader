@@ -70,6 +70,11 @@ class _Krea2FirstProjection(nn.Module):
         self.control_tokens = None
 
     def forward(self, image_tokens):
+        logger.info(
+            "[Krea2Control] first_forward attached=%s image_tokens_shape=%s",
+            self.control_tokens is not None,
+            tuple(image_tokens.shape),
+        )
         if image_tokens.shape[-1] != self.base_in_features:
             raise RuntimeError(
                 f"Krea2 first projection expects {self.base_in_features} image features, got {image_tokens.shape[-1]}."
@@ -365,9 +370,19 @@ def _krea2_make_wrapper(projection):
                 diffusion_model.patch,
                 projection.control_in_features,
             )
+            control_tokens_mean_abs = float(control_tokens.detach().abs().mean().cpu().item())
+            logger.info(
+                "[Krea2Control] control_tokens_shape=%s mean_abs=%.6f",
+                tuple(control_tokens.shape),
+                control_tokens_mean_abs,
+            )
             projection.control_tokens = control_tokens
             if getattr(diffusion_model, "first", None) is not projection:
                 diffusion_model.first = projection
+            logger.info(
+                "[Krea2Control] first_injected=%s",
+                getattr(diffusion_model, "first", None) is projection,
+            )
             return executor(*args, **kwargs)
         finally:
             projection.control_tokens = previous_tokens
@@ -405,6 +420,7 @@ def _apply_krea2_control(model_patched, model_patch, vae, image, strength):
         raise RuntimeError("Krea2 model did not accept any control LoRA block patches.")
 
     control_latent = _krea2_prepare_control_latent(model_patched, vae, image)
+    logger.info("[Krea2Control] control_latent_shape=%s", tuple(control_latent.shape))
     model_patched.add_wrapper_with_key(
         comfy.patcher_extension.WrappersMP.DIFFUSION_MODEL,
         KREA2_CONTROL_WRAPPER_KEY,

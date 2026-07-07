@@ -1,4 +1,8 @@
-### v2.5.0 (latest)
+### v2.5.1 (latest)
+- **Added**: Krea2 depth ControlNet LoRA support via `Krea2ControlNetLoraLoader` and the Krea2 route in `NunchakuQI&ZITDiffsynthControlnet`. Load a Krea2 depth controlnet-lora file (for example `krea2-depth-control-lora.safetensors`) from the `controlnet` folder, connect its `MODEL_PATCH` output to the controlnet node `model_patch` input, and apply depth conditioning on Krea2 / SingleStreamDiT models.
+- **Technical Details**: See [v2.5.1 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.1) for complete explanation
+
+### v2.5.0
 - **Added**: Revived the previously unregistered `NunchakuQI&ZITDiffsynthControlnet` node.
 - **Fixed**: Resolved an issue where ControlNet failed to apply to Nunchaku Qwen Image models due to custom forward loop skipping dynamic resizing.
 - **Technical Details**: See [v2.5.0 Release Notes](v2.5.0.md) for complete explanation

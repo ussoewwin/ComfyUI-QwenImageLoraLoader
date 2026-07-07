@@ -23,12 +23,9 @@ This LoRA loader was extracted and modified from GavChap's fork:
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
 
-## v2.5.0 Update
+## 🎉 MAJOR UPDATE: v2.5.0 - NunchakuQI&ZITDiffsynthControlnet Revived & Nunchaku Qwen Image ControlNet Support Fixed!
 
-- **NunchakuQI&ZITDiffsynthControlnet Node**: Revived the previously unregistered `NunchakuQI&ZITDiffsynthControlnet` node.
-- **Fixed Nunchaku Qwen Image Compatibility**: Resolved an issue where ControlNet failed to apply to Nunchaku Qwen Image models.
-
-For details, see [v2.5.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
+For detailed technical explanation, see [v2.5.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
 
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
 
@@ -89,6 +86,8 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 - **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA stacker with dynamic UI - **Unofficial loader only** - ComfyUI Nodes 2.0 compatible
   - ⚠️ **Warning**: This node is **only compatible with the unofficial Nunchaku Z-Image-Turbo DiT Loader** from [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader)
   - ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku
+
+- **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
 
 ### Basic Usage
 

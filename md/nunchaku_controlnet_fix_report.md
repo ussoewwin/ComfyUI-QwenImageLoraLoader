@@ -4,22 +4,22 @@
 
 The issue where "ControlNet (DiffSynth version) does not work with Nunchaku Qwen Image" was a **complex problem caused by a combination of architectural differences and missing specifications**. Here is a step-by-step explanation.
 
-### ① Differences in Nunchaku's Model Optimization Approach
+### 1. Differences in Nunchaku's Model Optimization Approach
 Normally, ComfyUI's Transformer (DiT) models have a standard loop structure that processes internal blocks (layers) sequentially.
 When Nunchaku optimizes Z Image, it takes the approach of replacing only the components within the blocks (such as Attention) with Nunchaku versions, while maintaining this standard loop.
 However, **for the Nunchaku patch for Qwen Image, due to processing speed and structural reasons, it completely discards ComfyUI's standard loop structure and redefines and executes its own `_forward` loop**.
 
-### ② Ignoring the Standard Patch (`double_block`)
+### 2. Ignoring the Standard Patch (`double_block`)
 In standard ComfyUI, ControlNet intervenes in the processing of each block using a mechanism called `patches["double_block"]`.
 However, as mentioned above, the custom loop of Nunchaku for Qwen Image does not have the code to process this `patches["double_block"]`, and **completely ignores it**. This was the first cause of "ControlNet not working in Nunchaku Qwen Image".
 
-### ③ Fatal Information Loss in the Alternative Patch Route (`x` disappearing)
+### 3. Fatal Information Loss in the Alternative Patch Route (`x` disappearing)
 Therefore, we modified the code to inject ControlNet using another patching feature called `patches_replace["dit"]`, which is also read by Nunchaku's custom loop. As a result, the ControlNet processing itself started executing, but **another fatal problem** occurred.
 
 ControlNet needs to dynamically resize the reference image (condition image like Canny) according to the resolution of the image being generated (Dynamic Resizing). For this resizing, the tensor `x` (latent variable), which holds the base generation resolution information, is absolutely necessary.
 However, Nunchaku's custom loop was designed **not to pass this `x` as an argument** when calling `patches_replace`.
 
-### ④ Silent Failure Due to Resolution Mismatch
+### 4. Silent Failure Due to Resolution Mismatch
 Because `x` was not passed, ControlNet could not determine the "current generation resolution" and skipped the resizing process.
 As a result, the tensor addition process was performed while the actual generated image size (e.g., 1216x1216) and the default size of the reference image (e.g., 768x768) were **mismatched**.
 In terms of PyTorch tensor operations, it does not result in an error and silently passes through the processing. However, because data with completely mismatched positions and sizes were added, the effect of ControlNet was not reflected in the final generated image (it visually appeared as if it was not working).
@@ -30,10 +30,10 @@ In terms of PyTorch tensor operations, it does not result in an error and silent
 
 To solve this problem, we modified the node side of ComfyUI-QwenImageLoraLoader.
 
-### ① Added/Modified Filenames
+### 1. Added/Modified Filenames
 `nodes/controlnet.py`
 
-### ② Full Text of Added/Modified Code
+### 2. Full Text of Added/Modified Code
 
 Below is the **full text** of the newly added wrapper class and the modified registration class.
 
@@ -176,7 +176,7 @@ class NunchakuQwenImageDiffsynthControlnet:
         return (model_patched,)
 ```
 
-### ③ Its Meaning (Technical Points)
+### 3. Its Meaning (Technical Points)
 
 1. **Using `set_model_patch_replace`:**
    Since Nunchaku Qwen Image ignores the standard `double_block`, we registered `DiffSynthCnetBlockReplace` for all 60 blocks using `set_model_patch_replace` so that we can intervene in `blocks_replace[("double_block", i)]` of Nunchaku's custom loop.

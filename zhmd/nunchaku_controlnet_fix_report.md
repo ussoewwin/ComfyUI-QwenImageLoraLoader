@@ -4,22 +4,22 @@
 
 “ControlNet (DiffSynth 版本) 在 Nunchaku Qwen Image 中不起作用”的问题是一个**由于架构差异和规范缺失导致的复杂问题**。下面是逐步解释。
 
-### ① Nunchaku 模型优化方法的差异
+### 1. Nunchaku 模型优化方法的差异
 通常，ComfyUI 的 Transformer (DiT) 模型具有标准的循环结构，它按顺序处理内部块（层）。
 当 Nunchaku 优化 Z Image 时，它采取的方法是仅将块内的组件（例如 Attention）替换为 Nunchaku 版本，同时保持这个标准的循环。
 然而，**对于 Qwen Image 的 Nunchaku 补丁，由于处理速度和结构的原因，它完全放弃了 ComfyUI 的标准循环结构，并重新定义和执行了其自己的 `_forward` 循环**。
 
-### ② 忽略标准补丁 (`double_block`)
+### 2. 忽略标准补丁 (`double_block`)
 在标准 ComfyUI 中，ControlNet 使用名为 `patches["double_block"]` 的机制干预每个块的处理。
 但是，如前所述，Nunchaku 针对 Qwen Image 的自定义循环没有处理此 `patches["double_block"]` 的代码，并**完全忽略了它**。这是“ControlNet 在 Nunchaku Qwen Image 中不起作用”的第一个原因。
 
-### ③ 备用补丁路径中的致命信息丢失（`x` 消失）
+### 3. 备用补丁路径中的致命信息丢失（`x` 消失）
 因此，我们修改了代码，使用另一种名为 `patches_replace["dit"]` 的补丁功能注入 ControlNet，Nunchaku 的自定义循环也会读取该功能。结果，ControlNet 处理本身开始执行，但发生了**另一个致命问题**。
 
 ControlNet 需要根据正在生成的图像的分辨率动态调整参考图像（如 Canny 等条件图像）的大小（动态调整大小）。对于此调整大小，包含基本生成分辨率信息的张量 `x`（潜在变量）是绝对必要的。
 然而，Nunchaku 的自定义循环被设计为在调用 `patches_replace` 时**不将此 `x` 作为参数传递**。
 
-### ④ 分辨率不匹配导致静默失败
+### 4. 分辨率不匹配导致静默失败
 由于没有传递 `x`，ControlNet 无法确定“当前的生成分辨率”，从而跳过了调整大小的过程。
 结果，在实际生成的图像大小（例如 1216x1216）和参考图像的默认大小（例如 768x768）**不匹配**的情况下进行了张量加法处理。
 就 PyTorch 张量操作而言，它不会导致错误，而是静默通过处理。但是，因为添加了位置和大小完全不匹配的数据，ControlNet 的效果没有反映在最终生成的图像中（从视觉上看就像没有起作用一样）。
@@ -30,10 +30,10 @@ ControlNet 需要根据正在生成的图像的分辨率动态调整参考图像
 
 为了解决这个问题，我们在 ComfyUI-QwenImageLoraLoader 的节点侧进行了修改。
 
-### ① 添加/修改的文件名
+### 1. 添加/修改的文件名
 `nodes/controlnet.py`
 
-### ② 添加/修改的代码全文
+### 2. 添加/修改的代码全文
 
 下面是新添加的包装器类和修改后的注册类的**完整代码**。
 
@@ -176,7 +176,7 @@ class NunchakuQwenImageDiffsynthControlnet:
         return (model_patched,)
 ```
 
-### ③ 它的含义（技术要点）
+### 3. 它的含义（技术要点）
 
 1. **使用 `set_model_patch_replace`：**
    因为 Nunchaku Qwen Image 忽略了标准的 `double_block`，所以我们使用 `set_model_patch_replace` 为全部 60 个块注册了 `DiffSynthCnetBlockReplace`，以便我们能够干预 Nunchaku 自定义循环的 `blocks_replace[("double_block", i)]`。

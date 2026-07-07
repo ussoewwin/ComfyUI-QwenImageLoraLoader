@@ -228,7 +228,7 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Changelog
 
-For the latest updates and detailed release notes (from v2.4.0 to v2.5.0), please see [changelog.md](RELEASE_NOTES/changelog.md).
+For the latest updates and detailed release notes (from v2.4.0 onwards), please see [changelog.md](RELEASE_NOTES/changelog.md).
 ### Previous Releases (v2.3.0 to v2.3.9)
 
 For detailed release notes from v2.3.0 to v2.3.9, please see [RELEASE_NOTES_V2.3.0_TO_V2.3.9.md](RELEASE_NOTES/RELEASE_NOTES_V2.3.0_TO_V2.3.9.md).

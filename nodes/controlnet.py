@@ -8,6 +8,43 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _classify_controlnet_target(model, model_patch):
+    """
+    Classify ControlNet target route strictly to avoid mixing model families.
+
+    Returns one of:
+      - "zimage"
+      - "nunchaku_qwenimage"
+      - "qwenimage_standard"
+      - "krea2"
+      - "unknown"
+    """
+    if isinstance(model_patch.model, comfy.ldm.lumina.controlnet.ZImage_Control):
+        return "zimage"
+
+    if not hasattr(model, "model"):
+        return "unknown"
+
+    model_base_name = model.model.__class__.__name__
+    if model_base_name == "NunchakuQwenImage":
+        return "nunchaku_qwenimage"
+
+    if not hasattr(model.model, "diffusion_model"):
+        return "unknown"
+
+    dm = model.model.diffusion_model
+    dm_name = dm.__class__.__name__
+    dm_module = getattr(dm.__class__, "__module__", "")
+
+    if dm_name in ("ComfyQwenImageWrapper", "NunchakuQwenImageTransformer2DModel"):
+        return "qwenimage_standard"
+
+    if dm_name == "SingleStreamDiT" or "comfy.ldm.krea2" in dm_module:
+        return "krea2"
+
+    return "unknown"
+
+
 class DiffSynthCnetPatch:
     def __init__(self, model_patch, vae, image, strength, mask=None):
         self.model_patch = model_patch
@@ -232,45 +269,16 @@ class NunchakuQwenImageDiffsynthControlnet:
                 mask = mask.unsqueeze(2)
             mask = 1.0 - mask
 
-        # Detect ControlNet model type
-        is_zimage_control = isinstance(model_patch.model, comfy.ldm.lumina.controlnet.ZImage_Control)
+        route = _classify_controlnet_target(model, model_patch)
+        logger.info(f"[ControlNet] route={route}")
 
-        # Detect Nunchaku Qwen Image model
-        # Nunchaku's _forward() processes patches_replace but ignores patches["double_block"],
-        # so we need to use set_model_patch_replace() instead of set_model_double_block_patch().
-        is_nunchaku_qwenimage = False
-        is_krea2_model = False
-        if not is_zimage_control and hasattr(model, 'model'):
-            # Check model base class name (NunchakuQwenImage from ComfyUI-nunchaku model_base)
-            model_base_name = model.model.__class__.__name__
-            if model_base_name == 'NunchakuQwenImage':
-                is_nunchaku_qwenimage = True
-            # Check diffusion model class name
-            elif hasattr(model.model, 'diffusion_model'):
-                dm_name = model.model.diffusion_model.__class__.__name__
-                if dm_name in ('ComfyQwenImageWrapper', 'NunchakuQwenImageTransformer2DModel'):
-                    is_nunchaku_qwenimage = True
-                # Krea2 backbone in ComfyUI (comfy.ldm.krea2.model.SingleStreamDiT)
-                elif dm_name == 'SingleStreamDiT':
-                    is_krea2_model = True
-                else:
-                    dm_module = getattr(model.model.diffusion_model.__class__, "__module__", "")
-                    if "comfy.ldm.krea2" in dm_module:
-                        is_krea2_model = True
-
-        logger.info(
-            f"[ControlNet] is_zimage={is_zimage_control}, "
-            f"is_nunchaku_qwenimage={is_nunchaku_qwenimage}, "
-            f"is_krea2={is_krea2_model}"
-        )
-
-        if is_zimage_control:
+        if route == "zimage":
             # ZImage ControlNet (works for both standard and Nunchaku Z-Image)
             logger.info("[ControlNet] Using ZImageControlPatch")
             patch = ZImageControlPatch(model_patch, vae, image, strength, mask=mask)
             model_patched.set_model_noise_refiner_patch(patch)
             model_patched.set_model_double_block_patch(patch)
-        elif is_nunchaku_qwenimage:
+        elif route == "nunchaku_qwenimage":
             # Nunchaku Qwen Image: use patches_replace since _forward ignores patches["double_block"]
             logger.info("[ControlNet] Using DiffSynthCnetBlockReplace for Nunchaku Qwen Image")
             cnet_patch = DiffSynthCnetPatch(model_patch, vae, image, strength, mask)
@@ -290,13 +298,18 @@ class NunchakuQwenImageDiffsynthControlnet:
                     "dit", "double_block", i
                 )
             logger.info(f"[ControlNet] Registered {num_blocks} patches_replace entries for Nunchaku Qwen Image")
-        elif is_krea2_model:
-            # Krea2 model path: keep control processing in this patcher (not in LoRA loader).
+        elif route == "krea2":
+            # Krea2 path is isolated here by explicit routing.
             logger.info("[ControlNet] Using DiffSynthCnetPatch (krea2)")
             model_patched.set_model_double_block_patch(DiffSynthCnetPatch(model_patch, vae, image, strength, mask))
-        else:
+        elif route == "qwenimage_standard":
             # Standard Qwen Image: use patches["double_block"] (processed by ComfyUI's _forward)
-            logger.info("[ControlNet] Using DiffSynthCnetPatch (standard)")
+            logger.info("[ControlNet] Using DiffSynthCnetPatch (qwenimage_standard)")
             model_patched.set_model_double_block_patch(DiffSynthCnetPatch(model_patch, vae, image, strength, mask))
+        else:
+            raise RuntimeError(
+                "Unsupported model/controlnet route. "
+                "Control routing is strict to avoid mixing QI/ZI/Nunchaku/Krea2 branches."
+            )
 
         return (model_patched,)

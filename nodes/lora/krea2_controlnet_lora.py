@@ -39,39 +39,12 @@ class Krea2ControlNetLoraLoader:
     CATEGORY = "advanced/loaders/krea2"
     DESCRIPTION = "Load a Krea2 controlnet LoRA file and output MODEL_PATCH."
 
-    def _is_krea2_like_lora(self, state_dict: dict) -> bool:
-        if not state_dict:
-            return False
-
-        keys = list(state_dict.keys())
-        has_lora_pair = any(".lora_up." in k or ".lora_A." in k or ".lora.down." in k for k in keys)
-        if not has_lora_pair:
-            return False
-
-        krea2_tokens = (
-            ".blocks.",
-            ".txtfusion.",
-            ".first.",
-            ".last.",
-            ".tmlp.",
-            ".txtmlp.",
-            ".tproj.",
-            ".pe_embedder.",
-        )
-        return any(any(token in k for token in krea2_tokens) for k in keys)
-
     def load_model_patch(self, name):
         lora_file = folder_paths.get_full_path_or_raise("controlnet", name)
         logger.info(f"[Krea2ControlNetLoraLoader] Loading controlnet LoRA: {lora_file}")
         lora_state_dict = comfy.utils.load_torch_file(lora_file, safe_load=True)
         if not isinstance(lora_state_dict, dict) or len(lora_state_dict) == 0:
             raise ValueError(f"Invalid or empty state dict: {lora_file}")
-
-        if not self._is_krea2_like_lora(lora_state_dict):
-            raise ValueError(
-                "This file does not look like a Krea2 LoRA (missing expected Krea2/LoRA key patterns). "
-                f"Refusing to apply: {lora_file}"
-            )
 
         model = _Krea2LoraAsModelPatch(lora_state_dict)
         model_patcher = comfy.model_patcher.CoreModelPatcher(

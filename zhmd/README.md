@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.5.0 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.0)
+> 最新版本: [v2.5.0 发行说明](nunchaku_controlnet_fix_report.md)
 >
 
 ## 来源

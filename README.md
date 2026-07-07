@@ -86,6 +86,9 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
   - ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku
 
 - **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
+- **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora loader
+
+<img src="images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">
 
 <img src="png/diffsynth.png" alt="Diffsynth ControlNet Usage" width="400">
 

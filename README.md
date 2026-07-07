@@ -87,6 +87,8 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 - **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
 
+<img src="png/diffsynth.png" alt="Diffsynth ControlNet Usage" width="400">
+
 ### Basic Usage
 
 **For Nunchaku Qwen Image models:**
@@ -103,8 +105,6 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 5. Connect to your workflow
 
 ### Diffsynth ControlNet Usage
-
-<img src="png/diffsynth.png" alt="Diffsynth ControlNet Usage" width="400">
 
 1. Load your diffsynth ControlNet model patch using `Model Patch Loader` from [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)
 2. The `Model Patch Loader` (`ModelPatchLoaderCustom`) supports CPU offload, allowing you to load ControlNet patches to CPU memory to save VRAM

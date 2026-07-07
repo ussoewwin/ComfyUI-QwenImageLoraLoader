@@ -86,7 +86,6 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
   - ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku
 
 - **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
-- **Krea2 depth support**
 
 ### Basic Usage
 

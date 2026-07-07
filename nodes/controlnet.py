@@ -244,6 +244,28 @@ def _krea2_prepare_control_latent(model_patcher, vae, image):
     return control_latent
 
 
+def _krea2_spatial_patch_size(patch_size):
+    if isinstance(patch_size, int):
+        return int(patch_size), int(patch_size)
+    if isinstance(patch_size, (list, tuple)):
+        if len(patch_size) == 0:
+            raise RuntimeError("Krea2 patch_size is empty.")
+        if len(patch_size) == 1:
+            v = int(patch_size[0])
+            return v, v
+        return int(patch_size[-2]), int(patch_size[-1])
+    raise RuntimeError(f"Unsupported Krea2 patch_size type: {type(patch_size)}")
+
+
+def _krea2_control_latent_to_4d(control_latent):
+    if control_latent.ndim == 4:
+        return control_latent
+    if control_latent.ndim == 5:
+        b, c, t, h, w = control_latent.shape
+        return control_latent.permute(0, 2, 1, 3, 4).reshape(b * t, c, h, w)
+    raise RuntimeError(f"Krea2 control latent must be 4D or 5D, got {tuple(control_latent.shape)}")
+
+
 def _krea2_latent_to_tokens(control_latent, x, patch_size, expected_control_features):
     if x.ndim == 5:
         batch = x.shape[0] * x.shape[2]
@@ -252,22 +274,25 @@ def _krea2_latent_to_tokens(control_latent, x, patch_size, expected_control_feat
     else:
         raise RuntimeError(f"Krea2 input latent must be 4D or 5D, got {tuple(x.shape)}")
 
-    control = comfy.utils.repeat_to_batch_size(control_latent, batch)
+    patch_h, patch_w = _krea2_spatial_patch_size(patch_size)
+
+    control_source = _krea2_control_latent_to_4d(control_latent)
+    control = comfy.utils.repeat_to_batch_size(control_source, batch)
     control = comfy.model_management.cast_to_device(control, x.device, x.dtype)
 
     target_h, target_w = x.shape[-2], x.shape[-1]
     if control.shape[-2:] != (target_h, target_w):
         control = comfy.utils.common_upscale(control, target_w, target_h, "bilinear", "disabled")
 
-    control = comfy.ldm.common_dit.pad_to_patch_size(control, (patch_size, patch_size))
+    control = comfy.ldm.common_dit.pad_to_patch_size(control, (patch_h, patch_w))
     b, c, h, w = control.shape
-    token_features = c * patch_size * patch_size
+    token_features = c * patch_h * patch_w
     if token_features != expected_control_features:
         raise RuntimeError(
             f"Krea2 control token feature mismatch: got {token_features}, expected {expected_control_features}."
         )
-    control = control.reshape(b, c, h // patch_size, patch_size, w // patch_size, patch_size)
-    return control.permute(0, 2, 4, 1, 3, 5).reshape(b, (h // patch_size) * (w // patch_size), token_features)
+    control = control.reshape(b, c, h // patch_h, patch_h, w // patch_w, patch_w)
+    return control.permute(0, 2, 4, 1, 3, 5).reshape(b, (h // patch_h) * (w // patch_w), token_features)
 
 
 def _krea2_extract_transformer_options(args, kwargs):

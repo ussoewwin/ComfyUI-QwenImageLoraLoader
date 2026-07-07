@@ -125,11 +125,9 @@ Use this loader when you want to apply Krea2 depth controlnet-lora through the D
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
 
-### Krea2ControlNetLoraLoader Usage
-
 <img src="images/krea2_controlnet_lora.png" alt="Krea2 depth controlnet-lora workflow reference" width="420">
 
-**Krea2 depth controlnet-lora support (LoRA loader):**
+**Krea2 depth controlnet-lora support:**
 1. Load your Krea2 model in ComfyUI.
 2. Use `Krea2ControlNetLoraLoader` and select your Krea2 depth controlnet-lora file (for example: `krea2-depth-control-lora.safetensors`).
 3. Connect the loader `MODEL_PATCH` output to `model_patch` of `NunchakuQI&ZITDiffsynthControlnet`.

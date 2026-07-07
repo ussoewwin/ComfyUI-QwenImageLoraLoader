@@ -364,12 +364,6 @@ class ComfyQwenImageWrapper(nn.Module):
                 transformer_options_cleaned.pop("guidance", None)
                 transformer_options_cleaned.pop("ref_latents", None)
                 
-                logger.info(f"[DEBUG Wrapper customized] transformer_options keys: {transformer_options_cleaned.keys()}")
-                if "patches_replace" in transformer_options_cleaned:
-                    logger.info(f"[DEBUG Wrapper customized] patches_replace keys: {transformer_options_cleaned['patches_replace'].keys()}")
-                    if "dit" in transformer_options_cleaned["patches_replace"]:
-                        logger.info(f"[DEBUG Wrapper customized] dit patches_replace keys: {transformer_options_cleaned['patches_replace']['dit'].keys()}")
-                
                 return self.customized_forward(
                     self.model,
                     hidden_states=x,
@@ -408,12 +402,6 @@ class ComfyQwenImageWrapper(nn.Module):
                 transformer_options_cleaned = dict(transformer_options) if transformer_options else {}
                 transformer_options_cleaned.pop("guidance", None)
                 transformer_options_cleaned.pop("ref_latents", None)
-                
-                logger.info(f"[DEBUG Wrapper] transformer_options keys: {transformer_options_cleaned.keys()}")
-                if "patches_replace" in transformer_options_cleaned:
-                    logger.info(f"[DEBUG Wrapper] patches_replace keys: {transformer_options_cleaned['patches_replace'].keys()}")
-                    if "dit" in transformer_options_cleaned["patches_replace"]:
-                        logger.info(f"[DEBUG Wrapper] dit patches_replace keys: {transformer_options_cleaned['patches_replace']['dit'].keys()}")
 
                 # Include control in kwargs if provided
                 final_kwargs = dict(kwargs_cleaned)

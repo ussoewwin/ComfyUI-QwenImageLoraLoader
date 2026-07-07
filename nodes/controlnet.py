@@ -167,15 +167,33 @@ class DiffSynthCnetBlockReplace:
         # Apply DiffSynth ControlNet residual
         img = out["img"]
         
-        # Call the original patch's logic to handle dynamic resizing if necessary
-        # We need to construct the kwargs expected by DiffSynthCnetPatch.__call__
-        # args contains "img", "txt", "vec", "pe". Nunchaku doesn't pass "x" to patches_replace.
-        # But we need "x" shape for dynamic resizing in the original patch.
-        # Let's see if we can deduce x.shape from img or just use the current encoded_image.
+        # We need `x` to determine target resolution for dynamic resizing, but Nunchaku doesn't pass it to patches_replace.
+        # Find `x` in the call stack (BaseModel.apply_model or ComfyQwenImageWrapper.forward):
+        import sys
+        x = None
+        frame = sys._getframe()
+        while frame:
+            if 'x' in frame.f_locals:
+                candidate_x = frame.f_locals['x']
+                if isinstance(candidate_x, torch.Tensor) and candidate_x.ndim in (4, 5):
+                    x = candidate_x
+                    break
+            frame = frame.f_back
+            
+        if x is not None:
+            spacial_compression = self.cnet_patch.vae.spacial_compression_encode()
+            target_h = x.shape[-2] * spacial_compression
+            target_w = x.shape[-1] * spacial_compression
+            
+            if self.cnet_patch.encoded_image is None or self.cnet_patch.encoded_image_size != (target_h, target_w):
+                logger.info(f"[ControlNet Block {self.block_index}] Resizing condition image to {target_w}x{target_h}")
+                image_scaled = comfy.utils.common_upscale(self.cnet_patch.image.movedim(-1, 1), target_w, target_h, "area", "center")
+                loaded_models = comfy.model_management.loaded_models(only_currently_used=True)
+                self.cnet_patch.encoded_image = self.cnet_patch.model_patch.model.process_input_latent_image(self.cnet_patch.encode_latent_cond(image_scaled.movedim(1, -1)))
+                self.cnet_patch.encoded_image_size = (target_h, target_w)
+                comfy.model_management.load_models_gpu(loaded_models)
         
         encoded_image = self.cnet_patch.encoded_image
-        logger.info(f"[ControlNet Block {self.block_index}] block_replace called! img shape: {img.shape}, encoded_image shape: {encoded_image.shape if encoded_image is not None else None}")
-        
         if encoded_image is not None:
             control_residual = self.cnet_patch.model_patch.model.control_block(
                 img[:, :encoded_image.shape[1]],

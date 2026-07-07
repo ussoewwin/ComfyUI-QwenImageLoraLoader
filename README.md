@@ -115,6 +115,7 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
+6. Krea2 depth support and usage: add `Krea2ControlNetLoraLoader`, select your Krea2 depth controlnet-lora file (for example: `krea2-depth-control-lora.safetensors`), then connect its `MODEL_PATCH` output to `NunchakuQI&ZITDiffsynthControlnet` `model_patch`
 
 ## Features
 

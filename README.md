@@ -91,6 +91,15 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader: Krea2 depth ControlNet-LoRA loader" width="420">
 
+#### Krea2ControlNetLoraLoader (What it does)
+
+Use this loader when you want to apply Krea2 depth controlnet-lora through the Diffsynth ControlNet route.
+
+- **Input**: `name` (select a ControlNet LoRA file from dropdown)
+- **Output**: `MODEL_PATCH`
+- **Purpose**: Load Krea2 depth controlnet-lora (for example `krea2-depth-control-lora.safetensors`) and pass it to `NunchakuQI&ZITDiffsynthControlnet`.
+- **Design**: This node is a loader only. Actual control application is handled in the ControlNet patcher route (`route=krea2`).
+
 ### Basic Usage
 
 **For Nunchaku Qwen Image models:**

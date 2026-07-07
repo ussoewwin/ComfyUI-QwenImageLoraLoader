@@ -68,6 +68,8 @@ class _Krea2FirstProjection(nn.Module):
         self.weight = nn.Parameter(expanded_weight.detach().cpu().clone(), requires_grad=False)
         self.bias = None if bias is None else nn.Parameter(bias.detach().cpu().clone(), requires_grad=False)
         self.control_tokens = None
+        self.control_strength = 1.0
+        self.ab_logged = False
 
     def forward(self, image_tokens):
         logger.info(
@@ -83,6 +85,7 @@ class _Krea2FirstProjection(nn.Module):
             return self.base_first(image_tokens)
         control_tokens = comfy.utils.repeat_to_batch_size(self.control_tokens, image_tokens.shape[0])
         control_tokens = control_tokens.to(device=image_tokens.device, dtype=image_tokens.dtype)
+        control_tokens = control_tokens * float(self.control_strength)
         if control_tokens.shape[1] != image_tokens.shape[1]:
             raise RuntimeError(
                 f"Krea2 control token count mismatch: image={image_tokens.shape[1]}, control={control_tokens.shape[1]}."
@@ -92,7 +95,20 @@ class _Krea2FirstProjection(nn.Module):
         bias = None
         if self.bias is not None:
             bias = comfy.model_management.cast_to_device(self.bias, x.device, x.dtype)
-        return F.linear(x, weight, bias)
+        out = F.linear(x, weight, bias)
+
+        # One-shot A/B diff log per run: control off vs on.
+        if not self.ab_logged:
+            self.ab_logged = True
+            with torch.no_grad():
+                base_out = self.base_first(image_tokens)
+                delta = (out - base_out).detach().abs().mean().float().cpu().item()
+                logger.info(
+                    "[Krea2Control] first_output_delta_mean_abs=%.6f control_strength=%.4f",
+                    float(delta),
+                    float(self.control_strength),
+                )
+        return out
 
 
 def _krea2_get_lora_state_dict(model_patch):
@@ -377,6 +393,7 @@ def _krea2_make_wrapper(projection):
                 control_tokens_mean_abs,
             )
             projection.control_tokens = control_tokens
+            projection.ab_logged = False
             if getattr(diffusion_model, "first", None) is not projection:
                 diffusion_model.first = projection
             logger.info(
@@ -411,6 +428,7 @@ def _apply_krea2_control(model_patched, model_patch, vae, image, strength):
         expanded_bias = first.bias.detach()
 
     projection = _Krea2FirstProjection(expanded_weight, base_in_features, first, expanded_bias)
+    projection.control_strength = float(strength)
 
     lora_patches = _krea2_build_block_patches(state_dict, model_patched)
     if not lora_patches:

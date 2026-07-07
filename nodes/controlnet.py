@@ -148,6 +148,37 @@ class ZImageControlPatch:
         return [self.model_patch]
 
 
+class DiffSynthCnetBlockReplace:
+    """patches_replace wrapper for DiffSynthCnetPatch on Nunchaku Qwen Image.
+
+    Nunchaku's _forward() processes patches_replace["dit"][("double_block", i)]
+    but ignores patches["double_block"]. This class bridges DiffSynthCnetPatch
+    into the patches_replace interface so ControlNet works with Nunchaku Qwen Image.
+    """
+
+    def __init__(self, cnet_patch, block_index):
+        self.cnet_patch = cnet_patch
+        self.block_index = block_index
+
+    def __call__(self, args, extra_options):
+        # Run the original transformer block first
+        out = extra_options["original_block"](args)
+
+        # Apply DiffSynth ControlNet residual
+        img = out["img"]
+        encoded_image = self.cnet_patch.encoded_image
+        if encoded_image is not None:
+            control_residual = self.cnet_patch.model_patch.model.control_block(
+                img[:, :encoded_image.shape[1]],
+                encoded_image.to(img.dtype),
+                self.block_index
+            )
+            img[:, :encoded_image.shape[1]] += control_residual * self.cnet_patch.strength
+            out["img"] = img
+
+        return out
+
+
 class NunchakuQwenImageDiffsynthControlnet:
     @classmethod
     def INPUT_TYPES(s):
@@ -174,52 +205,55 @@ class NunchakuQwenImageDiffsynthControlnet:
                 mask = mask.unsqueeze(2)
             mask = 1.0 - mask
 
-        # Debug logging - log all available information
-        logger.info("=" * 80)
-        logger.info("[NunchakuQwenImageDiffsynthControlnet] Starting ControlNet patch detection")
-        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model type: {type(model).__name__}")
-        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model_patch type: {type(model_patch).__name__}")
-        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model_patch.model type: {type(model_patch.model).__name__}")
-        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model_patch.model.__class__: {model_patch.model.__class__}")
-        
-        # Check model.model structure
-        if hasattr(model, 'model'):
-            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model exists, type: {type(model.model).__name__}")
-            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.__class__.__name__: {model.model.__class__.__name__}")
-            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.__class__.__module__: {model.model.__class__.__module__}")
-            
-            # Check diffusion_model if available
-            if hasattr(model.model, 'diffusion_model'):
-                logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.diffusion_model type: {type(model.model.diffusion_model).__name__}")
-                logger.info(f"[NunchakuQwenImageDiffsynthControlnet] model.model.diffusion_model.__class__.__name__: {model.model.diffusion_model.__class__.__name__}")
-        else:
-            logger.warning("[NunchakuQwenImageDiffsynthControlnet] model has no 'model' attribute")
-        
-        # Check if this is a Z-Image ControlNet model
-        # model_patch.model is ZImage_Control for both standard Z-Image and Nunchaku Z-Image-Turbo
+        # Detect ControlNet model type
         is_zimage_control = isinstance(model_patch.model, comfy.ldm.lumina.controlnet.ZImage_Control)
-        logger.info(f"[NunchakuQwenImageDiffsynthControlnet] is_zimage_control (ZImage_Control check): {is_zimage_control}")
-        
-        # Check if model.model is NunchakuZImage (for Nunchaku Z-Image-Turbo)
-        is_nunchaku_zimage = False
-        if hasattr(model, 'model'):
-            model_model_class_name = model.model.__class__.__name__
-            logger.info(f"[NunchakuQwenImageDiffsynthControlnet] Checking if model.model is NunchakuZImage: {model_model_class_name}")
-            if model_model_class_name == "NunchakuZImage":
-                is_nunchaku_zimage = True
-                logger.info("[NunchakuQwenImageDiffsynthControlnet] ✓ Detected NunchakuZImage model base")
-        
-        # Use ZImageControlPatch for Z-Image ControlNet (works for both standard and Nunchaku Z-Image-Turbo)
+
+        # Detect Nunchaku Qwen Image model
+        # Nunchaku's _forward() processes patches_replace but ignores patches["double_block"],
+        # so we need to use set_model_patch_replace() instead of set_model_double_block_patch().
+        is_nunchaku_qwenimage = False
+        if not is_zimage_control and hasattr(model, 'model'):
+            # Check model base class name (NunchakuQwenImage from ComfyUI-nunchaku model_base)
+            model_base_name = model.model.__class__.__name__
+            if model_base_name == 'NunchakuQwenImage':
+                is_nunchaku_qwenimage = True
+            # Check diffusion model class name
+            elif hasattr(model.model, 'diffusion_model'):
+                dm_name = model.model.diffusion_model.__class__.__name__
+                if dm_name in ('ComfyQwenImageWrapper', 'NunchakuQwenImageTransformer2DModel'):
+                    is_nunchaku_qwenimage = True
+
+        logger.info(f"[ControlNet] is_zimage={is_zimage_control}, is_nunchaku_qwenimage={is_nunchaku_qwenimage}")
+
         if is_zimage_control:
-            logger.info("[NunchakuQwenImageDiffsynthControlnet] ✓ Using ZImageControlPatch for Z-Image ControlNet")
+            # ZImage ControlNet (works for both standard and Nunchaku Z-Image)
+            logger.info("[ControlNet] Using ZImageControlPatch")
             patch = ZImageControlPatch(model_patch, vae, image, strength, mask=mask)
             model_patched.set_model_noise_refiner_patch(patch)
             model_patched.set_model_double_block_patch(patch)
-            logger.info("[NunchakuQwenImageDiffsynthControlnet] ✓ Patches registered successfully")
+        elif is_nunchaku_qwenimage:
+            # Nunchaku Qwen Image: use patches_replace since _forward ignores patches["double_block"]
+            logger.info("[ControlNet] Using DiffSynthCnetBlockReplace for Nunchaku Qwen Image")
+            cnet_patch = DiffSynthCnetPatch(model_patch, vae, image, strength, mask)
+            # Register via set_model_double_block_patch for model loading (models() discovery)
+            model_patched.set_model_double_block_patch(cnet_patch)
+            # Get number of transformer blocks from the diffusion model
+            dm = model.model.diffusion_model
+            try:
+                num_blocks = len(dm.transformer_blocks)
+            except AttributeError:
+                num_blocks = 60  # Default for Qwen Image
+                logger.warning(f"[ControlNet] Could not determine block count, using default {num_blocks}")
+            # Register patches_replace entries for actual ControlNet execution in Nunchaku
+            for i in range(num_blocks):
+                model_patched.set_model_patch_replace(
+                    DiffSynthCnetBlockReplace(cnet_patch, i),
+                    "dit", "double_block", i
+                )
+            logger.info(f"[ControlNet] Registered {num_blocks} patches_replace entries for Nunchaku Qwen Image")
         else:
-            logger.info("[NunchakuQwenImageDiffsynthControlnet] Using DiffSynthCnetPatch for standard diffsynth ControlNet")
+            # Standard Qwen Image: use patches["double_block"] (processed by ComfyUI's _forward)
+            logger.info("[ControlNet] Using DiffSynthCnetPatch (standard)")
             model_patched.set_model_double_block_patch(DiffSynthCnetPatch(model_patch, vae, image, strength, mask))
-        
-        logger.info("=" * 80)
-        return (model_patched,)
 
+        return (model_patched,)

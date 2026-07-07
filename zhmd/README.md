@@ -87,6 +87,10 @@
 
 <img src="../png/diffsynth.png" alt="Diffsynth ControlNet 使用方法" width="400">
 
+- **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora 加载器
+
+<img src="../images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">
+
 ### 基本用法
 
 **对于 Nunchaku Qwen Image 模型：**
@@ -109,6 +113,7 @@
 3. 将 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 节点的 `model_patch` 输入端
 4. 连接您的 Nunchaku Qwen Image 模型、VAE 和控制图像
 5. 设置 ControlNet 强度并连接到您的工作流
+6. Krea2 depth 支持与使用方法：添加 `Krea2ControlNetLoraLoader`，选择您的 Krea2 depth controlnet-lora 文件（例如：`krea2-depth-control-lora.safetensors`），然后将其 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 的 `model_patch`
 
 ## 功能
 

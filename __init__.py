@@ -53,6 +53,7 @@ try:
     # Z-Image-Turbo V3 is deprecated - removed from registration
     # from .nodes.lora.zimageturbo_v3 import GENERATED_NODES as ZIMAGETURBO_V3_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V3_NAMES
     from .nodes.lora.zimageturbo_v4 import GENERATED_NODES as ZIMAGETURBO_V4_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V4_NAMES
+    from .nodes.lora.krea2_controlnet_lora import Krea2ControlNetLoraLoader
 
     # Add version to classes before creating NODE_CLASS_MAPPINGS
     NunchakuQwenImageLoraLoader.__version__ = __version__
@@ -72,6 +73,7 @@ try:
     #     node_class.__version__ = __version__
     for node_class in ZIMAGETURBO_V4_NODES.values():
         node_class.__version__ = __version__
+    Krea2ControlNetLoraLoader.__version__ = __version__
 
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
@@ -83,6 +85,7 @@ try:
     # Z-Image-Turbo V3 registration removed
     # NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V3_NODES)
     NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V4_NODES)
+    NODE_CLASS_MAPPINGS["Krea2ControlNetLoraLoader"] = Krea2ControlNetLoraLoader
 except ImportError:
     logger.exception("LoRA nodes import failed:")
 
@@ -109,6 +112,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     # **ZIMAGETURBO_V3_NAMES,
     **ZIMAGETURBO_V4_NAMES
 }
+NODE_DISPLAY_NAME_MAPPINGS["Krea2ControlNetLoraLoader"] = "Krea2 controlnet lora loader"
 
 # Add ControlNet display name only if the node was successfully loaded
 if "NunchakuQwenImageDiffsynthControlnet" in NODE_CLASS_MAPPINGS:

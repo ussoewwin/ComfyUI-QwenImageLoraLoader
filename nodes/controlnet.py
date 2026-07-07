@@ -239,6 +239,7 @@ class NunchakuQwenImageDiffsynthControlnet:
         # Nunchaku's _forward() processes patches_replace but ignores patches["double_block"],
         # so we need to use set_model_patch_replace() instead of set_model_double_block_patch().
         is_nunchaku_qwenimage = False
+        is_krea2_model = False
         if not is_zimage_control and hasattr(model, 'model'):
             # Check model base class name (NunchakuQwenImage from ComfyUI-nunchaku model_base)
             model_base_name = model.model.__class__.__name__
@@ -249,8 +250,19 @@ class NunchakuQwenImageDiffsynthControlnet:
                 dm_name = model.model.diffusion_model.__class__.__name__
                 if dm_name in ('ComfyQwenImageWrapper', 'NunchakuQwenImageTransformer2DModel'):
                     is_nunchaku_qwenimage = True
+                # Krea2 backbone in ComfyUI (comfy.ldm.krea2.model.SingleStreamDiT)
+                elif dm_name == 'SingleStreamDiT':
+                    is_krea2_model = True
+                else:
+                    dm_module = getattr(model.model.diffusion_model.__class__, "__module__", "")
+                    if "comfy.ldm.krea2" in dm_module:
+                        is_krea2_model = True
 
-        logger.info(f"[ControlNet] is_zimage={is_zimage_control}, is_nunchaku_qwenimage={is_nunchaku_qwenimage}")
+        logger.info(
+            f"[ControlNet] is_zimage={is_zimage_control}, "
+            f"is_nunchaku_qwenimage={is_nunchaku_qwenimage}, "
+            f"is_krea2={is_krea2_model}"
+        )
 
         if is_zimage_control:
             # ZImage ControlNet (works for both standard and Nunchaku Z-Image)
@@ -278,6 +290,10 @@ class NunchakuQwenImageDiffsynthControlnet:
                     "dit", "double_block", i
                 )
             logger.info(f"[ControlNet] Registered {num_blocks} patches_replace entries for Nunchaku Qwen Image")
+        elif is_krea2_model:
+            # Krea2 model path: keep control processing in this patcher (not in LoRA loader).
+            logger.info("[ControlNet] Using DiffSynthCnetPatch (krea2)")
+            model_patched.set_model_double_block_patch(DiffSynthCnetPatch(model_patch, vae, image, strength, mask))
         else:
             # Standard Qwen Image: use patches["double_block"] (processed by ComfyUI's _forward)
             logger.info("[ControlNet] Using DiffSynthCnetPatch (standard)")

@@ -1,4 +1,8 @@
-### v2.5.0 (最新)
+### v2.5.1 (最新)
+- **已添加**: 通过 `Krea2ControlNetLoraLoader` 以及 `NunchakuQI&ZITDiffsynthControlnet` 中的 Krea2 路由，新增 Krea2 depth ControlNet LoRA 支持。从 `controlnet` 文件夹加载 Krea2 depth controlnet-lora 文件（例如 `krea2-depth-control-lora.safetensors`），将其 `MODEL_PATCH` 输出连接到 controlnet 节点的 `model_patch` 输入，并在 Krea2 / SingleStreamDiT 模型上应用 depth 条件。
+- **技术详情**: 请参阅 [v2.5.1 发行说明](v2.5.1.md) 获取完整说明
+
+### v2.5.0
 - **已添加**: 恢复了以前未注册的 NunchakuQI&ZITDiffsynthControlnet 节点。
 - **已修复**: 修复了由于自定义前向循环跳过动态调整大小而导致 ControlNet 无法应用于 Nunchaku Qwen Image 模型的问题。
 - **技术详情**: 请参阅 [v2.5.0 发行说明](v2.5.0.md) 获取完整说明

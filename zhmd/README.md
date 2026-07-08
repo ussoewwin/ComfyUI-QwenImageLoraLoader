@@ -85,8 +85,6 @@
 
 - **NunchakuQI&ZITDiffsynthControlnet**: 用于 Nunchaku Qwen Image & Z-ImageTurbo 的 DiffSynth ControlNet 支持节点
 
-<img src="../png/diffsynth.png" alt="Diffsynth ControlNet 使用方法" width="400">
-
 - **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora 加载器
 
 <img src="../images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">

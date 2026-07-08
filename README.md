@@ -87,8 +87,6 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 - **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
 
-<img src="png/diffsynth.png" alt="Diffsynth ControlNet Usage" width="400">
-
 - **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora loader
 
 <img src="images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">

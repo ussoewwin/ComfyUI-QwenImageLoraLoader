@@ -248,7 +248,7 @@ def _get_compute_device() -> torch.device:
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ```
 
-In `_awq_lora_forward`:
+In `_apply_lora_to_module` nunchaku branch:
 
 ```python
 compute_device = _get_compute_device()
@@ -257,11 +257,11 @@ pu_gpu = pu.to(compute_device)
 A_gpu = A.to(compute_device)
 B_gpu = B.to(compute_device)
 
-pd_unpacked = unpack_lowrank_weight(pd_gpu, down=True)
-pu_unpacked = unpack_lowrank_weight(pu_gpu, down=False)
-# ... cat, pack on compute_device ...
+pd_unpacked = unpack_lowrank_weight(pd_gpu, down=True)   # CUDA
+pu_unpacked = unpack_lowrank_weight(pu_gpu, down=False)  # CUDA
+new_proj_down = torch.cat([pd_unpacked, A_gpu], dim=0)    # CUDA
+packed_down = pack_lowrank_weight(new_proj_down, down=True)  # CUDA
 module.proj_down.data = packed_down.to(pd.device)  # restore to original device
-module.proj_up.data = packed_up.to(pu.device)
 ```
 
 `reset_lora_v2` applies the same optimization.
@@ -275,9 +275,17 @@ module.proj_up.data = packed_up.to(pu.device)
 
 - **Same direction as** `PERFORMANCE_OPTIMIZATION_PLAN.md` item 2 ("batch device transfers"). The plan was "cat on CPU then one transfer"; the PR is "complete pack/unpack on GPU". Same goal (reduce device transfers).
 
-#### Concerns
+#### Data flow verification (validated)
 
-- The nunchaku branch of `_apply_lora_to_module` itself does **not** have this optimization. A/B are passed as `all_A.append(A.to(dtype=target_dtype))` (staying on CPU), then `torch.cat([pd, A], dim=0)` combines CPU `pd` with CPU `A`. The PR's A/B pre-transfer optimization (skipping `target_device` in the nunchaku branch) and the `_apply_lora_to_module` GPU pack/unpack optimization are **not fully consistent**. Must verify during adoption.
+The PR's two-stage optimization is **internally consistent**:
+
+| Stage | Location | What happens | Device |
+|-------|----------|-------------|--------|
+| 1 | `compose_loras_v2` application loop | `all_A.append(A.to(dtype=target_dtype))` — dtype conversion only, **device intentionally omitted** | CPU (A/B stay on CPU) |
+| 2 | `torch.cat(all_A, dim=0)` | Concatenate all A tensors | CPU |
+| 3 | `_apply_lora_to_module` nunchaku branch | `A_gpu = A.to(compute_device)` → `torch.cat([pd_unpacked, A_gpu], dim=0)` on CUDA → `pack_lowrank_weight` on CUDA → `.to(pd.device)` restore | CUDA → original |
+
+Stage 1 intentionally skips `device=target_device` for the nunchaku branch (the only branch that does so). The comment explains: "~960 redundant CPU→CPU memcpies per generation". Stage 3 then moves A/B to `compute_device` alongside `pd`/`pu` and performs all pack/unpack/cat operations on CUDA. The two stages are designed to work together — no device mismatch occurs.
 
 ---
 

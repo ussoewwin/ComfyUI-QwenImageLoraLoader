@@ -14,9 +14,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 lora_loader_dir = os.path.dirname(os.path.dirname(current_dir))
 if lora_loader_dir not in sys.path:
     sys.path.insert(0, lora_loader_dir)
-    print(f"[DEBUG] Added to sys.path: {lora_loader_dir}")
-    print(f"[DEBUG] wrappers dir exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers'))}")
-    print(f"[DEBUG] qwenimage.py exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers', 'qwenimage.py'))}")
 
 import folder_paths
 
@@ -148,7 +145,7 @@ class NunchakuQwenImageLoraStackV2:
             detection = _detect_lora_format(lora_state_dict)
             _log_lora_format_detection(str(_fn), detection)
             # First LoRA: Detailed key inspection (same as zimageturbo_v4.py lines 219-240)
-            print(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {_fs}) ---")
+            logger.info(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {_fs}) ---")
             _first_detection = _detect_lora_format(lora_state_dict)
             if _first_detection["has_standard"]:
                 for key in lora_state_dict.keys():
@@ -156,14 +153,14 @@ class NunchakuQwenImageLoraStackV2:
                     if parsed_res:
                         group, base_key, comp, ab = parsed_res
                         mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
-                        print(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
+                        logger.info(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
                     else:
-                        print(f"Key: {key} -> UNMATCHED (Ignored)")
+                        logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
             else:
-                print("⚠️  Unsupported LoRA format detected (No standard keys).")
-                print(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
-                print("   Note: This LoRA will likely have no effect or will be skipped entirely.")
-            print("--- DEBUG: End key inspection ---")
+                logger.warning("⚠️  Unsupported LoRA format detected (No standard keys).")
+                logger.warning(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
+                logger.warning("   Note: This LoRA will likely have no effect or will be skipped entirely.")
+            logger.info("--- DEBUG: End key inspection ---")
 
         model_wrapper = model.model.diffusion_model
 

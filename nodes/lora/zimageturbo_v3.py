@@ -14,9 +14,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 lora_loader_dir = os.path.dirname(os.path.dirname(current_dir))
 if lora_loader_dir not in sys.path:
     sys.path.insert(0, lora_loader_dir)
-    print(f"[DEBUG] Added to sys.path: {lora_loader_dir}")
-    print(f"[DEBUG] wrappers dir exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers'))}")
-    print(f"[DEBUG] zimageturbo.py exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers', 'zimageturbo.py'))}")
 
 import folder_paths
 
@@ -190,7 +187,7 @@ class NunchakuZImageTurboLoraStackV2:
             if lora_loader_dir not in sys.path:
                 sys.path.insert(0, lora_loader_dir)
             
-            from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format
+            from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format, NUNCHAKU_LOG_ENABLED
         except ImportError as e:
             logger.warning(f"Failed to import mapping debug functions: {e}")
             logger.warning("Mapping debug logs will be skipped.")
@@ -199,7 +196,7 @@ class NunchakuZImageTurboLoraStackV2:
             _detect_lora_format = None
 
         # DEBUG: Inspect all keys in the first LoRA (mapping debug logs)
-        if loras_to_apply and _classify_and_map_key and _load_lora_state_dict and _detect_lora_format:
+        if loras_to_apply and _classify_and_map_key and _load_lora_state_dict and _detect_lora_format and NUNCHAKU_LOG_ENABLED:
             first_lora_name, first_lora_strength = loras_to_apply[0]
             try:
                 first_lora_path = folder_paths.get_full_path_or_raise("loras", first_lora_name)

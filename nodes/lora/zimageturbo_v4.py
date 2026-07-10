@@ -177,7 +177,7 @@ class NunchakuZImageTurboLoraStackV4:
             if lora_loader_dir not in sys.path:
                 sys.path.insert(0, lora_loader_dir)
             
-            from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format, _log_lora_format_detection
+            from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format, _log_lora_format_detection, NUNCHAKU_LOG_ENABLED
         except ImportError as e:
             logger.warning(f"Failed to import mapping debug functions: {e}")
             logger.warning("Mapping debug logs will be skipped.")
@@ -217,7 +217,7 @@ class NunchakuZImageTurboLoraStackV4:
                         pass
                     
                     # First LoRA: Detailed key inspection (same as v3 compose_loras_v2)
-                    if idx == 0:
+                    if idx == 0 and NUNCHAKU_LOG_ENABLED:
                         logger.info(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {lora_strength}) ---")
                         
                         # Check format first (same optimization as v3)

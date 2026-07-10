@@ -2,7 +2,7 @@ import logging
 import os
 
 # Version information - must be at module level for ComfyUI Manager
-__version__ = "2.5.1"
+__version__ = "2.4.0"
 
 # Get log level from environment variable (default to INFO)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -26,6 +26,8 @@ ZIMAGETURBO_V2_NODES = {}
 ZIMAGETURBO_V2_NAMES = {}
 ZIMAGETURBO_V4_NODES = {}
 ZIMAGETURBO_V4_NAMES = {}
+TE_V2_NODES = {}
+TE_V2_NAMES = {}
 
 # --- Nunchaku Monkey Patch Application ---
 try:
@@ -53,7 +55,11 @@ try:
     # Z-Image-Turbo V3 is deprecated - removed from registration
     # from .nodes.lora.zimageturbo_v3 import GENERATED_NODES as ZIMAGETURBO_V3_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V3_NAMES
     from .nodes.lora.zimageturbo_v4 import GENERATED_NODES as ZIMAGETURBO_V4_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V4_NAMES
-    from .nodes.lora.krea2_controlnet_lora import Krea2ControlNetLoraLoader
+
+    try:
+        from .nodes.te_offload.nunchaku_te_v2 import GENERATED_NODES as TE_V2_NODES, GENERATED_DISPLAY_NAMES as TE_V2_NAMES
+    except Exception as _te_v2_err:
+        logger.warning(f"TE V2 loader nodes could not be loaded (ComfyUI-nunchaku not found?): {_te_v2_err}")
 
     # Add version to classes before creating NODE_CLASS_MAPPINGS
     NunchakuQwenImageLoraLoader.__version__ = __version__
@@ -73,7 +79,8 @@ try:
     #     node_class.__version__ = __version__
     for node_class in ZIMAGETURBO_V4_NODES.values():
         node_class.__version__ = __version__
-    Krea2ControlNetLoraLoader.__version__ = __version__
+    for node_class in TE_V2_NODES.values():
+        node_class.__version__ = __version__
 
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
     NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
@@ -85,20 +92,9 @@ try:
     # Z-Image-Turbo V3 registration removed
     # NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V3_NODES)
     NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V4_NODES)
-    NODE_CLASS_MAPPINGS["Krea2ControlNetLoraLoader"] = Krea2ControlNetLoraLoader
+    NODE_CLASS_MAPPINGS.update(TE_V2_NODES)
 except ImportError:
     logger.exception("LoRA nodes import failed:")
-
-# Try to import ControlNet node separately - it may fail if comfy.ldm.lumina.controlnet is not available
-try:
-    from .nodes.controlnet import NunchakuQwenImageDiffsynthControlnet
-    NunchakuQwenImageDiffsynthControlnet.__version__ = __version__
-    NODE_CLASS_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = NunchakuQwenImageDiffsynthControlnet
-    logger.info("ControlNet node loaded successfully")
-except ImportError:
-    logger.warning("ControlNet node not available (comfy.ldm.lumina.controlnet not found). LoRA nodes will still work.")
-except Exception as e:
-    logger.warning(f"ControlNet node failed to load: {e}. LoRA nodes will still work.")
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
@@ -110,13 +106,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **ZIMAGETURBO_V2_NAMES,
     # Z-Image-Turbo V3 registration removed
     # **ZIMAGETURBO_V3_NAMES,
-    **ZIMAGETURBO_V4_NAMES
+    **ZIMAGETURBO_V4_NAMES,
+    **TE_V2_NAMES,
 }
-NODE_DISPLAY_NAME_MAPPINGS["Krea2ControlNetLoraLoader"] = "Krea2 controlnet lora loader"
-
-# Add ControlNet display name only if the node was successfully loaded
-if "NunchakuQwenImageDiffsynthControlnet" in NODE_CLASS_MAPPINGS:
-    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "NunchakuQI&ZITDiffsynthControlnet"
 
 # Register JavaScript extensions
 WEB_DIRECTORY = "js"

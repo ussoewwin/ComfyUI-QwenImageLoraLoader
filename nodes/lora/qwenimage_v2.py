@@ -33,7 +33,7 @@ class NunchakuQwenImageLoraStackV2:
     Node for loading and applying multiple LoRAs to a Nunchaku Qwen Image model with dynamic UI.
     """
     @classmethod
-    def IS_CHANGED(cls, model, lora_count, cpu_offload="disable", **kwargs):
+    def IS_CHANGED(cls, model, lora_count, cpu_offload="disable", save_precompiled_lora=False, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
@@ -44,6 +44,7 @@ class NunchakuQwenImageLoraStackV2:
         m.update(str(lora_count).encode())
         m.update(cpu_offload.encode())
         m.update(str(kwargs.get("apply_awq_mod", False)).encode())
+        m.update(str(save_precompiled_lora).encode())
         # Hash all LoRA parameters
         for i in range(1, 11):
             m.update(kwargs.get(f"lora_name_{i}", "").encode())
@@ -89,7 +90,20 @@ class NunchakuQwenImageLoraStackV2:
                     },
                 ),
             },
-            "optional": {},
+            "optional": {
+                "save_precompiled_lora": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": (
+                            "When enabled, saves a pre-fused structural cache for each LoRA to "
+                            "ComfyUI/models/SVDQLora/. Subsequent loads skip regex classify and tensor "
+                            "fusion, reducing per-generation CPU latency. Strength scaling still applies "
+                            "at inference time."
+                        ),
+                    },
+                ),
+            },
         }
 
         # Add all LoRA inputs (up to 10 slots) as optional
@@ -118,7 +132,7 @@ class NunchakuQwenImageLoraStackV2:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. v1.0.3"
 
-    def load_lora_stack(self, model, lora_count, cpu_offload="disable", apply_awq_mod=False, **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload="disable", apply_awq_mod=False, save_precompiled_lora=False, **kwargs):
         loras_to_apply = []
         
         # Process only the number of LoRAs specified by lora_count
@@ -277,8 +291,8 @@ class NunchakuQwenImageLoraStackV2:
 
         for lora_name, lora_strength in loras_to_apply:
             lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-            ret_model_wrapper.loras.append((lora_path, lora_strength))
-            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength})")
+            ret_model_wrapper.loras.append((lora_path, lora_strength, {"save_precompiled": save_precompiled_lora}))
+            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength}, save_precompiled={save_precompiled_lora})")
 
         logger.info(f"Total LoRAs in stack: {len(ret_model_wrapper.loras)}")
 

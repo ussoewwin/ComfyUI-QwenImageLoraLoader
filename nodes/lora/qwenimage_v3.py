@@ -14,9 +14,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 lora_loader_dir = os.path.dirname(os.path.dirname(current_dir))
 if lora_loader_dir not in sys.path:
     sys.path.insert(0, lora_loader_dir)
-    print(f"[DEBUG] Added to sys.path: {lora_loader_dir}")
-    print(f"[DEBUG] wrappers dir exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers'))}")
-    print(f"[DEBUG] qwenimage.py exists: {os.path.exists(os.path.join(lora_loader_dir, 'wrappers', 'qwenimage.py'))}")
 
 import folder_paths
 
@@ -35,18 +32,22 @@ class NunchakuQwenImageLoraStackV2:
     """
 
     @classmethod
-    def IS_CHANGED(cls, model, lora_count, cpu_offload="disable", toggle_all=True, **kwargs):
+    def IS_CHANGED(cls, lora_count, cpu_offload="disable", toggle_all=True, save_precompiled_lora=False, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
+        Note: model is intentionally excluded — ComfyUI does not pass MODEL-type
+        inputs (which come from other nodes' outputs) to IS_CHANGED.
+        Including it would cause a TypeError, which ComfyUI converts to NaN,
+        making the node always re-execute on every generation.
         """
         import hashlib
 
         m = hashlib.sha256()
-        m.update(str(model).encode())
         m.update(str(lora_count).encode())
         m.update(cpu_offload.encode())
         m.update(str(toggle_all).encode())
+        m.update(str(save_precompiled_lora).encode())
         # Hash all LoRA parameters
         for i in range(1, 11):
             m.update(kwargs.get(f"lora_name_{i}", "").encode())
@@ -93,7 +94,20 @@ class NunchakuQwenImageLoraStackV2:
                     },
                 ),
             },
-            "optional": {},
+            "optional": {
+                "save_precompiled_lora": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": (
+                            "When enabled, saves a pre-fused structural cache for each LoRA to "
+                            "ComfyUI/models/SVDQLora/. Subsequent loads skip regex classify and tensor "
+                            "fusion, reducing per-generation CPU latency. Strength scaling still applies "
+                            "at inference time."
+                        ),
+                    },
+                ),
+            },
         }
 
         # Add all LoRA inputs (up to 10 slots) as optional
@@ -129,7 +143,7 @@ class NunchakuQwenImageLoraStackV2:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control."
 
-    def load_lora_stack(self, model, lora_count, cpu_offload="disable", toggle_all=True, **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload="disable", toggle_all=True, save_precompiled_lora=False, **kwargs):
         loras_to_apply = []
 
         # Log toggle_all state
@@ -185,8 +199,7 @@ class NunchakuQwenImageLoraStackV2:
         if lora_state_dict and NUNCHAKU_LOG_ENABLED:
             detection = _detect_lora_format(lora_state_dict)
             _log_lora_format_detection(str(_fn), detection)
-            # First LoRA: Detailed key inspection (same as zimageturbo_v4.py lines 219-240)
-            print(f"--- DEBUG: Inspecting keys for LoRA 1 (Strength: {_fs}) ---")
+            # First LoRA: Detailed key inspection (only when verbose logging is on)
             _first_detection = _detect_lora_format(lora_state_dict)
             if _first_detection["has_standard"]:
                 for key in lora_state_dict.keys():
@@ -194,14 +207,11 @@ class NunchakuQwenImageLoraStackV2:
                     if parsed_res:
                         group, base_key, comp, ab = parsed_res
                         mapped_name = f"{base_key}.{comp}.{ab}" if comp and ab else (f"{base_key}.{ab}" if ab else base_key)
-                        print(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
+                        logger.debug(f"Key: {key} -> Mapped to: {mapped_name} (Group: {group})")
                     else:
-                        print(f"Key: {key} -> UNMATCHED (Ignored)")
+                        logger.debug(f"Key: {key} -> UNMATCHED (Ignored)")
             else:
-                print("⚠️  Unsupported LoRA format detected (No standard keys).")
-                print(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
-                print("   Note: This LoRA will likely have no effect or will be skipped entirely.")
-            print("--- DEBUG: End key inspection ---")
+                logger.debug("⚠️  Unsupported LoRA format detected (No standard keys). Skipping key inspection.")
 
         model_wrapper = model.model.diffusion_model
 
@@ -281,8 +291,8 @@ class NunchakuQwenImageLoraStackV2:
 
         for lora_name, lora_strength in loras_to_apply:
             lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-            ret_model_wrapper.loras.append((lora_path, lora_strength))
-            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength})")
+            ret_model_wrapper.loras.append((lora_path, lora_strength, {"save_precompiled": save_precompiled_lora}))
+            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength}, save_precompiled={save_precompiled_lora})")
 
         logger.info(f"Total LoRAs in stack: {len(ret_model_wrapper.loras)}")
         return (ret_model,)

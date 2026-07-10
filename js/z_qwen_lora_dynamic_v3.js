@@ -54,6 +54,9 @@ app.registerExtension({
             const toggleAllWidget = all.find(w => w.name === "toggle_all");
             if (toggleAllWidget) node.cachedToggleAll = toggleAllWidget;
 
+            const savePrecompiledWidget = all.find(w => w.name === "save_precompiled_lora");
+            if (savePrecompiledWidget) node.cachedSavePrecompiled = savePrecompiledWidget;
+
             for (let i = 1; i <= 10; i++) {
                 const wEnabled = all.find(w => w.name === `enabled_${i}`);
                 const wName = all.find(w => w.name === `lora_name_${i}`);
@@ -132,6 +135,8 @@ app.registerExtension({
 
             if (node.cachedCpuOffload) this.widgets.push(node.cachedCpuOffload);
 
+            if (node.cachedSavePrecompiled) this.widgets.push(node.cachedSavePrecompiled);
+
             for (let i = 1; i <= count; i++) {
                 const pair = this.cachedWidgets[i];
                 if (pair && pair.length >= 3) {
@@ -152,8 +157,9 @@ app.registerExtension({
             const SLOT_H = 80;
             const TOGGLE_ALL_H = toggleAllWidget ? 30 : 0;
             const CPU_OFFLOAD_H = node.cachedCpuOffload ? 30 : 0;
+            const SAVE_PRECOMPILED_H = node.cachedSavePrecompiled ? 30 : 0;
             const PADDING = 20;
-            const targetH = HEADER_H + TOGGLE_ALL_H + CPU_OFFLOAD_H + (count * SLOT_H) + PADDING;
+            const targetH = HEADER_H + TOGGLE_ALL_H + CPU_OFFLOAD_H + SAVE_PRECOMPILED_H + (count * SLOT_H) + PADDING;
             this.setSize([this.size[0], targetH]);
             if (app.canvas) app.canvas.setDirty(true, true);
         };

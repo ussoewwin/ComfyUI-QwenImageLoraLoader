@@ -58,7 +58,6 @@ venv.bak/
 # IDE
 .vscode/
 .idea/
-.cursor/
 *.swp
 *.swo
 *~
@@ -85,13 +84,3 @@ pr48_*.txt
 
 # Local/tool tracking list (do not track in repo)
 .tracking
-
-# Ignore scripts folder
-scripts/
-
-# Ignore backups
-backups/
-backup/
-# Ignore reflection files
-反省文*
-反省文/

@@ -10,6 +10,20 @@ import torch
 import torch.nn as nn
 from safetensors import safe_open
 
+
+def _get_compute_device() -> torch.device:
+    """Return the best compute device, deferring to ComfyUI's memory manager.
+
+    Using comfy.model_management.get_torch_device() keeps us fully compatible
+    with ComfyUI's VRAM tracking and offloading context.  Falls back to plain
+    CUDA or CPU if ComfyUI is not available.
+    """
+    try:
+        import comfy.model_management as _mm
+        return _mm.get_torch_device()
+    except Exception:
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # It's assumed these functions from your project are available for import.
 # If not, you'll need to provide their definitions.
 from nunchaku.lora.flux.nunchaku_converter import (
@@ -1159,22 +1173,39 @@ def _apply_lora_to_module(module: nn.Module, A: torch.Tensor, B: torch.Tensor, m
     # Handle Nunchaku LoRA-ready modules
     if hasattr(module, "proj_down") and hasattr(module, "proj_up"):
         pd, pu = module.proj_down.data, module.proj_up.data
-        pd = unpack_lowrank_weight(pd, down=True)
-        pu = unpack_lowrank_weight(pu, down=False)
 
-        base_rank = pd.shape[0] if pd.shape[1] == module.in_features else pd.shape[1]
+        # Use ComfyUI-aware device to stay compatible with its VRAM manager.
+        # This avoids allocating CUDA memory at a time ComfyUI has moved things to CPU.
+        compute_device = _get_compute_device()
+        pd_gpu = pd.to(compute_device)
+        pu_gpu = pu.to(compute_device)
+        A_gpu = A.to(compute_device)
+        B_gpu = B.to(compute_device)
 
-        if pd.shape[1] == module.in_features:  # [rank, in]
-            new_proj_down = torch.cat([pd, A], dim=0)
+        pd_unpacked = unpack_lowrank_weight(pd_gpu, down=True)
+        pu_unpacked = unpack_lowrank_weight(pu_gpu, down=False)
+        del pd_gpu, pu_gpu  # free intermediates promptly
+
+        base_rank = pd_unpacked.shape[0] if pd_unpacked.shape[1] == module.in_features else pd_unpacked.shape[1]
+
+        if pd_unpacked.shape[1] == module.in_features:  # [rank, in]
+            new_proj_down = torch.cat([pd_unpacked, A_gpu], dim=0)
             axis_down = 0
         else:  # [in, rank]
-            new_proj_down = torch.cat([pd, A.T], dim=1)
+            new_proj_down = torch.cat([pd_unpacked, A_gpu.T], dim=1)
             axis_down = 1
+        del pd_unpacked, A_gpu
 
-        new_proj_up = torch.cat([pu, B], dim=1)
+        new_proj_up = torch.cat([pu_unpacked, B_gpu], dim=1)
+        del pu_unpacked, B_gpu
 
-        module.proj_down.data = pack_lowrank_weight(new_proj_down, down=True)
-        module.proj_up.data = pack_lowrank_weight(new_proj_up, down=False)
+        packed_down = pack_lowrank_weight(new_proj_down, down=True)
+        packed_up = pack_lowrank_weight(new_proj_up, down=False)
+        del new_proj_down, new_proj_up
+
+        # Move back to parameter's original device
+        module.proj_down.data = packed_down.to(pd.device)
+        module.proj_up.data = packed_up.to(pu.device)
         module.rank = base_rank + A.shape[0]
 
         if not hasattr(model, "_lora_slots"):
@@ -1238,10 +1269,22 @@ def compose_loras_v2(
         model: torch.nn.Module,
         lora_configs: List[Tuple[Union[str, Path, Dict[str, torch.Tensor]], float]],
         apply_awq_mod: Union[bool, str] = "auto",
+        save_precompiled_lora: bool = False,
+        cache_dir: Optional[str] = None,
 ) -> bool:
     """
     Resets and composes multiple LoRAs into the model with individual strengths.
     """
+    import time
+    try:
+        from tqdm import tqdm as _tqdm
+    except ImportError:
+        def _tqdm(iterable, *args, **kwargs):
+            return iterable
+
+    t_start = time.perf_counter()
+    report_entries = []
+
     logger.info(f"Composing {len(lora_configs)} LoRAs (Direct Fix V6)...")
     reset_lora_v2(model)
     _first_detection = None
@@ -1270,35 +1313,111 @@ def compose_loras_v2(
         logger.info("⚠️  AWQ Modulation Layer LoRA Injection ENABLED (via override).")
 
     # --- 3. Debug Inspection (First LoRA) ---
-    # OPTIMIZATION: Cache first LoRA state dict for reuse in processing loop
-    _cached_first_lora_state_dict = None
+    # Safe unpack: entries may be 2-tuples (path, strength) or 3-tuples
+    # (path, strength, meta_dict) when the cache meta-dict is attached by the node.
     if lora_configs:
-        first_lora_path_or_dict, first_lora_strength = lora_configs[0]
-        first_lora_state_dict = _load_lora_state_dict_robust(first_lora_path_or_dict)
-        _cached_first_lora_state_dict = first_lora_state_dict  # Cache for reuse
+        _first_entry = lora_configs[0]
+        first_lora_path_or_dict = _first_entry[0]
+        first_lora_strength = _first_entry[1]
 
-        # Simple logging of format detection
-        _first_detection = _detect_lora_format(first_lora_state_dict)
-        _log_lora_format_detection(str(first_lora_path_or_dict)[:50], _first_detection)
+        # Optimize: Check if cache is valid for the first LoRA. If so, skip loading the raw safetensors file
+        _cache_path = None
+        _cache_is_valid = False
+        if cache_dir is not None and isinstance(first_lora_path_or_dict, (str, Path)):
+            from nunchaku_code.lora_cache import get_cache_dir as _get_cache_dir, get_cache_path as _get_cache_path, is_cache_valid as _is_cache_valid
+            try:
+                _real_cache_dir = _get_cache_dir(cache_dir)
+                _cache_path = _get_cache_path(first_lora_path_or_dict, _real_cache_dir)
+                _cache_is_valid = _is_cache_valid(first_lora_path_or_dict, _cache_path)
+            except Exception:
+                _cache_is_valid = False
+
+        if _cache_is_valid:
+            _first_detection = {"has_standard": True, "details": "Standard LoRA (Precompiled Cache)"}
+        else:
+            first_lora_state_dict = _load_lora_state_dict_robust(first_lora_path_or_dict)
+            # Simple logging of format detection
+            _first_detection = _detect_lora_format(first_lora_state_dict)
+            _log_lora_format_detection(str(first_lora_path_or_dict)[:50], _first_detection)
 
     aggregated_weights: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     # Track names of LoRA files that contain skipped weights
     skipped_lora_names = set()
 
     # --- 4. Main Loading Loop ---
-    for idx, (lora_path_or_dict, strength) in enumerate(lora_configs):
+    # Resolve cache directory once (None disables the cache path entirely).
+    _cache_dir_path = None
+    if cache_dir is not None:
+        from pathlib import Path as _Path
+        _cache_dir_path = _Path(cache_dir)
+
+    for idx, _entry in enumerate(lora_configs):
+        # Entries may be plain 2-tuples (path, strength) or 3-tuples
+        # (path, strength, meta_dict) carrying per-LoRA flags from the node UI.
+        lora_path_or_dict = _entry[0]
+        strength = _entry[1]
+        _entry_meta: dict = _entry[2] if len(_entry) > 2 else {}
+
         if abs(strength) < 1e-5:
             continue
-        
+
+        t_lora_start = time.perf_counter()
+
         lora_name = str(lora_path_or_dict)
         if isinstance(lora_path_or_dict, dict):
             lora_name = f"lora_{idx}"
 
-        # OPTIMIZATION: Reuse cached first LoRA state dict to avoid duplicate file I/O
-        if idx == 0 and _cached_first_lora_state_dict is not None:
-            lora_state_dict = _cached_first_lora_state_dict
-        else:
-            lora_state_dict = _load_lora_state_dict_robust(lora_path_or_dict)
+        # Per-entry save flag: honour node-level flag OR the global function arg.
+        _should_save = save_precompiled_lora or bool(_entry_meta.get("save_precompiled", False))
+
+        # ------------------------------------------------------------------ #
+        # CACHE FAST PATH                                                     #
+        # Only available for file-backed LoRAs (not inline dicts) and only   #
+        # when a cache directory is configured.                               #
+        # ------------------------------------------------------------------ #
+        _cache_path = None
+        if _cache_dir_path is not None and isinstance(lora_path_or_dict, (str, Path)):
+            from nunchaku_code.lora_cache import (
+                get_cache_dir as _get_cache_dir,
+                get_cache_path as _get_cache_path,
+                is_cache_valid as _is_cache_valid,
+                load_precompiled as _load_precompiled,
+                save_precompiled as _save_precompiled,
+            )
+            _real_cache_dir = _get_cache_dir(_cache_dir_path)
+            _cache_path = _get_cache_path(lora_path_or_dict, _real_cache_dir)
+
+            if _is_cache_valid(lora_path_or_dict, _cache_path):
+                # ---- CACHE HIT: skip disk I/O + classify + fuse ---- #
+                processed_groups = _load_precompiled(_cache_path)
+                if processed_groups:
+                    logger.info(
+                        f"[CACHE HIT] Skipping classify+fuse for '{Path(lora_path_or_dict).name}'. "
+                        f"Loaded {len(processed_groups)} pre-fused entries from cache."
+                    )
+                    for module_key, (A, B, alpha) in processed_groups.items():
+                        aggregated_weights[module_key].append(
+                            {"A": A, "B": B, "alpha": alpha, "strength": strength, "source": lora_name}
+                        )
+                    t_lora_end = time.perf_counter()
+                    report_entries.append({
+                        "name": Path(lora_path_or_dict).name if isinstance(lora_path_or_dict, (str, Path)) else f"lora_{idx}",
+                        "strength": strength,
+                        "format": "Standard LoRA (Precompiled)",
+                        "load_type": "Cache Hit",
+                        "elapsed": t_lora_end - t_lora_start,
+                    })
+                    continue  # skip normal fuse path for this LoRA
+                else:
+                    logger.warning(
+                        f"[CACHE] Cache file loaded but returned empty groups for "
+                        f"'{Path(lora_path_or_dict).name}'. Falling back to full fuse."
+                    )
+
+        # ------------------------------------------------------------------ #
+        # NORMAL (FULL) FUSE PATH                                            #
+        # ------------------------------------------------------------------ #
+        lora_state_dict = _load_lora_state_dict_robust(lora_path_or_dict)
         if not lora_state_dict:
             continue
 
@@ -1323,17 +1442,19 @@ def compose_loras_v2(
         # Process groups
         processed_groups = {}
         special_handled = set()
-        
-        for base_key, lw in lora_grouped.items():
+
+        items_to_process = list(lora_grouped.items())
+        pbar_desc = f"Fusing weights for {Path(lora_path_or_dict).name[:25]}"
+        for base_key, lw in _tqdm(items_to_process, desc=pbar_desc, unit="group", leave=True):
             if base_key in special_handled:
                 continue
 
             # Standard Logic Copied from Original
             if "lokr_w1" in lw or "lokr_w2" in lw:
-                continue # LoKR skipped
+                continue  # LoKR skipped
 
             A, B, alpha = None, None, None
-            
+
             if "qkv" in base_key:
                 A, B, alpha = (lw.get("A"), lw.get("B"), lw.get("alpha")) if "A" in lw else _fuse_qkv_lora(lw, model=model, base_key=base_key)
             elif "w1_A" in lw or "w3_A" in lw:
@@ -1349,19 +1470,44 @@ def compose_loras_v2(
             if A is not None and B is not None:
                 processed_groups[base_key] = (A, B, alpha)
 
+        # ------------------------------------------------------------------ #
+        # OPTIONAL CACHE SAVE                                                #
+        # Persist the freshly fused processed_groups so the next run can     #
+        # skip straight to aggregation.  B is stored un-scaled so the       #
+        # strength slider keeps working at inference time.                   #
+        # ------------------------------------------------------------------ #
+        load_type = "Cache Miss (Compiled)"
+        if _should_save and _cache_path is not None and processed_groups:
+            try:
+                _save_precompiled(processed_groups, lora_path_or_dict, _cache_path)
+                load_type = "Cache Miss (Compiled & Saved)"
+            except Exception as _cache_save_exc:
+                logger.warning(f"[CACHE] Failed to save precompiled cache: {_cache_save_exc}")
+
         for module_key, (A, B, alpha) in processed_groups.items():
             aggregated_weights[module_key].append(
                 {"A": A, "B": B, "alpha": alpha, "strength": strength, "source": lora_name}
             )
 
+        t_lora_end = time.perf_counter()
+        report_entries.append({
+            "name": Path(lora_path_or_dict).name if isinstance(lora_path_or_dict, (str, Path)) else f"lora_{idx}",
+            "strength": strength,
+            "format": detection["has_standard"] and "Standard LoRA (Rank-Decomposed)" or "Unknown/Other",
+            "load_type": load_type,
+            "elapsed": t_lora_end - t_lora_start,
+        })
+
     # --- 5. Application Loop (with AWQ Fix) ---
+    t_apply_start = time.perf_counter()
     applied_modules_count = 0
     skipped_modules_count = 0
     mod_layer_applied_count = 0
     
     all_A = [] # Initialization for safety
 
-    for module_name_key, weight_list in aggregated_weights.items():
+    apply_pbar_desc = "Applying weights to modules"
+    for module_name_key, weight_list in _tqdm(list(aggregated_weights.items()), desc=apply_pbar_desc, unit="mod", leave=True):
         # Correctly resolving module (handling tuple return if needed from _resolve_module_name, but it returns tuple (name, mod) or just (name, mod) in signature, wait.)
         # _resolve_module_name defined in this file returns Tuple[str, Optional[nn.Module]]
         # Wait, if module is None, it returns None? line 416 returns name, m. line 409 returns None.
@@ -1428,16 +1574,22 @@ def compose_loras_v2(
                 # Standard Linear / Nunchaku
                 if hasattr(module, "proj_down"):
                      target_dtype = module.proj_down.dtype
-                     target_device = module.proj_down.device
+                     # Nunchaku: skip the CPU→CPU device pre-transfer.
+                     # _apply_lora_to_module will move these to the compute device (CUDA)
+                     # itself. Pre-transferring to CPU here is a redundant memcpy (~960
+                     # copies per generation) that wastes CPU memory bandwidth.
+                     all_A.append(A.to(dtype=target_dtype))
+                     all_B_scaled.append((B * scale).to(dtype=target_dtype))
                 elif hasattr(module, "weight"):
                      target_dtype = module.weight.dtype
                      target_device = module.weight.device
+                     all_A.append(A.to(dtype=target_dtype, device=target_device))
+                     all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
                 else:
                      target_dtype = torch.float16
                      target_device = "cuda"
-
-                all_A.append(A.to(dtype=target_dtype, device=target_device))
-                all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
+                     all_A.append(A.to(dtype=target_dtype, device=target_device))
+                     all_B_scaled.append((B * scale).to(dtype=target_dtype, device=target_device))
 
 
         if not all_A:
@@ -1490,6 +1642,10 @@ def compose_loras_v2(
                 logger.info(f"[APPLY] LoRA applied to: {resolved_name}")
             applied_modules_count += 1
 
+    t_apply_end = time.perf_counter()
+    t_apply_elapsed = t_apply_end - t_apply_start
+    t_total_elapsed = t_apply_end - t_start
+
     if skipped_lora_names:
         logger.warning("""\n⚠️  Some weights from the following LoRAs were automatically skipped 
         because modulation layers (img_mod/txt_mod) are extremely sensitive to Nunchaku quantization. 
@@ -1498,7 +1654,42 @@ def compose_loras_v2(
             short_name = os.path.basename(source) if os.path.sep in source else source
             logger.warning(f"   - {short_name}")
 
-    logger.info(f"Sampled LoRA composition complete. Applied: {applied_modules_count}, Mod-patched: {mod_layer_applied_count}, Skipped: {skipped_modules_count}")
+    # Display Report Card
+    card_width = 70
+    border = "┌" + "─" * (card_width - 2) + "┐"
+    divider = "├" + "─" * (card_width - 2) + "┤"
+    bottom = "└" + "─" * (card_width - 2) + "┘"
+
+    def _log_line(left_text: str, right_text: str = ""):
+        padding_len = card_width - 4 - len(left_text) - len(right_text)
+        if padding_len < 0:
+            left_text = left_text[:card_width - 8 - len(right_text)] + "..."
+            padding_len = card_width - 4 - len(left_text) - len(right_text)
+        logger.info(f"│ {left_text}{' ' * padding_len}{right_text} │")
+
+    logger.info(border)
+    title = "NUNCHAKU QWEN LORA COMPOSITION REPORT"
+    title_padding = (card_width - 2 - len(title)) // 2
+    logger.info(f"│{' ' * title_padding}{title}{' ' * (card_width - 2 - len(title) - title_padding)}│")
+    logger.info(divider)
+    
+    for i, entry in enumerate(report_entries, 1):
+        _log_line(f"{i}. {entry['name']}")
+        _log_line(f"   - Strength: {entry['strength']}")
+        _log_line(f"   - Format:   {entry['format']}")
+        _log_line(f"   - Status:   {entry['load_type']}")
+        _log_line(f"   - Time:     {entry['elapsed']:.3f}s")
+        if i < len(report_entries):
+            logger.info("│" + " " * (card_width - 2) + "│")
+            
+    logger.info(divider)
+    _log_line(f"Total Processed:      {len(report_entries)} LoRA(s)")
+    _log_line(f"Layers Applied:       {applied_modules_count} (Attention/MLP)")
+    _log_line(f"Modulation Patched:   {mod_layer_applied_count} (AWQ manual planar)")
+    _log_line(f"Weight Apply Time:    {t_apply_elapsed:.3f}s")
+    _log_line(f"Total Composition:    {t_total_elapsed:.3f}s")
+    logger.info(bottom)
+
     return True
 
 def update_lora_params_v2(
@@ -1515,6 +1706,8 @@ def compose_loras_v2_v2(
         model: torch.nn.Module,
         lora_configs: List[Tuple[Union[str, Path, Dict[str, torch.Tensor]], float]],
         apply_awq_mod: bool | str | None = None,
+        save_precompiled_lora: bool = False,
+        cache_dir: Optional[str] = None,
 ) -> bool:
     """
     V2 node-specific LoRA composition function with AWQ modulation control.
@@ -1547,7 +1740,13 @@ def compose_loras_v2_v2(
     
     # Call compose_loras_v2 with the determined flag
     # Pass as bool explicitly to override default "auto" behavior
-    return compose_loras_v2(model, lora_configs, apply_awq_mod=apply_awq_mod_flag)
+    return compose_loras_v2(
+        model,
+        lora_configs,
+        apply_awq_mod=apply_awq_mod_flag,
+        save_precompiled_lora=save_precompiled_lora,
+        cache_dir=cache_dir,
+    )
 
 
 def set_lora_strength_v2(model: nn.Module, strength: float) -> None:
@@ -1561,7 +1760,9 @@ def set_lora_strength_v2(model: nn.Module, strength: float) -> None:
 
     for name, info in model._lora_slots.items():
         module = _get_module_by_name(model, name)
-        if module is None or info.get("appended", 0) <= 0:
+        # Skip if module not found, no appended weights, or no base_rank recorded
+        # (awq_w4a16 modulation slots don't store base_rank — they're handled by forward patching)
+        if module is None or info.get("appended", 0) <= 0 or "base_rank" not in info:
             continue
 
         base_rank, appended = info["base_rank"], info["appended"]
@@ -1581,27 +1782,33 @@ def reset_lora_v2(model: nn.Module) -> None:
         if module is None:
             continue
 
-    for name, info in model._lora_slots.items():
-        module = _get_module_by_name(model, name)
-        if module is None:
-            continue
-
         module_type = info.get("type", "nunchaku") # Default to nunchaku for backward compatibility logic
 
         if module_type == "nunchaku":
              base_rank = info["base_rank"]
              with torch.no_grad():
-                 pd = unpack_lowrank_weight(module.proj_down.data, down=True)
-                 pu = unpack_lowrank_weight(module.proj_up.data, down=False)
- 
+                 # Use ComfyUI-aware device to stay compatible with its VRAM manager
+                 compute_device = _get_compute_device()
+                 orig_pd_device = module.proj_down.data.device
+                 orig_pu_device = module.proj_up.data.device
+
+                 pd_gpu = module.proj_down.data.to(compute_device)
+                 pu_gpu = module.proj_up.data.to(compute_device)
+
+                 pd = unpack_lowrank_weight(pd_gpu, down=True)
+                 pu = unpack_lowrank_weight(pu_gpu, down=False)
+                 del pd_gpu, pu_gpu  # free intermediates promptly
+
                  if info.get("axis_down", 0) == 0:  # [rank, in]
                      pd_reset = pd[:base_rank, :].clone()
                  else:  # [in, rank]
                      pd_reset = pd[:, :base_rank].clone()
                  pu_reset = pu[:, :base_rank].clone()
- 
-                 module.proj_down.data = pack_lowrank_weight(pd_reset, down=True)
-                 module.proj_up.data = pack_lowrank_weight(pu_reset, down=False)
+                 del pd, pu
+
+                 module.proj_down.data = pack_lowrank_weight(pd_reset, down=True).to(orig_pd_device)
+                 module.proj_up.data = pack_lowrank_weight(pu_reset, down=False).to(orig_pu_device)
+                 del pd_reset, pu_reset
                  module.rank = base_rank
 
         elif module_type == "linear":
@@ -1629,4 +1836,9 @@ def reset_lora_v2(model: nn.Module) -> None:
             
     model._lora_slots.clear()
     model._lora_strength = 1.0
+    if hasattr(model, "_applied_loras"):
+        try:
+            delattr(model, "_applied_loras")
+        except Exception:
+            pass
     logger.info("All LoRA weights have been reset from the model.")

@@ -20,7 +20,7 @@
 
 ---
 
-## Adoption Items (8 features)
+## Adoption Items (7 adopted, 1 rejected)
 
 ### Adoption 1: `_has_ever_had_loras` bypass-path corruption fix
 
@@ -199,59 +199,25 @@ if _cache_dir_path is not None and isinstance(lora_path_or_dict, (str, Path)):
 
 ---
 
-### Adoption 4: TE V2 CPU offload
+### Adoption 4: TE V2 CPU offload — REJECTED (not adopted)
 
 **Target files**: `nodes/te_offload/nunchaku_te_v2.py` (new), `__init__.py`
 
-#### Current code problem
+#### PR claim
 
-ComfyUI-nunchaku's TE loaders (`NunchakuQwenImageEditEncoderLoader`, etc.) keep the encoder on GPU after encode completes. The Qwen2.5-VL edit encoder (LLM + vision ViT) occupies ~4-5 GB. This VRAM remains reserved during KSampler passes, reducing VRAM available to diffusion model blocks.
+Adds three V2 loader nodes (`NunchakuQwenImageEditEncoderLoaderV2`, `NunchakuQwenImageTextEncoderLoaderV2`, `NunchakuQwen3TextEncoderLoaderV2`) with an `offload_after_encode` toggle that moves the text encoder to CPU after encode.
 
-#### PR improvement
+#### Why rejected
 
-Adds three V2 loader nodes:
+1. **Referenced loader classes do not exist.** The PR's `_delegate_load` method attempts to import `NunchakuQwenImageEditEncoderLoader`, `NunchakuQwenImageTextEncoderLoader`, and `NunchakuQwen3TextEncoderLoader` from a module path `custom_nodes/ComfyUI-nunchaku/nodes/models/qwen_text_encoder.py`. Verified against the installed ComfyUI-nunchaku: **this file does not exist**. The actual TE module is `nodes/models/text_encoder.py` and contains only `NunchakuTextEncoderLoader` / `NunchakuTextEncoderLoaderV2` (FLUX T5 — not Qwen). The three Qwen-specific classes the PR references **do not exist in ComfyUI-nunchaku or ComfyUI core**.
 
-- `NunchakuQwenImageEditEncoderLoaderV2` (Qwen2.5-VL edit, vision-aware)
-- `NunchakuQwenImageTextEncoderLoaderV2` (Qwen2.5-VL text-only)
-- `NunchakuQwen3TextEncoderLoaderV2` (FLUX.2 Klein, Qwen3-4B/8B)
+2. **CPU offload is already available via existing ComfyUI mechanisms.** Qwen Image text encoders are loaded through ComfyUI's standard CLIP loader pipeline, which uses `ModelPatcher` for VRAM management. CPU offload is already supported through ComfyUI's built-in model management — no custom node is needed.
 
-Each node has an `offload_after_encode` toggle (default=True). Mechanism:
+3. **The PR's monkey-patch approach (`encode_token_weights` replacement) is unnecessary** when ComfyUI's existing offload infrastructure handles this case.
 
-```python
-def encode_with_offload(token_weight_pairs):
-    compute_device = comfy.model_management.get_torch_device()
-    # 1. Restore CPU → CUDA (if previously offloaded)
-    if current_device.type != compute_device.type:
-        encoder.to(compute_device)
-        object.__setattr__(te_model, "_encoder_device", compute_device)
-        if has_inv_freq_guard:
-            object.__setattr__(te_model, "_inv_freq_fixed", False)
-    # 2. Run original encode
-    result = original_encode(token_weight_pairs)
-    # 3. Offload encoder to CPU
-    encoder.to("cpu")
-    object.__setattr__(te_model, "_encoder_device", torch.device("cpu"))
-    if has_inv_freq_guard:
-        object.__setattr__(te_model, "_inv_freq_fixed", False)
-    torch.cuda.empty_cache()
-    return result
-```
+#### Conclusion
 
-#### Effects
-
-- **VRAM freed**: 4-5 GB released immediately after encode. Available to diffusion model during KSampler.
-- **Auto-restore**: Encoder is automatically moved back to CUDA before the next encode call. Multi-KSampler workflows work correctly on every cycle.
-- **`_inv_freq_fixed` guard**: Correctly handles the Qwen2.5-VL edit encoder's rotary embedding CPU-buffer quirk. After a CPU/CUDA round-trip, `original_inv_freq` ends up on CPU again, so the guard is reset to re-run on the next encode.
-
-#### Relation to md docs
-
-- No existing md doc covers TE offload. **Entirely new feature.**
-
-#### Concerns
-
-1. `torch.cuda.empty_cache()` on every encode introduces a synchronization stall. May conflict with ComfyUI's VRAM management.
-2. Hardcoded nunchaku TE file path `custom_nodes/ComfyUI-nunchaku/nodes/models/qwen_text_encoder.py`. If nunchaku changes layout, `RuntimeError` occurs. `sys.modules` scan fallback exists, but after first failure it's cached, so recovery requires restart.
-3. 4-5 GB CPU↔GPU round-trip on every encode. For workflows that frequently switch prompts, **round-trip latency may outweigh VRAM savings** — a net-negative case. default=True may be too aggressive; default=False might be safer.
+Not adopted. The `nodes/te_offload/` package and its `__init__.py` registration in `__init__.py` are excluded from the merge.
 
 ---
 
@@ -475,10 +441,10 @@ This loop does nothing. The 2nd loop is the real body. Present in both PR and cu
 
 | # | File | Action | Details |
 |---|------|--------|---------|
-| 1 | `nodes/te_offload/__init__.py` | **Adopt fully** | New empty package |
-| 2 | `nodes/te_offload/nunchaku_te_v2.py` | **Adopt fully** | New TE V2 CPU offload (3 nodes) |
+| 1 | `nodes/te_offload/__init__.py` | **Reject** | TE V2 offload — referenced loaders don't exist; CPU offload already available via ComfyUI |
+| 2 | `nodes/te_offload/nunchaku_te_v2.py` | **Reject** | Same — references non-existent `NunchakuQwenImageEditEncoderLoader` etc. |
 | 3 | `nunchaku_code/lora_cache.py` | **Adopt fully** | New precompiled cache module |
-| 4 | `__init__.py` | **Partial adopt** | Add TE_V2_NODES/NAMES; keep Krea2/Diffsynth registration; keep `__version__ = "2.5.1"` |
+| 4 | `__init__.py` | **Partial adopt** | Add TE_V2_NODES/NAMES **excluded**; keep Krea2/Diffsynth registration; keep `__version__ = "2.5.1"` |
 | 5 | `pyproject.toml` | **Overwrite** | Keep `version = "2.5.1"` |
 | 6 | `.gitignore` | **Overwrite** | Keep `.cursor/`, `反省文*`, `backups/`, `scripts/` ignores |
 | 7 | `README.md` | **Overwrite** | Keep language switcher, Diffsynth/Krea2 sections, v2.5.1 URL |
@@ -526,7 +492,7 @@ This loop does nothing. The 2nd loop is the real body. Present in both PR and cu
 | Current main version | `2.5.1` (`pyproject.toml` + `__init__.py`) |
 | PR version (rejected) | `2.4.0` / `2.4.3` (mismatched) |
 | Files changed | 17 (+1465 / -364) |
-| Adoption items | 8 features |
+| Adoption items | 7 features (8 in PR, 1 rejected) |
 | Overwrite items | 6 (rebase-omission rollbacks) |
 | Additional fixes | 3 (not in PR, required during adoption) |
 | Logging unification | **Done** — commit `33ba82e` (7 files, `print()` eliminated, Key Diffusion gated behind `nunchaku_log`) |

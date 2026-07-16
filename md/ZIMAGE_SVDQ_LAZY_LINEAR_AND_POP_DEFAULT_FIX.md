@@ -132,8 +132,8 @@ Plus **layer A’s `pop` bug** meant **callers passing `torch_dtype` still crash
 
 ## Responsibility split (what upstream “should” fix)
 
-| Area | Closest owner | Notes |
-|------|----------------|------|
+| Area | Closest component | Notes |
+|------|-------------------|------|
 | Deferred `Linear` on Windows + AIMDO | **ComfyUI core** | Deliberate optimization; behavior should be documented as spec |
 | `from_linear` using `pop(..., linear.weight.dtype)` | **Nunchaku (library)** | Wrong for Python semantics; can be written safely when `weight is None` |
 | Order of `patch_model` vs `load_model_weights` | **ComfyUI-nunchaku** | Design choice: patch without weights vs reorder |

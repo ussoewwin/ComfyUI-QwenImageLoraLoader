@@ -398,7 +398,7 @@ Three categories of uncontrolled logging existed:
 
 - **All `print()` calls eliminated** from `nodes/lora/` — zero remaining
 - **Key Diffusion** gated behind `nunchaku_log` env var across all 7 node files
-- **Status logs** remain always-on per owner's policy ("ユーザーが何と言おうと出す")
+- **Status logs** remain always-on by design (emitted regardless of user preference)
 - **Console freeze** risk from `print()` eliminated (logger has flush control)
 - **`nunchaku_log=0`** (default) suppresses only per-key mapping details; status logs still flow
 
@@ -417,7 +417,7 @@ These are rebase-omission artifacts where the PR's working copy was stale. They 
 2. **`Krea2ControlNetLoraLoader`** import & registration — PR removes it
 3. **`NunchakuQwenImageDiffsynthControlnet`** import & registration — PR removes it
 4. **`apply_qwen_image_apply_rotary_emb_compat`** patch (`patches/nunchaku_patch.py`, 122 lines) — PR deletes it
-5. **`.gitignore`** entries for `.cursor/`, `反省文*`, `backups/`, `scripts/` — PR removes them
+5. **`.gitignore`** entries for `.cursor/`, `backups/`, `scripts/`, and local-only files — PR removes them
 6. **README** language switcher table, Diffsynth/Krea2 sections, Latest release v2.5.1 URL — PR reverts to v2.4.2
 
 ---
@@ -454,7 +454,7 @@ This loop does nothing. The 2nd loop is the real body. Present in both PR and cu
 | 3 | `nunchaku_code/lora_cache.py` | **Adopt fully** | New precompiled cache module |
 | 4 | `__init__.py` | **Partial adopt** | Add TE_V2_NODES/NAMES **excluded**; keep Krea2/Diffsynth registration; keep `__version__ = "2.5.1"` |
 | 5 | `pyproject.toml` | **Overwrite** | Keep `version = "2.5.1"` |
-| 6 | `.gitignore` | **Overwrite** | Keep `.cursor/`, `反省文*`, `backups/`, `scripts/` ignores |
+| 6 | `.gitignore` | **Overwrite** | Keep `.cursor/`, `backups/`, `scripts/`, and local-only ignores |
 | 7 | `README.md` | **Overwrite** | Keep language switcher, Diffsynth/Krea2 sections, v2.5.1 URL |
 | 8 | `patches/nunchaku_patch.py` | **Overwrite** | Keep `apply_qwen_image_apply_rotary_emb_compat` (122 lines) |
 | 9 | `js/z_qwen_lora_dynamic.js` | **Adopt** | `save_precompiled_lora` widget cache/size |

@@ -269,7 +269,7 @@ Plus **layer A’s `pop` bug** meant **callers passing `torch_dtype` still crash
 
 
 
-| Area | Closest owner | Notes |
+| Area | Closest component | Notes |
 
 |------|----------------|------|
 

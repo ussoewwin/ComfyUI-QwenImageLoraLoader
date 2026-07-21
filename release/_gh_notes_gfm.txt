@@ -1,1 +1,0 @@
-GFM: remove blank lines between table rows (GitHub rendering)

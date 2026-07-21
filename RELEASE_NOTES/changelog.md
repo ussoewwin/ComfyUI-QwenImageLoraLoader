@@ -1,3 +1,10 @@
+<table align="center">
+  <tr>
+    <td align="center" bgcolor="#3478ca" width="88" height="36"><font color="#ffffff"><b>EN</b></font></td>
+    <td align="center" bgcolor="#e5e7eb" width="88" height="36"><a href="https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/blob/main/zhmd/changelogzh.md"><font color="#4b5563"><b>中文</b></font></a></td>
+  </tr>
+</table>
+
 ### v2.5.2 (latest)
 - **Fixed**: Suppressed the cosmetic ComfyUI startup warning `WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.` ([Issue #53](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/53)). The warning fires because the mandatory `apply_rotary_emb` prestartup shim must import `comfy.ldm` modules that import `torch` at module level (all CUDA env setup already ran, so it is harmless). A one-shot root-logger filter installed early in `prestartup_script.py` drops only that single message and lets every other log through. Opt out with `QWENIMAGE_SUPPRESS_TORCH_WARNING=0`.
 - **Technical Details**: See [v2.5.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.2) for complete explanation

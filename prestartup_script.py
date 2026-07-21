@@ -24,6 +24,30 @@ def _load_patch_module(module_name: str, path: str):
     return module
 
 
+# Load the nunchaku patch module once; reuse it for warning suppression and the
+# apply_rotary_emb compat shim.
+_patch_module = None
+try:
+    _patch_module = _load_patch_module(
+        "comfyui_qwenimageloraloader_nunchaku_patch_prestartup",
+        _NUNCHAKU_PATCH_PATH,
+    )
+except Exception:
+    logger.exception("ComfyUI-QwenImageLoraLoader prestartup: failed to load nunchaku patch module")
+
+# Install the cosmetic 'Torch already imported' warning filter first, before any
+# prestartup step imports comfy.ldm (which imports torch) and before main.py logs it.
+if _patch_module is not None:
+    try:
+        if _patch_module.suppress_torch_preimport_warning():
+            logger.debug(
+                "ComfyUI-QwenImageLoraLoader prestartup: torch pre-import warning suppressed"
+            )
+    except Exception:
+        logger.exception(
+            "ComfyUI-QwenImageLoraLoader prestartup: torch warning suppression failed"
+        )
+
 try:
     _docstring_patch_module = _load_patch_module(
         "comfyui_qwenimageloraloader_docstring_patch_prestartup",
@@ -38,16 +62,13 @@ try:
 except Exception:
     logger.exception("ComfyUI-QwenImageLoraLoader prestartup: CausalLM ModelOutput docstring patch failed")
 
-try:
-    _patch_module = _load_patch_module(
-        "comfyui_qwenimageloraloader_nunchaku_patch_prestartup",
-        _NUNCHAKU_PATCH_PATH,
-    )
-    if _patch_module.apply_qwen_image_apply_rotary_emb_compat():
-        logger.info("ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat applied")
-    else:
-        logger.debug(
-            "ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat not needed or already present"
-        )
-except Exception:
-    logger.exception("ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat failed")
+if _patch_module is not None:
+    try:
+        if _patch_module.apply_qwen_image_apply_rotary_emb_compat():
+            logger.info("ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat applied")
+        else:
+            logger.debug(
+                "ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat not needed or already present"
+            )
+    except Exception:
+        logger.exception("ComfyUI-QwenImageLoraLoader prestartup: apply_rotary_emb compat failed")

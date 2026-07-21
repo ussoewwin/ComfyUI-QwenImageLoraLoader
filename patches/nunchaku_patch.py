@@ -24,6 +24,65 @@ _NUNCHAKU_QWENIMAGE_APPLY_ROTARY_PATTERNS = (
     ),
 )
 
+_torch_preimport_warning_suppressed: bool = False
+_TORCH_PREIMPORT_WARNING_MARKER = "Torch already imported"
+
+
+def _torch_warning_suppression_disabled_by_env() -> bool:
+    value = os.environ.get("QWENIMAGE_SUPPRESS_TORCH_WARNING", "").strip().lower()
+    return value in ("0", "false", "no", "off", "disable", "disabled")
+
+
+class _TorchPreimportWarningFilter(logging.Filter):
+    """Drop ComfyUI's cosmetic 'Torch already imported' warning.
+
+    The apply_rotary_emb compat shim must run in prestartup (before ComfyUI-nunchaku
+    loads), and installing it requires importing comfy.ldm modules, which import torch.
+    ComfyUI main.py then warns that torch entered sys.modules early. cuda_malloc and all
+    CUDA env setup already ran before prestartup, so the early import is harmless; this
+    filter hides only that single message and then lets every record through.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._suppressed = False
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if self._suppressed:
+            return True
+        try:
+            message = record.getMessage()
+        except Exception:
+            return True
+        if _TORCH_PREIMPORT_WARNING_MARKER in message:
+            self._suppressed = True
+            return False
+        return True
+
+
+def suppress_torch_preimport_warning() -> bool:
+    """Install a one-shot root-logger filter hiding the cosmetic torch pre-import warning.
+
+    Must be called during prestartup (before ComfyUI main.py logs the warning).
+    Set QWENIMAGE_SUPPRESS_TORCH_WARNING=0 to keep the warning visible.
+    """
+    global _torch_preimport_warning_suppressed
+    if _torch_preimport_warning_suppressed:
+        return True
+    if _torch_warning_suppression_disabled_by_env():
+        logger.info(
+            "Torch pre-import warning suppression skipped "
+            "(QWENIMAGE_SUPPRESS_TORCH_WARNING is disabled)"
+        )
+        return False
+    try:
+        logging.getLogger().addFilter(_TorchPreimportWarningFilter())
+        _torch_preimport_warning_suppressed = True
+        return True
+    except Exception as exc:
+        logger.debug("Failed to install torch pre-import warning filter: %s", exc)
+        return False
+
 
 def _rotary_compat_disabled_by_env() -> bool:
     value = os.environ.get("QWENIMAGE_ROTARY_COMPAT", "").strip().lower()

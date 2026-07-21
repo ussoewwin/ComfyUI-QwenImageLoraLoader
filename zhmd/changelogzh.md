@@ -7,7 +7,7 @@
 
 ### v2.5.2 (最新)
 - **已修复**: 抑制了 ComfyUI 启动时的无害警告 `WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.`（[Issue #53](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/53)）。该警告出现，是因为必需的 `apply_rotary_emb` prestartup 垫片必须导入在模块层级导入 `torch` 的 `comfy.ldm` 模块（此时所有 CUDA 环境设置均已完成，因此无害）。在 `prestartup_script.py` 早期安装的一次性根日志过滤器仅丢弃这一条消息，其余所有日志照常输出。可通过 `QWENIMAGE_SUPPRESS_TORCH_WARNING=0` 关闭该抑制。
-- **技术详情**: 请参阅 [v2.5.2 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.2) 获取完整说明
+- **技术详情**: 请参阅 [v2.5.2 发行说明](v2.5.2.md) 获取完整说明
 
 ### v2.5.1
 - **已添加**: 通过 `Krea2ControlNetLoraLoader` 以及 `NunchakuQI&ZITDiffsynthControlnet` 中的 Krea2 路由，新增 Krea2 depth ControlNet LoRA 支持。从 `controlnet` 文件夹加载 Krea2 depth controlnet-lora 文件（例如 `krea2-depth-control-lora.safetensors`），将其 `MODEL_PATCH` 输出连接到 controlnet 节点的 `model_patch` 输入，并在 Krea2 / SingleStreamDiT 模型上应用 depth 条件。

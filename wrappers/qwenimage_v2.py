@@ -1,9 +1,11 @@
 from typing import Callable, List, Tuple, Union
 from pathlib import Path
+import os
 
 import torch
 from torch import nn
 import comfy.model_management
+import folder_paths
 import logging
 
 from nunchaku import NunchakuQwenImageTransformer2DModel
@@ -136,12 +138,13 @@ class ComfyQwenImageWrapperV2(nn.Module):
         )
         
         # Deep comparison of LoRA stacks to detect any changes
-        # This ensures we catch changes in weights, paths, or order
+        # Check against the shared model's currently composed LoRAs to handle multiple wrappers sharing the model.
+        model_applied = getattr(self.model, "_applied_loras", None)
         loras_changed = False
-        if self._applied_loras is None or len(self._applied_loras) != len(self.loras):
+        if model_applied is None or len(model_applied) != len(self.loras):
             loras_changed = True
         else:
-            for applied, current in zip(self._applied_loras, self.loras):
+            for applied, current in zip(model_applied, self.loras):
                 if applied != current:
                     loras_changed = True
                     break
@@ -157,6 +160,7 @@ class ComfyQwenImageWrapperV2(nn.Module):
         if loras_changed or model_is_dirty or device_changed:
             # The compose function handles resetting before applying the new stack
             reset_lora_v2(self.model)
+            self.model._applied_loras = self.loras.copy()
             self._applied_loras = self.loras.copy()
             
             # Reset cache when LoRAs change to prevent stale cache in multi-stage workflows
@@ -201,10 +205,32 @@ class ComfyQwenImageWrapperV2(nn.Module):
 
             # --- END NEW VRAM CHECK ---
 
-            # 4. Compose LoRAs using v2-specific function. This changes internal tensor shapes.
-            # Returns True if successful (supported format), False if unsupported (skipped).
+            # 4. Build cache args — same pattern as the V1 wrapper.
+            try:
+                _comfy_base = str(Path(folder_paths.models_dir).parent)
+            except Exception:
+                _comfy_base = None
+
+            # Separate per-LoRA meta dicts and derive the global save_precompiled flag.
+            _lora_configs_clean = []
+            _any_save_flag = False
+            for _entry in self.loras:
+                _lc_path = _entry[0]
+                _lc_strength = _entry[1]
+                _lc_meta: dict = _entry[2] if len(_entry) > 2 else {}
+                _lora_configs_clean.append((_lc_path, _lc_strength, _lc_meta))
+                if _lc_meta.get("save_precompiled", False):
+                    _any_save_flag = True
+
+            # 5. Compose LoRAs using v2-specific function.
             logger.info(f"[V2 Node] 🔧 Forward pass: calling compose_loras_v2_v2 with apply_awq_mod={self.apply_awq_mod} (type: {type(self.apply_awq_mod).__name__})")
-            is_supported_format = compose_loras_v2_v2(self.model, self.loras, apply_awq_mod=self.apply_awq_mod)
+            is_supported_format = compose_loras_v2_v2(
+                self.model,
+                _lora_configs_clean,
+                apply_awq_mod=self.apply_awq_mod,
+                save_precompiled_lora=_any_save_flag,
+                cache_dir=_comfy_base,
+            )
 
             # Validate composition result; if 0 targets after a crash/transition, retry once
             # But ONLY if the format was supported. If unsupported, retrying is pointless.
@@ -217,7 +243,13 @@ class ComfyQwenImageWrapperV2(nn.Module):
                     logger.warning("[V2 Node] LoRA composition reported 0 target modules. Forcing reset and one retry.")
                     try:
                         reset_lora_v2(self.model)
-                        compose_loras_v2_v2(self.model, self.loras, apply_awq_mod=self.apply_awq_mod)
+                        compose_loras_v2_v2(
+                            self.model,
+                            _lora_configs_clean,
+                            apply_awq_mod=self.apply_awq_mod,
+                            save_precompiled_lora=_any_save_flag,
+                            cache_dir=_comfy_base,
+                        )
                     except Exception as e:
                         logger.error(f"[V2 Node] LoRA re-compose retry failed: {e}")
             else:
@@ -251,7 +283,9 @@ class ComfyQwenImageWrapperV2(nn.Module):
 
             # --- END MODIFIED SECTION ---
 
-            # Update last known device signature after (re)composition
+            # Always update state tracking so subsequent calls see a consistent snapshot.
+            self.model._applied_loras = self.loras.copy()
+            self._applied_loras = self.loras.copy()
             self._last_device = current_device
 
         # Caching logic

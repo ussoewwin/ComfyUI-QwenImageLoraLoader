@@ -73,7 +73,20 @@ class NunchakuQwenImageLoraStackV1:
                     },
                 ),
             },
-            "optional": FlexibleOptionalInputType(),
+            "optional": FlexibleOptionalInputType({
+                "save_precompiled_lora": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": (
+                            "When enabled, saves a pre-fused structural cache for each LoRA to "
+                            "ComfyUI/models/SVDQLora/. Subsequent loads skip regex classify and tensor "
+                            "fusion, reducing per-generation CPU latency. Strength scaling still applies "
+                            "at inference time."
+                        ),
+                    },
+                ),
+            }),
             # Use 'hidden' here to let JS pass dynamic LoRA data
             "hidden": {
                 "prompt": "PROMPT",
@@ -90,7 +103,7 @@ class NunchakuQwenImageLoraStackV1:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control."
 
-    def load_lora_stack(self, model, cpu_offload="disable", apply_awq_mod=True, stack_enabled=True, **kwargs):
+    def load_lora_stack(self, model, cpu_offload="disable", apply_awq_mod=True, stack_enabled=True, save_precompiled_lora=False, **kwargs):
         # Dynamic widgets passed from JS will appear in kwargs
         # Named lora_1, lora_2... with values as dictionaries: {'enabled': bool, 'lora_name': str, 'lora_strength': float}
         lora_keys = [key for key in kwargs.keys() if key.startswith("lora_")]
@@ -228,8 +241,8 @@ class NunchakuQwenImageLoraStackV1:
 
         for lora_name, lora_strength in loras_to_apply:
             lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-            ret_model_wrapper.loras.append((lora_path, lora_strength))
-            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength})")
+            ret_model_wrapper.loras.append((lora_path, lora_strength, {"save_precompiled": save_precompiled_lora}))
+            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength}, save_precompiled={save_precompiled_lora})")
 
         logger.info(f"Total LoRAs in stack: {len(ret_model_wrapper.loras)}")
         return (ret_model,)

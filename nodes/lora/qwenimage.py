@@ -30,17 +30,21 @@ class NunchakuQwenImageLoraLoader:
     Node for loading and applying a LoRA to a Nunchaku Qwen Image model.
     """
     @classmethod
-    def IS_CHANGED(s, model, lora_name, lora_strength, cpu_offload="disable", *args, **kwargs):
+    def IS_CHANGED(s, lora_name, lora_strength, cpu_offload="disable", save_precompiled_lora=False, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
+        Note: model is intentionally excluded — ComfyUI does not pass MODEL-type
+        inputs (which come from other nodes' outputs) to IS_CHANGED.
+        Including it would cause a TypeError, which ComfyUI converts to NaN,
+        making the node always re-execute on every generation.
         """
         import hashlib
         m = hashlib.sha256()
         m.update(lora_name.encode())
         m.update(str(lora_strength).encode())
-        m.update(str(model).encode())
         m.update(cpu_offload.encode())
+        m.update(str(save_precompiled_lora).encode())
         return m.digest().hex()
 
     @classmethod
@@ -75,7 +79,22 @@ class NunchakuQwenImageLoraLoader:
                         "tooltip": "CPU offload setting. 'auto' enables offload when VRAM is low, 'enable' forces offload, 'disable' disables offload.",
                     },
                 ),
-            }
+            },
+            "optional": {
+                "save_precompiled_lora": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": (
+                            "When enabled, saves a pre-fused structural cache of this LoRA to "
+                            "ComfyUI/models/SVDQLora/<name>_precompiled.safetensors after the first "
+                            "load. Subsequent loads skip the regex classify and tensor fusion stages, "
+                            "reducing per-generation CPU latency. Strength scaling still applies at "
+                            "inference time. Disable to force a full re-fuse (e.g. after updating the LoRA)."
+                        ),
+                    },
+                ),
+            },
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -85,7 +104,7 @@ class NunchakuQwenImageLoraLoader:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "LoRAs are used to modify the diffusion model, altering the way in which latents are denoised."
 
-    def load_lora(self, model, lora_name: str, lora_strength: float, cpu_offload: str = "disable"):
+    def load_lora(self, model, lora_name: str, lora_strength: float, cpu_offload: str = "disable", save_precompiled_lora: bool = False):
         if abs(lora_strength) < 1e-5:
             return (model,)
 
@@ -200,9 +219,12 @@ class NunchakuQwenImageLoraLoader:
         ret_model_wrapper.model = transformer
 
         lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-        ret_model_wrapper.loras.append((lora_path, lora_strength))
+        # Carry the save_precompiled flag as a metadata dict in the 3-tuple so the
+        # wrapper can forward it to compose_loras_v2 without changing the public
+        # (path, strength) contract used elsewhere.
+        ret_model_wrapper.loras.append((lora_path, lora_strength, {"save_precompiled": save_precompiled_lora}))
 
-        logger.info(f"LoRA added: {lora_name} (strength={lora_strength})")
+        logger.info(f"LoRA added: {lora_name} (strength={lora_strength}, save_precompiled={save_precompiled_lora})")
         logger.debug(f"Total LoRAs: {len(ret_model_wrapper.loras)}")
 
         return (ret_model,)
@@ -213,16 +235,20 @@ class NunchakuQwenImageLoraStack:
     Node for loading and applying multiple LoRAs to a Nunchaku Qwen Image model with dynamic UI.
     """
     @classmethod
-    def IS_CHANGED(cls, model, lora_count, cpu_offload="disable", **kwargs):
+    def IS_CHANGED(cls, lora_count, cpu_offload="disable", save_precompiled_lora=False, **kwargs):
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
+        Note: model is intentionally excluded — ComfyUI does not pass MODEL-type
+        inputs (which come from other nodes' outputs) to IS_CHANGED.
+        Including it would cause a TypeError, which ComfyUI converts to NaN,
+        making the node always re-execute on every generation.
         """
         import hashlib
         m = hashlib.sha256()
-        m.update(str(model).encode())
         m.update(str(lora_count).encode())
         m.update(cpu_offload.encode())
+        m.update(str(save_precompiled_lora).encode())
         # Hash all LoRA parameters
         for i in range(1, 11):
             m.update(kwargs.get(f"lora_name_{i}", "").encode())
@@ -261,6 +287,20 @@ class NunchakuQwenImageLoraStack:
                     },
                 ),
             },
+            "optional": {
+                "save_precompiled_lora": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": (
+                            "When enabled, saves a pre-fused structural cache for each LoRA in the "
+                            "stack to ComfyUI/models/SVDQLora/. Subsequent loads skip the regex "
+                            "classify and tensor fusion stages, reducing per-generation CPU latency. "
+                            "Strength scaling still applies at inference time."
+                        ),
+                    },
+                ),
+            },
         }
 
         # Add all LoRA inputs (up to 10 slots)
@@ -289,7 +329,7 @@ class NunchakuQwenImageLoraStack:
     CATEGORY = "Nunchaku"
     DESCRIPTION = "Apply multiple LoRAs to a diffusion model in a single node with dynamic UI control. v1.0.3"
 
-    def load_lora_stack(self, model, lora_count, cpu_offload="disable", **kwargs):
+    def load_lora_stack(self, model, lora_count, cpu_offload="disable", save_precompiled_lora: bool = False, **kwargs):
         loras_to_apply = []
         
         # Process only the number of LoRAs specified by lora_count
@@ -419,8 +459,11 @@ class NunchakuQwenImageLoraStack:
 
         for lora_name, lora_strength in loras_to_apply:
             lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
-            ret_model_wrapper.loras.append((lora_path, lora_strength))
-            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength})")
+            # Carry the save_precompiled flag as a metadata dict in the 3-tuple so the
+            # wrapper can forward it to compose_loras_v2 without changing the public
+            # (path, strength) contract used elsewhere.
+            ret_model_wrapper.loras.append((lora_path, lora_strength, {"save_precompiled": save_precompiled_lora}))
+            logger.debug(f"LoRA added to stack: {lora_name} (strength={lora_strength}, save_precompiled={save_precompiled_lora})")
 
         logger.info(f"Total LoRAs in stack: {len(ret_model_wrapper.loras)}")
 

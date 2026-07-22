@@ -63,6 +63,12 @@ app.registerExtension({
                 node.cachedApplyAwqMod = applyAwqModWidget;
             }
 
+            // Cache save_precompiled_lora widget
+            const savePrecompiledWidget = all.find(w => w.name === "save_precompiled_lora");
+            if (savePrecompiledWidget) {
+                node.cachedSavePrecompiled = savePrecompiledWidget;
+            }
+
             for (let i = 1; i <= 10; i++) {
                 const wName = all.find(w => w.name === `lora_name_${i}`);
                 const wStrength = all.find(w => w.name === `lora_strength_${i}`);
@@ -141,6 +147,11 @@ app.registerExtension({
                 this.widgets.push(node.cachedApplyAwqMod);
             }
 
+            // Add save_precompiled_lora widget from cache
+            if (node.cachedSavePrecompiled) {
+                this.widgets.push(node.cachedSavePrecompiled);
+            }
+
             // Add only visible LoRA slots (non-visible widgets are removed from array)
             for (let i = 1; i <= count; i++) {
                 const pair = this.cachedWidgets[i];
@@ -155,8 +166,9 @@ app.registerExtension({
             const SLOT_H = 54;
             const CPU_OFFLOAD_H = node.cachedCpuOffload ? 40 : 0;
             const APPLY_AWQ_MOD_H = node.cachedApplyAwqMod ? 30 : 0;
+            const SAVE_PRECOMPILED_H = node.cachedSavePrecompiled ? 30 : 0;
             const PADDING = 20;
-            const targetH = HEADER_H + CPU_OFFLOAD_H + APPLY_AWQ_MOD_H + (count * SLOT_H) + PADDING;
+            const targetH = HEADER_H + CPU_OFFLOAD_H + APPLY_AWQ_MOD_H + SAVE_PRECOMPILED_H + (count * SLOT_H) + PADDING;
 
             this.setSize([this.size[0], targetH]);
 

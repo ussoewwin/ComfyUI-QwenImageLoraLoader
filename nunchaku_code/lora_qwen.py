@@ -1315,6 +1315,8 @@ def compose_loras_v2(
     # --- 3. Debug Inspection (First LoRA) ---
     # Safe unpack: entries may be 2-tuples (path, strength) or 3-tuples
     # (path, strength, meta_dict) when the cache meta-dict is attached by the node.
+    # OPTIMIZATION: Cache first LoRA state dict for reuse in the processing loop
+    _cached_first_lora_state_dict = None
     if lora_configs:
         _first_entry = lora_configs[0]
         first_lora_path_or_dict = _first_entry[0]
@@ -1336,6 +1338,7 @@ def compose_loras_v2(
             _first_detection = {"has_standard": True, "details": "Standard LoRA (Precompiled Cache)"}
         else:
             first_lora_state_dict = _load_lora_state_dict_robust(first_lora_path_or_dict)
+            _cached_first_lora_state_dict = first_lora_state_dict  # Cache for reuse in main loop
             # Simple logging of format detection
             _first_detection = _detect_lora_format(first_lora_state_dict)
             _log_lora_format_detection(str(first_lora_path_or_dict)[:50], _first_detection)
@@ -1417,7 +1420,12 @@ def compose_loras_v2(
         # ------------------------------------------------------------------ #
         # NORMAL (FULL) FUSE PATH                                            #
         # ------------------------------------------------------------------ #
-        lora_state_dict = _load_lora_state_dict_robust(lora_path_or_dict)
+        # Reuse first LoRA state dict cached during debug inspection (avoids double-read)
+        # Skip reuse when precompiled cache is enabled (matches original flow)
+        if idx == 0 and _cached_first_lora_state_dict is not None and _cache_path is None:
+            lora_state_dict = _cached_first_lora_state_dict
+        else:
+            lora_state_dict = _load_lora_state_dict_robust(lora_path_or_dict)
         if not lora_state_dict:
             continue
 

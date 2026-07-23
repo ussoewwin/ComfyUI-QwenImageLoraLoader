@@ -51,7 +51,7 @@ When the same LoRA file is reused, classify + fuse no longer need to re-run from
 - mtime sidecar invalidation when the source LoRA file changes
 - B tensors stored unscaled so the strength slider remains correct at apply time
 
-Optional UI: `save_precompiled_lora` widget (see item 7).
+Optional UI: `save_precompiled_lora` widget (see item 6).
 
 ### 4. GPU pack / unpack for nunchaku LoRA apply
 

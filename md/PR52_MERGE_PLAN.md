@@ -1,32 +1,67 @@
-# PR #52 Merge Plan — Technical Analysis & Adoption Items
+# PR #52 Merge Plan — Technical Analysis and Adoption Items
 
 ## Overview
 
 - **PR**: [#52 feat: GPU compile acceleration, atomic cache writes, and V2 TE loaders with CPU offload](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/52)
 - **Author**: [Sniper199999](https://github.com/Sniper199999)
-- **Merge-base**: `14f1e32` (v2.5.1 established main HEAD)
-- **Scope**: +1465 / -364 across 17 files
-- **Policy**: **Approve the proposal, overwrite problematic sections with current v2.5.1 code**
-- **Conclusion**: No malice — valuable contributions mixed with stale v2.4.x working-copy artifacts due to rebase omission
+- **PR base (merge-base)**: `14f1e32` (v2.5.1 main HEAD at PR creation time)
+- **PR head**: `601c79d` (branch `feature/gpu-perf-and-te-offload-v2`, single commit)
+- **Remote main HEAD**: `930fd82` (message `Update README.md`. Tree identical to previous `f82ccd1` at `ba4dedb` — tip-only update with no content diff)
+- **Version**: main has **`2.5.2`** in both `pyproject.toml` and `__init__.py`. PR `__init__.py` alone is **`2.4.0`** (must discard)
+- **Change size**: +1310 / -330, **15 files** (matches `gh pr view` / `git diff origin/main...601c79d`)
+- **Merge state (remote re-check)**: `mergeable=CONFLICTING` / `mergeStateStatus=DIRTY` / `state=OPEN`
+- **Measured conflict files (`origin/main` ← `601c79d` `--no-commit` merge)**:
+  1. `__init__.py`
+  2. `nodes/lora/qwenimage_v3.py`
+  3. `patches/nunchaku_patch.py`
+- **Policy**: **Keep the adoptable parts of the PR. One-click GitHub Merge is impossible due to conflicts. Bring the PR in with conflict resolution, then overwrite regressions / stale code with the correct current v2.5.2 shape.**
+- **Conclusion**: Valuable contributions are mixed with leftover v2.4.x working-copy residue from a missing rebase. The PR cannot be merged as-is. Keep valuable proposals; repair regressions by overwriting with v2.5.2. Conflict resolution centers on the three files in the table below.
 
 ---
 
 ## Premise
 
-- The PR is correctly based on v2.5.1 `main`, but the working copy was from the v2.4.x era and was not rebased before commit.
-- The PR adds genuinely valuable features: TE V2 CPU offload, LoRA precompiled cache, GPU pack/unpack optimization, and a real bug fix for bypass-path wrapper corruption.
-- The PR also accidentally reverts v2.5.0/v2.5.1 established features (version bump, Krea2/Diffsynth ControlNet registration, rotary compat patch, `.gitignore` entries, README structure).
-- **Policy**: Approve the proposal itself, then overwrite the problematic sections with current v2.5.1 code so v2.5.x achievements are preserved while new features are absorbed.
+### Why this plan exists
+
+**This plan exists to make sure the adoptable parts of the PR actually survive.** Merging the PR is the intake path for the contribution; the later overwrite is only site preparation so those proposals are not dragged into regressions. The remote is CONFLICTING, so intake requires conflict resolution.
+
+- Valuable proposals (Adoption 1–3, 5–7 below) are the payload of this plan.
+- “Overwrite” and “Additional fixes” exist only to protect those adoption items from stale v2.4.x code bundled in the same PR.
+
+### Why the PR is worth keeping
+
+The PR includes contributions worth taking:
+
+- LoRA precompiled cache (disk persistence, atomic writes, mtime invalidation)
+- GPU pack/unpack optimization (pack/unpack/cat completed on CUDA)
+- `_has_ever_had_loras` bypass-path corruption fix (real bug from ComfyUI’s caching model)
+- Removing the `model` argument from `IS_CHANGED` (stops forced re-compose every generation)
+- `set_lora_strength_v2` `base_rank` guard, and dynamic UI support for the `save_precompiled_lora` widget
+
+### Why the PR cannot be merged as-is
+
+- **Remote state**: `mergeable=CONFLICTING` / `mergeStateStatus=DIRTY`. GitHub UI Merge will not work. Conflicts are `__init__.py`, `qwenimage_v3.py`, and `nunchaku_patch.py` (measured).
+- The PR correctly bases on v2.5.1 `main` (`14f1e32`), but the working copy was still from the v2.4.x era and was not rebased before commit.
+- As a result it wrongly rolls back features established in v2.5.0/v2.5.1 (version bump, Krea2/Diffsynth ControlNet registration, rotary compat patch, `.gitignore` entries).
+- main has since advanced to **v2.5.2** (tip `930fd82`), including `suppress_torch_preimport_warning`, `transformers_qwen_vl_docstring_patch`, and logging unification (`33ba82e`) that the PR never saw. A bad conflict resolution would delete these.
+
+### Policy (core of this plan)
+
+**Merge the PR as the intake path (conflict resolution required because the remote is CONFLICTING). Then overwrite every regressing / stale section with the correct current v2.5.2 shape so the proposals can survive on a clean tree.**
+
+- “Intake” = accept the contributor’s intent and put adoption items into the tree. The green GitHub Merge button is currently unavailable. CLI / manual conflict-resolved merge (or equivalent intake) is required.
+- “Overwrite” = after intake, restore every regressing / stale place to the correct v2.5.2 form. This does not void the PR; it **protects the adopted parts** from stale code shipped with them.
+- Goal: keep valuable proposals in the tree, repair regressions, and preserve v2.5.x achievements (including v2.5.2).
 
 ---
 
-## Adoption Items (7 adopted, 1 rejected)
+## Adoption items (7 adopt, 1 reject)
 
 ### Adoption 1: `_has_ever_had_loras` bypass-path corruption fix
 
 **Target file**: `wrappers/qwenimage.py`
 
-#### Current code problem
+#### Problem in current code
 
 ```python:159:162:wrappers/qwenimage.py
         model_is_dirty = (
@@ -42,17 +77,17 @@
             self._applied_loras = self.loras.copy()
 ```
 
-`load_lora()` has a side effect: it permanently mutates the input model's `diffusion_model` to a `ComfyQwenImageWrapper(loras=[])` — call this W1. The returned model's wrapper (W2) holds the actual LoRAs and **shares the same `NunchakuQwenImageTransformer2DModel` instance** as W1.
+`load_lora()` has a side effect: it permanently rewrites the input model’s `diffusion_model` to `ComfyQwenImageWrapper(loras=[])`. Call that W1. The returned model’s wrapper (W2) holds the real LoRAs and **shares the same `NunchakuQwenImageTransformer2DModel` instance** with W1.
 
-When the LoRA node is bypassed, ComfyUI routes through the input model (with W1). On W1's first forward pass:
+When a LoRA node is bypassed, ComfyUI routes through the input model (W1). On W1’s first forward path:
 
 1. `_applied_loras = None` → `loras_changed = True`
-2. `reset_lora_v2(shared_transformer)` → **wipes the LoRA composition that W2 had applied**
-3. On the next run with LoRA active again, W2 sees `_applied_loras == loras` → skips recompose → LoRA is silently missing
+2. `reset_lora_v2(shared_transformer)` → **wipes the LoRA configuration W2 had applied**
+3. Next time LoRA is enabled again, W2 sees `_applied_loras == loras` and skips recompose → LoRA silently disappears
 
-The result is intermittent LoRA corruption: LoRA appears to stop working randomly, and toggling bypass restores it briefly before it breaks again.
+Result: intermittent LoRA corruption. LoRA appears to stop at random, briefly recovers when toggling bypass, then breaks again.
 
-#### PR improvement
+#### Improvement from the PR
 
 ```python
 # __init__ — add flag
@@ -63,9 +98,9 @@ if self.loras:
     self._has_ever_had_loras = True
 
 model_is_dirty = (
-    self._has_ever_had_loras and  # We were (or are) a LoRA manager
-    not self.loras and            # We currently expect no LoRA
-    hasattr(self.model, "_lora_slots") and self.model._lora_slots  # But the model has LoRA
+    self._has_ever_had_loras and  # Was (or is) a LoRA manager
+    not self.loras and            # Currently needs no LoRA
+    hasattr(self.model, "_lora_slots") and self.model._lora_slots  # But the model still has LoRA
 )
 
 if loras_changed or model_is_dirty or device_changed:
@@ -75,39 +110,39 @@ if loras_changed or model_is_dirty or device_changed:
     # ...
 ```
 
-W1 (`_has_ever_had_loras = False`) now skips the entire transformer-mutation block. Only wrappers that actually manage LoRAs can reset and recompose the shared transformer.
+W1 (`_has_ever_had_loras = False`) skips the entire transformer mutation block. Only wrappers that actually manage LoRA may reset / recompose the shared transformer.
 
 #### Effects
 
-- **Fixes**: Intermittent LoRA silent-disappearance on bypass toggle
-- **Fixes**: LoRA not re-applying after bypass restore because W2 skips recompose
-- **Safety**: `_has_ever_had_loras` is monotonic (once True, never reverts), so W1 permanently avoids reset
+- **Fix**: intermittent silent LoRA loss when toggling bypass
+- **Fix**: after restoring bypass, W2 skips recompose so LoRA is not reapplied
+- **Safety**: `_has_ever_had_loras` is monotonic (once True, stays True). W1 permanently avoids reset
 
 #### Relation to md docs
 
-- `QWEN_IMAGE_CONTROLNET_AND_GETATTR_FIX.md` (v2.4.2 `__getattr__` recursion fix) is a different location, but the same bug family: "wrapper incorrectly mutates shared transformer"
-- `PR28_FIX_EXPLANATION.md` recorded an `IS_CHANGED` fix; this is the same category of correct adaptation to ComfyUI's caching/execution model
+- `QWEN_IMAGE_CONTROLNET_AND_GETATTR_FIX.md` (v2.4.2 `__getattr__` recursion fix) is a different site, but same bug family: “wrapper wrongly mutates shared transformer”
+- `PR28_FIX_EXPLANATION.md` records `IS_CHANGED` fixes. This item is the same category: correct adaptation to ComfyUI’s cache / execution model
 
 ---
 
-### Adoption 2: Remove `model` argument from `IS_CHANGED`
+### Adoption 2: Remove `model` from `IS_CHANGED`
 
-**Target files**: `nodes/lora/qwenimage.py`, `nodes/lora/qwenimage_v3.py`, `nodes/lora/qwenimage_v2.py` (v2 is missing the fix in the PR — must apply manually)
+**Target files**: `nodes/lora/qwenimage.py`, `nodes/lora/qwenimage_v3.py`, `nodes/lora/qwenimage_v2.py` (v2 is missing the PR fix — manual apply required)
 
-#### Current code problem
+#### Problem in current code
 
-```python:36:nodes/lora/qwenimage.py
+```python:33:nodes/lora/qwenimage.py
     def IS_CHANGED(s, model, lora_name, lora_strength, cpu_offload="disable", *args, **kwargs):
 ```
 
-ComfyUI's caching system calls `IS_CHANGED` **without** the `model` argument. MODEL-type inputs (outputs from other nodes) are not passed. Result:
+ComfyUI’s cache system calls `IS_CHANGED` without passing `model`. MODEL-type inputs (outputs of other nodes) are not passed. Result:
 
-1. `model` argument is not provided → `TypeError`
-2. ComfyUI converts unhandled exceptions in `IS_CHANGED` to `NaN`
-3. `NaN` is the sentinel that tells ComfyUI to always re-execute the node
-4. **Full LoRA recomposition on every queue run, even when nothing changed**
+1. `model` not passed → `TypeError`
+2. ComfyUI turns the unhandled exception inside `IS_CHANGED` into `NaN`
+3. `NaN` is ComfyUI’s sentinel for “always re-run the node”
+4. **LoRA is re-composed on every queue run even when nothing changed**
 
-#### PR improvement
+#### Improvement from the PR
 
 ```python
 def IS_CHANGED(s, lora_name, lora_strength, cpu_offload="disable", save_precompiled_lora=False, **kwargs):
@@ -120,21 +155,23 @@ def IS_CHANGED(s, lora_name, lora_strength, cpu_offload="disable", save_precompi
     return m.digest().hex()
 ```
 
-`model` is removed from the signature; excess arguments are absorbed by `**kwargs`. Hash is computed from lora_name, lora_strength, cpu_offload, and save_precompiled_lora only.
+Remove `model` from the signature; absorb extras via `**kwargs`. Hash only lora_name, lora_strength, cpu_offload, and save_precompiled_lora.
 
 #### Effects
 
-- **Fixes**: Every-generation LoRA recomposition is no longer forced
-- **Reduces**: 1-3 seconds per generation for 500MB LoRA, 5-10 seconds for 2GB LoRA
-- **Side effect**: As long as non-LoRA parameters don't change, hash is identical → compose is skipped
+- **Fix**: eliminate forced LoRA re-compose every generation
+- **Reduction**: ~1–3 s/generation for a 500MB LoRA, ~5–10 s for a 2GB LoRA
+- **Side effect**: if non-LoRA parameters are unchanged, the hash matches → compose is skipped
 
 #### Relation to md docs
 
-- **Evolution of** `PR28_FIX_EXPLANATION.md` section ② "Fix 2: Additional Fixes Applied (IS_CHANGED Methods)". PR #28 added a default value for `cpu_offload` but kept `model`. PR #52 removes `model` entirely — a more fundamental fix. They are compatible.
+- Evolution of `PR28_FIX_EXPLANATION.md` section ② “Fix 2: Additional Fixes Applied (IS_CHANGED Methods)”. PR #28 only added a `cpu_offload` default and kept `model`. PR #52 removes `model` entirely — a more fundamental fix. Both are compatible.
 
-#### Note
+#### Notes
 
-The PR does **not** apply this fix to `qwenimage_v2.py`. When adopting, the same fix must be applied to v2 as well.
+- **Remote main (`930fd82`) at plan time**: `IS_CHANGED` in `qwenimage.py` / `qwenimage_v2.py` / `qwenimage_v3.py` still had `model` (Adoption 2 not yet applied).
+- **PR (`601c79d`)**: `model` removed from `qwenimage.py` and `qwenimage_v3.py`. **`qwenimage_v2.py` still has `model` in the PR** → Additional-2 must apply it manually.
+- **Conflict**: `qwenimage_v3.py` content-conflicts on merge (logging unification + Adoption 2). Synthesis policy is in the “Conflict watch during merge” table.
 
 ---
 
@@ -142,29 +179,29 @@ The PR does **not** apply this fix to `qwenimage_v2.py`. When adopting, the same
 
 **Target files**: `nunchaku_code/lora_cache.py` (new), `nunchaku_code/lora_qwen.py`, node files
 
-#### Current code problem
+#### Problem in current code
 
-`compose_loras_v2` Section 4, every run:
+Every `compose_loras_v2` section 4 run:
 
 1. `_load_lora_state_dict_robust(lora_path)` — load safetensors from disk
-2. `_classify_and_map_key` — apply 30 regex patterns to each key
+2. `_classify_and_map_key` — apply ~30 regexes per key
 3. `_fuse_*_lora` — fuse A/B tensors
 4. Accumulate into `aggregated_weights`
-5. `_apply_lora_to_module` — apply to module
+5. `_apply_lora_to_module` — apply to modules
 
-When the same LoRA is used repeatedly, steps 1-3 repeat every generation. Significant for 500MB-2GB LoRAs.
+When the same LoRA is reused, steps 1–3 repeat every generation. Cost is significant for 500MB–2GB LoRAs.
 
-#### PR improvement
+#### Improvement from the PR
 
 New module `lora_cache.py` provides:
 
 - `get_cache_dir(comfy_base)` → `ComfyUI/models/SVDQLora/`
-- `get_cache_path(lora_path, cache_dir)` → collision-avoiding filename with SHA256[:8] of parent directory
-- `is_cache_valid(lora_path, cache_path)` → file existence + mtime sidecar JSON check
+- `get_cache_path(lora_path, cache_dir)` → collision-safe filename via parent-dir SHA256[:8]
+- `is_cache_valid(lora_path, cache_path)` → file exists + mtime sidecar JSON match
 - `save_precompiled(processed_groups, lora_path, cache_path)` → atomic write of `{module_key__A, module_key__B, module_key__alpha}`
-- `load_precompiled(cache_path)` → reconstruct `{module_key: (A, B, alpha)}`
+- `load_precompiled(cache_path)` → rebuild `{module_key: (A, B, alpha)}`
 
-`compose_loras_v2` gains a cache fast path:
+`compose_loras_v2` gets a cache fast path:
 
 ```python
 if _cache_dir_path is not None and isinstance(lora_path_or_dict, (str, Path)):
@@ -180,64 +217,64 @@ if _cache_dir_path is not None and isinstance(lora_path_or_dict, (str, Path)):
 
 #### Effects
 
-- **Speed**: Skips classify + fuse stages. Significantly reduces disk I/O and CPU computation on 2nd+ generation
-- **Safety**: B tensor is saved **unscaled**; strength is re-applied at inference time → strength slider remains compatible
-- **Atomic write**: `tmp + os.replace` prevents corruption on interruption
-- **mtime validation**: Cache auto-invalidates when LoRA file is updated
-- **Collision avoidance**: Same-named LoRAs in different directories don't collide
+- **Speedup**: skip classify + fuse. Large cut in disk I/O and CPU work from the 2nd generation onward
+- **Safety**: B tensors stored **unscaled**. Strength is reapplied at inference → strength slider stays compatible
+- **Atomic writes**: `tmp + os.replace` prevents corruption on interrupt
+- **mtime check**: cache auto-invalidates when the LoRA file is updated
+- **Collision avoidance**: same-named LoRAs in different directories do not collide
 
 #### Relation to md docs
 
-- **Evolution of** `PERFORMANCE_OPTIMIZATION_PLAN.md` item 1 ("add `lru_cache` to `_load_lora_state_dict_robust`"). The plan was session-scoped; the PR's precompiled cache is persistent disk-scoped — more powerful.
-- **Complementary to** `LOST_OPTIMIZATION_v227_v230.md` ("first LoRA duplicate read elimination"). When precompiled cache hits, the double-read problem doesn't arise at all.
+- Evolution of `PERFORMANCE_OPTIMIZATION_PLAN.md` item 1 (`lru_cache` on `_load_lora_state_dict_robust`). That plan was session-scoped; the PR’s precompiled cache is disk-persistent and stronger
+- Complementary to `LOST_OPTIMIZATION_v227_v230.md` (eliminate double-read of first LoRA). A precompiled-cache hit avoids the double-read problem entirely
 
 #### Concerns
 
-1. No integrity verification (hash signature) of cache contents. Low risk for local use, but tamper risk in shared environments.
-2. mtime sidecar may produce false-positive invalidation on copy/sync. Acceptable in practice.
-3. **`_cached_first_lora_state_dict` mechanism is absent from the PR's `compose_loras_v2`**. When cache is invalid (default), the first LoRA is read twice. This re-loses the optimization restored in `LOST_OPTIMIZATION_v227_v230.md`. **Must be restored when adopting.**
+1. No integrity check (hash signature) of cache contents. Low risk locally; tamper risk in shared environments
+2. mtime sidecars can false-invalidate after copy/sync. Acceptable in practice
+3. **PR `compose_loras_v2` lacks `_cached_first_lora_state_dict`**. When the cache is disabled (default), the first LoRA is read twice. That re-loses the optimization restored in `LOST_OPTIMIZATION_v227_v230.md`. **Must restore on adoption**
 
 ---
 
-### Adoption 4: TE V2 CPU offload — REJECTED (not adopted)
+### Adoption 4: TE V2 CPU offload — REJECTED
 
 **Target files**: `nodes/te_offload/nunchaku_te_v2.py` (new), `__init__.py`
 
 #### PR claim
 
-Adds three V2 loader nodes (`NunchakuQwenImageEditEncoderLoaderV2`, `NunchakuQwenImageTextEncoderLoaderV2`, `NunchakuQwen3TextEncoderLoaderV2`) with an `offload_after_encode` toggle that moves the text encoder to CPU after encode.
+Adds three V2 loader nodes (`NunchakuQwenImageEditEncoderLoaderV2`, `NunchakuQwenImageTextEncoderLoaderV2`, `NunchakuQwen3TextEncoderLoaderV2`) and claims an `offload_after_encode` toggle moves the text encoder to CPU after encode.
 
-#### Why rejected
+#### Rejection reasons
 
-1. **Referenced loader classes do not exist.** The PR's `_delegate_load` method attempts to import `NunchakuQwenImageEditEncoderLoader`, `NunchakuQwenImageTextEncoderLoader`, and `NunchakuQwen3TextEncoderLoader` from a module path `custom_nodes/ComfyUI-nunchaku/nodes/models/qwen_text_encoder.py`. Verified against the installed ComfyUI-nunchaku: **this file does not exist**. The actual TE module is `nodes/models/text_encoder.py` and contains only `NunchakuTextEncoderLoader` / `NunchakuTextEncoderLoaderV2` (FLUX T5 — not Qwen). The three Qwen-specific classes the PR references **do not exist in ComfyUI-nunchaku or ComfyUI core**.
+1. **Referenced loader classes do not exist.** The PR’s `_delegate_load` tries to import `NunchakuQwenImageEditEncoderLoader`, `NunchakuQwenImageTextEncoderLoader`, and `NunchakuQwen3TextEncoderLoader` from `custom_nodes/ComfyUI-nunchaku/nodes/models/qwen_text_encoder.py`. Verified against installed ComfyUI-nunchaku: **that file does not exist**. The real TE module is `nodes/models/text_encoder.py`, which only has `NunchakuTextEncoderLoader` / `NunchakuTextEncoderLoaderV2` (FLUX T5 — not Qwen). The three Qwen-specific classes the PR references exist in **neither ComfyUI-nunchaku nor ComfyUI core**.
 
-2. **CPU offload is already available via existing ComfyUI mechanisms.** Qwen Image text encoders are loaded through ComfyUI's standard CLIP loader pipeline, which uses `ModelPatcher` for VRAM management. CPU offload is already supported through ComfyUI's built-in model management — no custom node is needed.
+2. **CPU offload is already available via ComfyUI.** Qwen Image text encoders load through ComfyUI’s standard CLIP loader pipeline and use `ModelPatcher` for VRAM. Built-in model management already supports CPU offload; a custom node is unnecessary.
 
-3. **The PR's monkey-patch approach (`encode_token_weights` replacement) is unnecessary** when ComfyUI's existing offload infrastructure handles this case.
+3. **The PR’s monkey-patch (`encode_token_weights` swap) is unnecessary.** ComfyUI’s existing offload stack covers this case.
 
 #### Conclusion
 
-Not adopted. The `nodes/te_offload/` package and its `__init__.py` registration in `__init__.py` are excluded from the merge.
+Rejected. Exclude the `nodes/te_offload/` package and its `__init__.py` registration from the merge.
 
 ---
 
 ### Adoption 5: GPU pack/unpack optimization
 
-**Target files**: `nunchaku_code/lora_qwen.py` (`_awq_lora_forward`, `_apply_lora_to_module` nunchaku branch, `reset_lora_v2`)
+**Target file**: `nunchaku_code/lora_qwen.py` (`_awq_lora_forward`, nunchaku branch of `_apply_lora_to_module`, `reset_lora_v2`)
 
-#### Current code problem
+#### Problem in current code
 
-`pack_lowrank_weight` / `unpack_lowrank_weight` execute on CPU. When nunchaku module's `proj_down.data` / `proj_up.data` are on CUDA:
+`pack_lowrank_weight` / `unpack_lowrank_weight` run on CPU. When nunchaku modules’ `proj_down.data` / `proj_up.data` are on CUDA:
 
 1. CUDA → CPU tensor copy (via paged staging buffer)
-2. CPU unpack / cat / pack
+2. unpack / cat / pack on CPU
 3. CPU → CUDA write-back
 
-This CPU paging stall accumulates across many modules (Qwen Image has dozens of transformer blocks × attn/mlp).
+This CPU paging stall accumulates across many modules (Qwen Image: dozens of transformer blocks × attn/mlp).
 
-#### PR improvement
+#### Improvement from the PR
 
-Adds `_get_compute_device()`, preferring `comfy.model_management.get_torch_device()`:
+Add `_get_compute_device()` preferring `comfy.model_management.get_torch_device()`:
 
 ```python
 def _get_compute_device() -> torch.device:
@@ -248,7 +285,7 @@ def _get_compute_device() -> torch.device:
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ```
 
-In `_apply_lora_to_module` nunchaku branch:
+In the nunchaku branch of `_apply_lora_to_module`:
 
 ```python
 compute_device = _get_compute_device()
@@ -264,28 +301,28 @@ packed_down = pack_lowrank_weight(new_proj_down, down=True)  # CUDA
 module.proj_down.data = packed_down.to(pd.device)  # restore to original device
 ```
 
-`reset_lora_v2` applies the same optimization.
+Apply the same optimization in `reset_lora_v2`.
 
 #### Effects
 
-- **Reduces**: CPU paging stall. pack/unpack completes on CUDA.
-- **Reduces**: Number of CPU ↔ GPU tensor round-trips.
+- **Reduction**: CPU paging stalls. pack/unpack finishes on CUDA
+- **Reduction**: CPU ↔ GPU tensor round trips
 
 #### Relation to md docs
 
-- **Same direction as** `PERFORMANCE_OPTIMIZATION_PLAN.md` item 2 ("batch device transfers"). The plan was "cat on CPU then one transfer"; the PR is "complete pack/unpack on GPU". Same goal (reduce device transfers).
+- Same direction as `PERFORMANCE_OPTIMIZATION_PLAN.md` item 2 (“batch device transfers”). The plan said “cat on CPU then transfer once”; the PR says “finish pack/unpack on GPU”. Same goal (fewer device transfers).
 
-#### Data flow verification (validated)
+#### Data-flow verification (validated)
 
-The PR's two-stage optimization is **internally consistent**:
+The PR’s two-stage optimization is **internally consistent**:
 
-| Stage | Location | What happens | Device |
-|-------|----------|-------------|--------|
-| 1 | `compose_loras_v2` application loop | `all_A.append(A.to(dtype=target_dtype))` — dtype conversion only, **device intentionally omitted** | CPU (A/B stay on CPU) |
-| 2 | `torch.cat(all_A, dim=0)` | Concatenate all A tensors | CPU |
-| 3 | `_apply_lora_to_module` nunchaku branch | `A_gpu = A.to(compute_device)` → `torch.cat([pd_unpacked, A_gpu], dim=0)` on CUDA → `pack_lowrank_weight` on CUDA → `.to(pd.device)` restore | CUDA → original |
+| Stage | Where | What | Device |
+|------|------|------|--------|
+| 1 | `compose_loras_v2` apply loop | `all_A.append(A.to(dtype=target_dtype))` — dtype only; **device intentionally omitted** | CPU (A/B stay on CPU) |
+| 2 | `torch.cat(all_A, dim=0)` | concatenate all A tensors | CPU |
+| 3 | `_apply_lora_to_module` nunchaku branch | `A_gpu = A.to(compute_device)` → `torch.cat([pd_unpacked, A_gpu], dim=0)` on CUDA → `pack_lowrank_weight` on CUDA → restore via `.to(pd.device)` | CUDA → original device |
 
-Stage 1 intentionally skips `device=target_device` for the nunchaku branch (the only branch that does so). The comment explains: "~960 redundant CPU→CPU memcpies per generation". Stage 3 then moves A/B to `compute_device` alongside `pd`/`pu` and performs all pack/unpack/cat operations on CUDA. The two stages are designed to work together — no device mismatch occurs.
+Stage 1 intentionally omits `device=target_device` only in the nunchaku branch (only that branch does this). Comment: “~960 redundant CPU→CPU memcpys per generation”. Stage 3 moves A/B with `pd`/`pu` to `compute_device` and runs pack/unpack/cat all on CUDA. The two stages are designed together; no device mismatch.
 
 ---
 
@@ -293,7 +330,7 @@ Stage 1 intentionally skips `device=target_device` for the nunchaku branch (the 
 
 **Target file**: `nunchaku_code/lora_qwen.py`
 
-#### Current code problem
+#### Problem in current code
 
 ```python:1562:1564:nunchaku_code/lora_qwen.py
     for name, info in model._lora_slots.items():
@@ -304,9 +341,9 @@ Stage 1 intentionally skips `device=target_device` for the nunchaku branch (the 
         base_rank, appended = info["base_rank"], info["appended"]
 ```
 
-AWQ modulation slots (`img_mod.1` / `txt_mod.1`) are registered with `type: "awq_w4a16"` and do not have `base_rank`. Accessing `info["base_rank"]` raises `KeyError`.
+AWQ modulation slots (`img_mod.1` / `txt_mod.1`) register as `type: "awq_w4a16"` and have no `base_rank`. Accessing `info["base_rank"]` raises `KeyError`.
 
-#### PR improvement
+#### Improvement from the PR
 
 ```python
         if module is None or info.get("appended", 0) <= 0 or "base_rank" not in info:
@@ -315,12 +352,12 @@ AWQ modulation slots (`img_mod.1` / `txt_mod.1`) are registered with `type: "awq
 
 #### Effects
 
-- **Fixes**: `KeyError` on AWQ modulation slots
-- **Safety**: nunchaku/linear slots have `base_rank` and are processed as before
+- **Fix**: `KeyError` on AWQ modulation slots
+- **Safety**: nunchaku/linear slots that have `base_rank` still process as before
 
 #### Relation to md docs
 
-- No direct mention in existing md docs. Supplements the AWQ modulation handling recorded in `V2.4.0_V1_RENAME_COMPLETE_EXPLANATION.md`.
+- No direct mention in existing md. Complements AWQ modulation handling recorded in `V2.4.0_V1_RENAME_COMPLETE_EXPLANATION.md`.
 
 ---
 
@@ -328,11 +365,11 @@ AWQ modulation slots (`img_mod.1` / `txt_mod.1`) are registered with `type: "awq
 
 **Target files**: `js/z_qwen_lora_dynamic.js`, `js/z_qwen_lora_dynamic_v3.js`
 
-#### Current code problem
+#### Problem in current code
 
-V1/V3 dynamic LoRA stack nodes' `onConfigure` caches and restores the `apply_awq_mod` widget, but if `save_precompiled_lora` widget is added, it would be missing on node redraw.
+V1/V3 dynamic LoRA stack nodes’ `onConfigure` caches/restores the `apply_awq_mod` widget, but when `save_precompiled_lora` is added it is missing after redraw.
 
-#### PR improvement
+#### Improvement from the PR
 
 ```javascript
 // Cache widget
@@ -346,93 +383,110 @@ if (node.cachedSavePrecompiled) {
     this.widgets.push(node.cachedSavePrecompiled);
 }
 
-// Reflect in size calculation
+// Size calculation
 const SAVE_PRECOMPILED_H = node.cachedSavePrecompiled ? 30 : 0;
 const targetH = HEADER_H + CPU_OFFLOAD_H + APPLY_AWQ_MOD_H + SAVE_PRECOMPILED_H + (count * SLOT_H) + PADDING;
 ```
 
 #### Effects
 
-- **Fixes**: `save_precompiled_lora` widget missing / size mismatch
-- **Cosmetic**: Node height is computed correctly, UI doesn't break
+- **Fix**: missing / mis-sized `save_precompiled_lora` widget
+- **UI**: node height calculates correctly; UI does not break
 
 ---
 
-### Adoption 8: Logging unification — `print()` removal and Key Diffusion gating
+### Adoption 8: Logging unification — remove `print()` and gate Key Diffusion
 
 **Target files**: `nodes/lora/qwenimage.py`, `nodes/lora/qwenimage_v1.py`, `nodes/lora/qwenimage_v2.py`, `nodes/lora/qwenimage_v3.py`, `nodes/lora/zimageturbo_v2.py`, `nodes/lora/zimageturbo_v3.py`, `nodes/lora/zimageturbo_v4.py`
 
 **Status**: **Already implemented and pushed** (commit `33ba82e`, 2026-07-10)
 
-#### Current code problem (before this commit)
+#### Problem before that commit
 
-Three categories of uncontrolled logging existed:
+Three kinds of uncontrolled logging:
 
-1. **Startup `[DEBUG]` print** — 6 files (qwenimage, qwenimage_v1, qwenimage_v2, qwenimage_v3, zimageturbo_v2, zimageturbo_v3) emitted 3 `print()` lines each at module import time (ComfyUI startup). These were temporary debug leftovers for import-path resolution and were never gated by any env var.
+1. **Startup `[DEBUG]` print** — 6 files (qwenimage, qwenimage_v1, qwenimage_v2, qwenimage_v3, zimageturbo_v2, zimageturbo_v3) each emitted 3 `print()` lines at module import (ComfyUI startup). Temporary debug leftovers for import-path resolution; no env gate.
 
-2. **Key Diffusion `print()`** — 4 files (qwenimage × 2 blocks, qwenimage_v2, qwenimage_v3) used `print()` for per-key mapping logs (`Key: ... -> Mapped to: ... (Group: ...)`). These were inside `if NUNCHAKU_LOG_ENABLED:` guards, so `nunchaku_log=0` suppressed them, but `print()` bypasses the logger framework entirely — no flush control, no level filtering, console freeze risk.
+2. **Key Diffusion `print()`** — 4 files (qwenimage × 2 blocks, qwenimage_v2, qwenimage_v3) used `print()` for per-key mapping logs (`Key: ... -> Mapped to: ... (Group: ...)`). Inside `if NUNCHAKU_LOG_ENABLED:` so `nunchaku_log=0` suppresses them, but `print()` bypasses the logging framework entirely — no flush control, no level filter, console-stick risk.
 
-3. **Key Diffusion `logger.info` without guard** — `zimageturbo_v3.py` and `zimageturbo_v4.py` used `logger.info()` for Key Diffusion but did **not** gate with `NUNCHAKU_LOG_ENABLED`. These would output even when `nunchaku_log=0`.
+3. **Ungated Key Diffusion `logger.info`** — `zimageturbo_v3.py` and `zimageturbo_v4.py` used `logger.info()` for Key Diffusion **without** gating on `NUNCHAKU_LOG_ENABLED`. Still printed with `nunchaku_log=0`.
 
 #### Implemented fix
 
 | File | Change |
 |------|--------|
-| `qwenimage.py` | Removed 3 startup `print()` lines; converted 2 Key Diffusion blocks (Loader + Stack) from `print()` to `logger.info`/`logger.warning`; kept inside `if NUNCHAKU_LOG_ENABLED:` |
+| `qwenimage.py` | Removed 3 startup `print()` lines. Converted Key Diffusion blocks ×2 (Loader + Stack) from `print()` → `logger.info`/`logger.warning`. Kept inside `if NUNCHAKU_LOG_ENABLED:` |
 | `qwenimage_v1.py` | Removed 3 startup `print()` lines |
-| `qwenimage_v2.py` | Removed 3 startup `print()` lines; converted 1 Key Diffusion block from `print()` to `logger.info`/`logger.warning`; kept inside `if NUNCHAKU_LOG_ENABLED:` |
-| `qwenimage_v3.py` | Removed 3 startup `print()` lines; converted 1 Key Diffusion block from `print()` to `logger.info`/`logger.warning`; kept inside `if NUNCHAKU_LOG_ENABLED:` |
+| `qwenimage_v2.py` | Removed 3 startup `print()` lines. Converted Key Diffusion ×1 `print()` → `logger.info`/`logger.warning`. Kept inside `if NUNCHAKU_LOG_ENABLED:` |
+| `qwenimage_v3.py` | Removed 3 startup `print()` lines. Converted Key Diffusion ×1 `print()` → `logger.info`/`logger.warning`. Kept inside `if NUNCHAKU_LOG_ENABLED:` |
 | `zimageturbo_v2.py` | Removed 3 startup `print()` lines |
-| `zimageturbo_v3.py` | Removed 3 startup `print()` lines; added `NUNCHAKU_LOG_ENABLED` import; gated Key Diffusion block with `and NUNCHAKU_LOG_ENABLED` |
-| `zimageturbo_v4.py` | Added `NUNCHAKU_LOG_ENABLED` import; gated Key Diffusion block with `if idx == 0 and NUNCHAKU_LOG_ENABLED:` |
+| `zimageturbo_v3.py` | Removed 3 startup `print()` lines. Import `NUNCHAKU_LOG_ENABLED`. Gate Key Diffusion with `and NUNCHAKU_LOG_ENABLED` |
+| `zimageturbo_v4.py` | Import `NUNCHAKU_LOG_ENABLED`. Gate Key Diffusion with `if idx == 0 and NUNCHAKU_LOG_ENABLED:` |
 
-#### Resulting log policy
+#### Resulting logging policy
 
 | Category | `nunchaku_log=0` (default) | `nunchaku_log=1` |
-|----------|---------------------------|------------------|
-| Status logs (`[LoRA Stack Status]`, `🔍`, `✅`, `📦`, `🔧`, `Composing`, `LoRA Format Detection`, `Sampled LoRA composition complete`, `Total LoRAs`, etc.) | **Always output** | Always output |
-| Key Diffusion per-key mapping (`Key: ... -> Mapped to: ...`) | Suppressed | Output |
-| Startup `[DEBUG]` path-verification print | Removed entirely | Removed entirely |
+|----------|----------------------------|------------------|
+| Status logs (`[LoRA Stack Status]`, `🔍`, `✅`, `📦`, `🔧`, `Composing`, `LoRA Format Detection`, `Sampled LoRA composition complete`, `Total LoRAs`, etc.) | **Always on** | Always on |
+| Key Diffusion per-key mapping (`Key: ... -> Mapped to: ...`) | Suppressed | Printed |
+| Startup `[DEBUG]` path-check print | Fully removed | Fully removed |
 
 #### Effects
 
-- **All `print()` calls eliminated** from `nodes/lora/` — zero remaining
-- **Key Diffusion** gated behind `nunchaku_log` env var across all 7 node files
-- **Status logs** remain always-on by design (emitted regardless of user preference)
-- **Console freeze** risk from `print()` eliminated (logger has flush control)
-- **`nunchaku_log=0`** (default) suppresses only per-key mapping details; status logs still flow
+- **All `print()` calls removed from `nodes/lora/`** — zero remaining
+- **Key Diffusion** gated behind `nunchaku_log` in all 7 node files
+- **Status logs** always on by design (independent of user settings)
+- Eliminates **console-stick risk from `print()`** (logger has flush control)
+- **`nunchaku_log=0`** (default) suppresses only per-key mapping detail. Status logs still flow
 
 #### Relation to md docs
 
-- **Supersedes** the policy recorded in `KEY_DIFFUSION_RESTORE_QI_LORA_LOADER.md` ("QI side outputs via `print()`"). All nodes now use `logger.info`/`logger.warning` uniformly, matching the `zimageturbo_v4.py` pattern.
-- **Complementary to** `PERFORMANCE_OPTIMIZATION_PLAN.md` (logging is a separate axis from performance optimization, but both reduce per-generation CPU overhead).
+- **Overrides** the policy in `KEY_DIFFUSION_RESTORE_QI_LORA_LOADER.md` (“QI side uses `print()`”). All nodes follow the `zimageturbo_v4.py` pattern with `logger.info`/`logger.warning`
+- Complementary to `PERFORMANCE_OPTIMIZATION_PLAN.md` (logging is a separate axis from perf, but both reduce per-generation CPU overhead)
+
+#### Post-merge note (mandatory)
+
+If Adoption 1–3 / 5–7 replace node files with PR versions, **`33ba82e` logging unification can regress**. After merge, re-check `nodes/lora/` for leftover `print(` and Key Diffusion `NUNCHAKU_LOG_ENABLED` gating (Additional-4).
+
+## Overwrite (keep correct current v2.5.2 shape) — 5 items
+
+These are stale v2.4.x leftovers bundled in the PR. Overwrite with current v2.5.2 code so adopted proposals survive on a clean tree.
+
+1. **`__init__.py` `__version__`** — PR downgrades to `2.4.0`. Restore current v2.5.2 `2.5.2`. PR does not touch `pyproject.toml`, so that stays `2.5.2` automatically. Leaving `__init__.py` at `2.4.0` desyncs ComfyUI Manager (reads `__init__.py`) from `pyproject.toml` — always restore `2.5.2` on the same path.
+2. **`Krea2ControlNetLoraLoader` import/registration** — PR deletes this. Keep v2.5.2 registration.
+3. **`NunchakuQwenImageDiffsynthControlnet` import/registration** — PR deletes this. Keep v2.5.2 registration.
+4. **`apply_qwen_image_apply_rotary_emb_compat` patch (`patches/nunchaku_patch.py`)** — PR deletes this. The same file also has v2.5.2 `suppress_torch_preimport_warning`, so overwrite must keep **both** rotary compat and v2.5.2 warning suppression.
+5. **`.gitignore`** `.cursor/`, `backups/`, `scripts/`, local-only entries — PR deletes these. Keep v2.5.2 entries.
+
+### Out of scope (auto-kept because PR does not touch them)
+
+- **`pyproject.toml`** — not in PR diff. Stays `2.5.2` with no action. (Previously listed with Overwrite 1; removed. No overwrite needed.)
+- **`README.md`** — not in PR diff. v2.5.2 README (language switcher, Diffsynth/Krea2 sections, v2.5.2 release URL) remains. (Previous Overwrite 6 removed. No overwrite needed.)
+- **`prestartup_script.py`** — not in PR diff. v2.5.2 docstring-patch and warning-suppression calls are kept automatically. No work.
+
+### Conflict watch during merge (remote measured — mandatory)
+
+`--no-commit` merge of `601c79d` onto `origin/main` (`930fd82`) produced **content conflicts in only these 3 files**. Other PR-changed files (`qwenimage.py` / `v1` / `v2` / `lora_qwen.py` / wrappers / js, etc.) auto-merged, but **auto-merge ≠ adoption policy** (especially logging unification — re-verify with Additional-4).
+
+| Conflict file | Why it conflicts | Resolution |
+|---------------|------------------|------------|
+| `__init__.py` | PR sets `__version__=2.4.0`, adds TE V2 registration, deletes Krea2/Diffsynth. main has `2.5.2` and keeps Krea2/Diffsynth | **Keep main (v2.5.2) entirely**. Do **not** add TE V2 node registration (Adoption 4 rejected) |
+| `patches/nunchaku_patch.py` | PR deletes rotary compat. main has rotary **and** `suppress_torch_preimport_warning` | **Keep main** (rotary + warning suppression). Discard PR’s rotary deletion |
+| `nodes/lora/qwenimage_v3.py` | PR removes `model` from `IS_CHANGED` + `save_precompiled_lora`. main has `33ba82e` logging unification (`print()` removal / Key Diffusion gate) | **Synthesize both**: take PR `IS_CHANGED`/`save_precompiled_lora`, keep main logging unification. Do not crush either side |
 
 ---
 
-## Overwrite (keep current v2.5.1) — 6 items
+## Additional fixes required on adoption (not in the PR)
 
-These are rebase-omission artifacts where the PR's working copy was stale. They must be overwritten with current v2.5.1 code:
+### Additional-1: Restore `_cached_first_lora_state_dict` ★ critical
 
-1. **Version `2.5.1`** (`pyproject.toml` + `__init__.py`) — PR downgrades to 2.4.0/2.4.3
-2. **`Krea2ControlNetLoraLoader`** import & registration — PR removes it
-3. **`NunchakuQwenImageDiffsynthControlnet`** import & registration — PR removes it
-4. **`apply_qwen_image_apply_rotary_emb_compat`** patch (`patches/nunchaku_patch.py`, 122 lines) — PR deletes it
-5. **`.gitignore`** entries for `.cursor/`, `backups/`, `scripts/`, and local-only files — PR removes them
-6. **README** language switcher table, Diffsynth/Krea2 sections, Latest release v2.5.1 URL — PR reverts to v2.4.2
+The optimization restored in `LOST_OPTIMIZATION_v227_v230.md` is missing from PR `compose_loras_v2`. When the precompiled cache is disabled (default), the first LoRA is read twice. **Must merge into PR `compose_loras_v2` sections 3–4 on adoption.**
 
----
+### Additional-2: Also remove `model` from `IS_CHANGED` in `qwenimage_v2.py`
 
-## Additional fixes required during adoption (not in PR)
+The PR fixes `qwenimage.py` and `qwenimage_v3.py` but misses `qwenimage_v2.py`. Apply the same fix on adoption.
 
-### Additional-1: Restore `_cached_first_lora_state_dict` ★Most critical
-
-The optimization restored in `LOST_OPTIMIZATION_v227_v230.md` does not exist in the PR's `compose_loras_v2`. When the precompiled cache is invalid (default), the first LoRA is read twice. **Must merge into PR's `compose_loras_v2` Section 3-4 when adopting.**
-
-### Additional-2: Apply `IS_CHANGED` `model` removal to `qwenimage_v2.py`
-
-The PR applies the fix to `qwenimage.py` and `qwenimage_v3.py` but misses `qwenimage_v2.py`. Must apply the same fix when adopting.
-
-### Additional-3: Remove `reset_lora_v2` dead 1st loop
+### Additional-3: Delete the dead first loop in `reset_lora_v2`
 
 ```python:1579:1582:nunchaku_code/lora_qwen.py
     for name, info in model._lora_slots.items():
@@ -441,70 +495,89 @@ The PR applies the fix to `qwenimage.py` and `qwenimage_v3.py` but misses `qweni
             continue
 ```
 
-This loop does nothing. The 2nd loop is the real body. Present in both PR and current. Remove during adoption.
+This loop does nothing. The second loop is the real work. Present in both PR and current. Delete on adoption.
+
+### Additional-4: Re-verify logging unification (`33ba82e`) after merge ★ mandatory
+
+Replacing node files with PR versions can regress main’s `33ba82e` (`print()` removal / Key Diffusion `NUNCHAKU_LOG_ENABLED` gate). **Remote re-check**: `origin/main` `nodes/lora/` has **0** `print(` (logging unification is maintained on main). After merge completes, always verify:
+
+1. No leftover `print(` under `nodes/lora/`
+2. Every Key Diffusion block is gated by `NUNCHAKU_LOG_ENABLED`
+3. Startup `[DEBUG]` path-check prints are not reintroduced
+4. Especially in conflict-resolved `qwenimage_v3.py`, PR adoption (`IS_CHANGED` / `save_precompiled_lora`) coexists with main logging
+
+If regressing, re-apply `33ba82e`-equivalent changes onto the adoption tree.
 
 ---
 
-## File-by-file adoption matrix
+## Per-file adoption matrix (15 PR-changed files)
 
-| # | File | Action | Details |
-|---|------|--------|---------|
-| 1 | `nodes/te_offload/__init__.py` | **Reject** | TE V2 offload — referenced loaders don't exist; CPU offload already available via ComfyUI |
-| 2 | `nodes/te_offload/nunchaku_te_v2.py` | **Reject** | Same — references non-existent `NunchakuQwenImageEditEncoderLoader` etc. |
-| 3 | `nunchaku_code/lora_cache.py` | **Adopt fully** | New precompiled cache module |
-| 4 | `__init__.py` | **Partial adopt** | Add TE_V2_NODES/NAMES **excluded**; keep Krea2/Diffsynth registration; keep `__version__ = "2.5.1"` |
-| 5 | `pyproject.toml` | **Overwrite** | Keep `version = "2.5.1"` |
-| 6 | `.gitignore` | **Overwrite** | Keep `.cursor/`, `backups/`, `scripts/`, and local-only ignores |
-| 7 | `README.md` | **Overwrite** | Keep language switcher, Diffsynth/Krea2 sections, v2.5.1 URL |
-| 8 | `patches/nunchaku_patch.py` | **Overwrite** | Keep `apply_qwen_image_apply_rotary_emb_compat` (122 lines) |
-| 9 | `js/z_qwen_lora_dynamic.js` | **Adopt** | `save_precompiled_lora` widget cache/size |
-| 10 | `js/z_qwen_lora_dynamic_v3.js` | **Adopt** | Same as above |
-| 11 | `nodes/lora/qwenimage.py` | **Partial adopt** | `IS_CHANGED` model removal + `save_precompiled_lora` optional + 3-tuple. **Logging already unified** (commit `33ba82e`) |
-| 12 | `nodes/lora/qwenimage_v1.py` | **Adopt** | `save_precompiled_lora` optional + 3-tuple. **Startup print removed** (commit `33ba82e`) |
-| 13 | `nodes/lora/qwenimage_v2.py` | **Partial adopt + fix** | `save_precompiled_lora` optional + 3-tuple; **apply `IS_CHANGED` model removal (PR missed this)**. **Logging already unified** (commit `33ba82e`) |
-| 14 | `nodes/lora/qwenimage_v3.py` | **Adopt** | `IS_CHANGED` model removal + `save_precompiled_lora` + 3-tuple. **Logging already unified** (commit `33ba82e`) |
-| 15 | `nunchaku_code/lora_qwen.py` | **Partial adopt** | `_get_compute_device`, GPU pack/unpack, `compose_loras_v2` cache args, `set_lora_strength_v2` guard, `reset_lora_v2` `_applied_loras` delattr; **restore `_cached_first_lora_state_dict`**; remove dead 1st loop |
-| 16 | `wrappers/qwenimage.py` | **Adopt** | `_has_ever_had_loras` flag, `is_lora_manager` guard, `self.model._applied_loras` sharing, cache args to `compose_loras_v2`, 3-tuple support |
-| 17 | `wrappers/qwenimage_v2.py` | **Adopt** | `self.model._applied_loras` sharing, cache args to `compose_loras_v2_v2`, 3-tuple support |
+| # | File | Policy | Detail |
+|---|------|--------|--------|
+| 1 | `nodes/te_offload/__init__.py` | **Reject** | TE V2 offload — referenced loaders missing; CPU offload available via ComfyUI |
+| 2 | `nodes/te_offload/nunchaku_te_v2.py` | **Reject** | Same — references non-existent `NunchakuQwenImageEditEncoderLoader`, etc. |
+| 3 | `nunchaku_code/lora_cache.py` | **Adopt fully** | New precompiled-cache module |
+| 4 | `__init__.py` | **Partial (conflict)** | Measured conflict. Resolve by **keeping main entirely** (`2.5.2`, Krea2/Diffsynth). Do not add TE_V2 registration. Discard PR `2.4.0` |
+| 5 | `.gitignore` | **Overwrite-keep** | Keep `.cursor/`, `backups/`, `scripts/`, local-only entries as in v2.5.2 (expect auto-merge) |
+| 6 | `patches/nunchaku_patch.py` | **Overwrite-keep (conflict)** | Measured conflict. Resolve by **keeping main** (rotary + `suppress_torch_preimport_warning`). Discard PR rotary deletion |
+| 7 | `js/z_qwen_lora_dynamic.js` | **Adopt** | Cache/size for `save_precompiled_lora` widget |
+| 8 | `js/z_qwen_lora_dynamic_v3.js` | **Adopt** | Same |
+| 9 | `nodes/lora/qwenimage.py` | **Partial** | Remove `model` from `IS_CHANGED` + optional `save_precompiled_lora` + 3-tuple. **Logging already unified in `33ba82e` — re-verify with Additional-4 after merge** |
+| 10 | `nodes/lora/qwenimage_v1.py` | **Adopt** | Optional `save_precompiled_lora` + 3-tuple. **Startup prints already removed in `33ba82e` — Additional-4** |
+| 11 | `nodes/lora/qwenimage_v2.py` | **Partial + fix** | Optional `save_precompiled_lora` + 3-tuple. **Also remove `model` from `IS_CHANGED` (PR miss)**. Logging: Additional-4 |
+| 12 | `nodes/lora/qwenimage_v3.py` | **Adopt (conflict)** | Measured conflict. **Must synthesize**: take PR `IS_CHANGED` model removal + `save_precompiled_lora` + 3-tuple; keep main `33ba82e` logging. Additional-4 |
+| 13 | `nunchaku_code/lora_qwen.py` | **Partial** | `_get_compute_device`, GPU pack/unpack, `compose_loras_v2` cache args, `set_lora_strength_v2` guard, `reset_lora_v2` `_applied_loras` delattr. **Restore `_cached_first_lora_state_dict`**. Delete dead first loop |
+| 14 | `wrappers/qwenimage.py` | **Adopt** | `_has_ever_had_loras` flag, `is_lora_manager` guard, share `self.model._applied_loras`, cache args into `compose_loras_v2`, 3-tuple support |
+| 15 | `wrappers/qwenimage_v2.py` | **Adopt** | Share `self.model._applied_loras`, cache args into `compose_loras_v2_v2`, 3-tuple support |
+
+### Auto-kept (outside matrix — PR does not touch)
+
+| File | Reason |
+|------|--------|
+| `pyproject.toml` | Not in PR diff. Stays `version = "2.5.2"` |
+| `README.md` | Not in PR diff. v2.5.2 README remains |
+| `prestartup_script.py` | Not in PR diff. Docstring patch / warning-suppression calls auto-kept |
 
 ---
 
-## Cross-reference with md/ documents
+## Cross-check against md/ docs
 
-| md document | Relationship |
-|---|---|
-| `PERFORMANCE_OPTIMIZATION_PLAN.md` | Item 1 (lru_cache) → superseded by precompiled cache (Adoption 3). Item 2 (batch device transfer) → same direction as GPU pack/unpack (Adoption 5). Item 3 (AWQ forward `.to()` skip) → different location, same goal, coexists. Item 4 (`_get_module_by_name` cache) → not in PR, remains as future plan. |
-| `LOST_OPTIMIZATION_v227_v230.md` | `_cached_first_lora_state_dict` restoration must be merged into PR's `compose_loras_v2` (Additional-1). |
-| `PR28_FIX_EXPLANATION.md` | PR #28 added `cpu_offload` default to `IS_CHANGED`; PR #52 removes `model` entirely — evolution (Adoption 2). |
-| `KEY_DIFFUSION_RESTORE_QI_LORA_LOADER.md` | **Superseded** — all nodes now use `logger.info`/`logger.warning` uniformly (commit `33ba82e`). Per-key mapping gated behind `nunchaku_log` env var. |
-| `QWEN_IMAGE_CONTROLNET_AND_GETATTR_FIX.md` | Different location, same bug family as Adoption 1. |
-| `QWEN_IMAGE_APPLY_ROTARY_EMB_COMPAT_FIX.md` | Must keep (overwrite item 4). |
-| `V2.4.0_V1_RENAME_COMPLETE_EXPLANATION.md` | AWQ modulation handling supplemented by Adoption 6. |
-| `COMFYUI_0.4.0_*`, `COMFYUI_0.7.0_*`, `COMFYUI_PR_PROPOSAL`, `MGPU_MM_LOG_*` | Unrelated — PR doesn't touch these areas. |
-| `ZIMAGE_SVDQ_LAZY_LINEAR_AND_POP_DEFAULT_FIX.md` | PR preserves — no conflict. |
-| `pr48_peft_lora_format_fix.md` | Unrelated — PR doesn't touch `_detect_lora_format`. |
-| `tech.md` | PR doesn't touch `_execute_model` — no conflict. |
-| `DIFFSYNTH_OFFICIAL_SUPPORT_EXPLANATION`, `KREA2_*`, `ZIMAGETURBO_CONTROLNET_FIX` | PR deletes; we keep (overwrite items 2-3, 6-7). |
-| `V2.0_ROOT_CAUSE_ANALYSIS`, `V3/V4_DEVELOPMENT`, `UPGRADE_GUIDE`, `technical_explanation`, `installation` | Unrelated. |
+| md doc | Relation |
+|--------|----------|
+| `PERFORMANCE_OPTIMIZATION_PLAN.md` | Item 1 (lru_cache) → precompiled cache (Adoption 3) is a stronger replacement. Item 2 (batch device transfers) → same direction as GPU pack/unpack (Adoption 5). Item 3 (skip `.to()` in AWQ forward) → different site, same goal, can coexist. Item 4 (`_get_module_by_name` cache) → not in PR; remains future plan |
+| `LOST_OPTIMIZATION_v227_v230.md` | Must merge `_cached_first_lora_state_dict` restore into PR `compose_loras_v2` (Additional-1) |
+| `PR28_FIX_EXPLANATION.md` | PR #28 added `cpu_offload` default to `IS_CHANGED`. PR #52 removes `model` itself — evolution (Adoption 2) |
+| `KEY_DIFFUSION_RESTORE_QI_LORA_LOADER.md` | **Already overridden** — all nodes unified on `logger.info`/`logger.warning` (`33ba82e`). Per-key mapping gated by `nunchaku_log`. Re-verify after merge with Additional-4 |
+| `QWEN_IMAGE_CONTROLNET_AND_GETATTR_FIX.md` | Same bug family as Adoption 1, different site |
+| `QWEN_IMAGE_APPLY_ROTARY_EMB_COMPAT_FIX.md` | Must keep (Overwrite 4). Also keep v2.5.2 `suppress_torch_preimport_warning` |
+| `V2.4.0_V1_RENAME_COMPLETE_EXPLANATION.md` | Adoption 6 complements AWQ modulation handling |
+| `COMFYUI_0.4.0_*`, `COMFYUI_0.7.0_*`, `COMFYUI_PR_PROPOSAL`, `MGPU_MM_LOG_*` | Unrelated — PR does not touch these areas |
+| `ZIMAGE_SVDQ_LAZY_LINEAR_AND_POP_DEFAULT_FIX.md` | PR keeps — no conflict |
+| `pr48_peft_lora_format_fix.md` | Unrelated — PR does not touch `_detect_lora_format` |
+| `tech.md` | PR does not touch `_execute_model` — no conflict |
+| `DIFFSYNTH_OFFICIAL_SUPPORT_EXPLANATION`, `KREA2_*`, `ZIMAGETURBO_CONTROLNET_FIX` | PR deletes; we keep (Overwrite 2–3). README auto-kept because PR does not touch it |
+| `V2.0_ROOT_CAUSE_ANALYSIS`, `V3/V4_DEVELOPMENT`, `UPGRADE_GUIDE`, `technical_explanation`, `installation` | Unrelated |
 
 ---
 
 ## Audit anchors
 
 | Item | Value |
-|---|---|
+|------|-------|
 | PR | [#52](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/52) |
-| Merge-base | `14f1e32` (v2.5.1 main HEAD) |
-| PR head | `3b50696` |
-| Merge state | CLEAN / MERGEABLE |
-| Current main version | `2.5.1` (`pyproject.toml` + `__init__.py`) |
-| PR version (rejected) | `2.4.0` / `2.4.3` (mismatched) |
-| Files changed | 17 (+1465 / -364) |
-| Adoption items | 7 features (8 in PR, 1 rejected) |
-| Overwrite items | 6 (rebase-omission rollbacks) |
-| Additional fixes | 3 (not in PR, required during adoption) |
-| Logging unification | **Done** — commit `33ba82e` (7 files, `print()` eliminated, Key Diffusion gated behind `nunchaku_log`) |
+| Merge-base | `14f1e32` (PR branch point; then-main) |
+| Remote main HEAD | `930fd82` (`Update README.md`. Tree identical to `f82ccd1` at `ba4dedb`) |
+| PR head | `601c79d` (unchanged) |
+| Merge state | **CONFLICTING** / **DIRTY** (`gh pr view` re-check). One-click Merge impossible |
+| Measured conflict files (3) | `__init__.py` / `nodes/lora/qwenimage_v3.py` / `patches/nunchaku_patch.py` |
+| Current main version | `2.5.2` (`pyproject.toml` + `__init__.py`, both confirmed on origin/main) |
+| PR version (discard) | `__init__.py` only `2.4.0` (`pyproject.toml` untouched by PR) |
+| Changed file count | **15** (+1310 / -330; matches `gh` files and `git diff origin/main...601c79d`) |
+| Adoption items | 7 features (of 8 in the PR; 1 rejected) |
+| Overwrite-keep items | **5** (stale rollback. `pyproject.toml` / `README.md` out of scope) |
+| Additional fixes | **4** (outside PR. Additional-4 = post-merge logging re-verify) |
+| Logging unification | **Already on main** — commit `33ba82e` (7 files, `print()` removed, Key Diffusion gated by `nunchaku_log`). After merge: Additional-4 |
 
 ---
 
-*Document created as the merge plan for PR #52. All adoption decisions are based on cross-reference with existing md/ technical documents and current v2.5.1 main code.*
+*This document is the merge plan for PR #52. Adoption decisions are based on cross-checking existing md/ technical docs against current v2.5.2 main (remote tip `930fd82`). Remote was CONFLICTING/DIRTY. The goal is not overwrite for its own sake, but to keep adoptable proposals alive on the current tree.*

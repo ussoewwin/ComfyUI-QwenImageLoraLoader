@@ -5,7 +5,11 @@
   </tr>
 </table>
 
-### v2.5.2 (最新)
+### v2.5.3 (最新)
+- **已变更**: 部分采用 PR #52 合并方案。
+- **技术详情**: 请参阅 [v2.5.3 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.3) 获取完整说明
+
+### v2.5.2
 - **已修复**: 抑制了 ComfyUI 启动时的无害警告 `WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.`（[Issue #53](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/53)）。该警告出现，是因为必需的 `apply_rotary_emb` prestartup 垫片必须导入在模块层级导入 `torch` 的 `comfy.ldm` 模块（此时所有 CUDA 环境设置均已完成，因此无害）。在 `prestartup_script.py` 早期安装的一次性根日志过滤器仅丢弃这一条消息，其余所有日志照常输出。可通过 `QWENIMAGE_SUPPRESS_TORCH_WARNING=0` 关闭该抑制。
 - **技术详情**: 请参阅 [v2.5.2 发行说明](v2.5.2.md) 获取完整说明
 

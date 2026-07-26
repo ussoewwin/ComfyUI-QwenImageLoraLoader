@@ -47,8 +47,6 @@ try:
     from .nodes.lora.qwenimage_v3 import GENERATED_NODES as QWEN_V3_NODES, GENERATED_DISPLAY_NAMES as QWEN_V3_NAMES
     from .nodes.lora.qwenimage_v1 import GENERATED_NODES as QWEN_V1_NODES, GENERATED_DISPLAY_NAMES as QWEN_V1_NAMES
     from .nodes.lora.zimageturbo_v1 import GENERATED_NODES as ZIMAGETURBO_V1_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V1_NAMES
-    # Z-Image-Turbo V2 registration removed
-    # from .nodes.lora.zimageturbo_v2 import GENERATED_NODES as ZIMAGETURBO_V2_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V2_NAMES
     # Z-Image-Turbo V3 is deprecated - removed from registration
     # from .nodes.lora.zimageturbo_v3 import GENERATED_NODES as ZIMAGETURBO_V3_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V3_NAMES
     from .nodes.lora.zimageturbo_v4 import GENERATED_NODES as ZIMAGETURBO_V4_NODES, GENERATED_DISPLAY_NAMES as ZIMAGETURBO_V4_NAMES
@@ -65,9 +63,6 @@ try:
         node_class.__version__ = __version__
     for node_class in ZIMAGETURBO_V1_NODES.values():
         node_class.__version__ = __version__
-    # Z-Image-Turbo V2 registration removed
-    # for node_class in ZIMAGETURBO_V2_NODES.values():
-    #     node_class.__version__ = __version__
     # Z-Image-Turbo V3 registration removed
     # for node_class in ZIMAGETURBO_V3_NODES.values():
     #     node_class.__version__ = __version__
@@ -81,8 +76,6 @@ try:
     NODE_CLASS_MAPPINGS.update(QWEN_V3_NODES)
     NODE_CLASS_MAPPINGS.update(QWEN_V1_NODES)
     NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V1_NODES)
-    # Z-Image-Turbo V2 registration removed
-    # NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V2_NODES)
     # Z-Image-Turbo V3 registration removed
     # NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V3_NODES)
     NODE_CLASS_MAPPINGS.update(ZIMAGETURBO_V4_NODES)
@@ -108,8 +101,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **QWEN_V3_NAMES,
     **QWEN_V1_NAMES,
     **ZIMAGETURBO_V1_NAMES,
-    # Z-Image-Turbo V2 registration removed
-    # **ZIMAGETURBO_V2_NAMES,
     # Z-Image-Turbo V3 registration removed
     # **ZIMAGETURBO_V3_NAMES,
     **ZIMAGETURBO_V4_NAMES

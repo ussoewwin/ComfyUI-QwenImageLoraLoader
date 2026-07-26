@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 
-console.log("★★★ zimageturbo_lora_dynamic.js: Z-Image-Turbo LoRA Stack V3 ★★★");
+console.log("★★★ zimageturbo_lora_dynamic_v3.js: Z-Image-Turbo LoRA Stack V3 ★★★");
 
 const HIDDEN_TAG = "tschide";
 

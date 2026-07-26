@@ -477,9 +477,8 @@ class ComfyZImageTurboWrapper(nn.Module):
                 # =============================================================================
                 # DEBUG LOGGING (MUTED) - Uncomment to diagnose input tensor issues
                 # =============================================================================
-                # This debug block logs the shapes of input tensors for Z-Image-Turbo forward pass.
-                # It is specifically active when using NunchakuZImageTurboLoraStackV2 (zimageturbo_v2.py)
-                # which wraps the model with ComfyZImageTurboWrapper.
+                # This debug block logs the shapes of input tensors for Z-Image-Turbo forward pass
+                # when the model is wrapped with ComfyZImageTurboWrapper.
                 #
                 # Output format:
                 #   - x_list: List of latent tensors, shape [C, F, H, W] = [channels, frames, height, width]

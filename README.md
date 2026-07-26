@@ -81,10 +81,6 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">
 
-- **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA stacker with dynamic UI - **Unofficial loader only** - ComfyUI Nodes 2.0 compatible
-  - ⚠️ **Warning**: This node is **only compatible with the unofficial Nunchaku Z-Image-Turbo DiT Loader** from [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader)
-  - ⚠️ **Not Compatible**: This node is **not compatible** with the official Nunchaku Z-Image-Turbo DiT Loader from ComfyUI-Nunchaku
-
 - **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
 
 - **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora loader

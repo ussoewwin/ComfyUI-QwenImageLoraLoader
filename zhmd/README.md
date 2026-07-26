@@ -79,10 +79,6 @@
 
 <img src="../images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA 堆叠器，带动态 UI - 标准 ComfyUI LoRA 加载器格式 (CLIP 输入/输出) - 兼容 ComfyUI Nodes 2.0" width="400">
 
-- **NunchakuZImageTurboLoraStackV2**: Z-Image-Turbo LoRA 堆叠器，带动态 UI - **仅非官方加载器** - 兼容 ComfyUI Nodes 2.0
-  - ⚠️ **警告**: 此节点**仅兼容**来自 [ComfyUI-nunchaku-unofficial-loader](https://github.com/ussoewwin/ComfyUI-nunchaku-unofficial-loader) 的非官方 Nunchaku Z-Image-Turbo DiT 加载器
-  - ⚠️ **不兼容**: 此节点**不兼容**来自 ComfyUI-Nunchaku 的官方 Nunchaku Z-Image-Turbo DiT 加载器
-
 - **NunchakuQI&ZITDiffsynthControlnet**: 用于 Nunchaku Qwen Image & Z-ImageTurbo 的 DiffSynth ControlNet 支持节点
 
 - **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora 加载器

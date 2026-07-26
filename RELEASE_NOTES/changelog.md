@@ -5,7 +5,10 @@
   </tr>
 </table>
 
-### v2.5.3 (latest)
+### v2.5.4 (latest)
+- **Removed**: Unregistered `NunchakuZImageTurboLoraStackV2` and removed its README documentation.
+
+### v2.5.3
 - **Changed**: Partial adoption of the PR #52 merge plan.
 - **Technical Details**: See [v2.5.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.3) for complete explanation
 

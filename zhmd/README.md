@@ -118,10 +118,27 @@
      以原生 Krea2 参考潜变量（`index_timestep_zero`）注入。建议保持 `use_kv_cache` 开启
      （默认值）——这与该 openpose 控制 LoRA 训练时使用的 ai-toolkit kv_cache 约定一致。
 
-### Krea2 OpenPose 控制
+### Krea2 控制（Depth & OpenPose）
+
+`NunchakuQI&ZITDiffsynthControlnet` 会根据加载的 LoRA 文件自动检测 Krea2 控制子类型，并应用
+独立、自包含的路由——无需任何外部节点。
+
+#### Krea2 Depth 控制
+
+1. 使用 `Krea2ControlNetLoraLoader` 加载 depth 控制 LoRA（例如 `krea2-depth-control-lora.safetensors`）
+2. 将其 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 的 `model_patch` 输入端
+3. 连接你的 Krea2 模型、VAE 与深度图，并设置 `strength`
+
+**工作原理：**
+- depth LoRA 提供扩展的 first 投影（2 倍输入通道），通过运行时 `_Krea2FirstProjection` 垫片注入，
+  并按 `strength` 缩放
+- 对 DiT 块应用块 LoRA 补丁（rank 64）
+- 深度图经 VAE 编码后送入扩展的 first 投影，使深度从第一层就开始条件化生成
+
+#### Krea2 OpenPose 控制
 
 `krea2_turbo_openpose_controlnet.safetensors` 控制 LoRA 通过
-`NunchakuQI&ZITDiffsynthControlnet` 中独立、自包含的路由应用（无需任何外部节点）：
+`NunchakuQI&ZITDiffsynthControlnet` 中独立、自包含的路由应用：
 
 1. 使用 `Krea2ControlNetLoraLoader` 加载 openpose 控制 LoRA
 2. 将其 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 的 `model_patch` 输入端

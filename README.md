@@ -121,10 +121,28 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
      `use_kv_cache` enabled (default) - this matches the ai-toolkit kv_cache training
      convention the openpose control LoRA was trained with.
 
-### Krea2 OpenPose Control
+### Krea2 Control (Depth & OpenPose)
+
+`NunchakuQI&ZITDiffsynthControlnet` auto-detects the Krea2 control sub-type from the loaded
+LoRA file and applies a dedicated, self-contained route - no external nodes required.
+
+#### Krea2 Depth Control
+
+1. Load the depth control LoRA with `Krea2ControlNetLoraLoader` (e.g. `krea2-depth-control-lora.safetensors`)
+2. Connect its `MODEL_PATCH` to `NunchakuQI&ZITDiffsynthControlnet`'s `model_patch`
+3. Connect your Krea2 model, VAE and the depth image; set `strength`
+
+**How it works:**
+- The depth LoRA provides an expanded first projection (2x input channels). It is injected
+  through a runtime `_Krea2FirstProjection` shim scaled by `strength`
+- Block LoRA patches (rank 64) are applied to the DiT blocks
+- The depth image is VAE-encoded and fed into the expanded first projection so depth
+  conditions the generation from the very first layer
+
+#### Krea2 OpenPose Control
 
 The `krea2_turbo_openpose_controlnet.safetensors` control LoRA is applied through a dedicated,
-self-contained route in `NunchakuQI&ZITDiffsynthControlnet` (no external nodes required):
+self-contained route in `NunchakuQI&ZITDiffsynthControlnet`:
 
 1. Load the openpose control LoRA with `Krea2ControlNetLoraLoader`
 2. Connect its `MODEL_PATCH` to `NunchakuQI&ZITDiffsynthControlnet`'s `model_patch`

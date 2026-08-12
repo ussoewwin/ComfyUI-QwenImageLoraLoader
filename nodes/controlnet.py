@@ -187,6 +187,8 @@ def _krea2_target_key(base):
                 changed = True
     if base.startswith("blocks."):
         return f"diffusion_model.{base}.weight"
+    if base.startswith("txtfusion."):
+        return f"diffusion_model.{base}.weight"
     return None
 
 
@@ -407,6 +409,55 @@ def _krea2_make_wrapper(projection):
                 diffusion_model.first = projection.base_first if projection.base_first is not None else previous_first
 
     return wrapper
+
+
+def _classify_krea2_control_type(state_dict):
+    """Classify Krea2 control MODEL_PATCH sub-type.
+
+    Returns:
+        "depth"    -- has expanded first projection (requires control latent injection)
+        "openpose" -- pure block LoRA on DiT + txtfusion (no first projection)
+    """
+    first_candidates = (
+        "first.weight",
+        "diffusion_model.first.weight",
+        "model.diffusion_model.first.weight",
+        "transformer.first.weight",
+    )
+    for key in first_candidates:
+        if key in state_dict:
+            return "depth"
+    return "openpose"
+
+
+def _apply_krea2_openpose_control(model_patched, model_patch, strength):
+    """Apply Krea2 openpose-style control LoRA.
+
+    Pure block LoRA patches on diffusion_model.blocks and
+    diffusion_model.txtfusion (layerwise + refiner blocks).
+    No first projection, no control latent injection.
+    """
+    state_dict = _krea2_get_lora_state_dict(model_patch)
+
+    lora_patches = _krea2_build_block_patches(state_dict, model_patched)
+    if not lora_patches:
+        raise RuntimeError(
+            "No block LoRA patches matched the current Krea2 model for openpose control."
+        )
+
+    patched_keys = model_patched.add_patches(
+        lora_patches, strength_patch=strength, strength_model=1.0
+    )
+    if not patched_keys:
+        raise RuntimeError(
+            "Krea2 model did not accept any openpose control LoRA block patches."
+        )
+
+    logger.info(
+        "[Krea2OpenposeControl] Applied %d block LoRA patches (strength=%.4f)",
+        len(patched_keys),
+        float(strength),
+    )
 
 
 def _apply_krea2_control(model_patched, model_patch, vae, image, strength):
@@ -717,9 +768,22 @@ class NunchakuQwenImageDiffsynthControlnet:
                 )
             logger.info(f"[ControlNet] Registered {num_blocks} patches_replace entries for Nunchaku Qwen Image")
         elif route == "krea2":
-            # Krea2 path: dedicated Krea2 runtime patching flow.
-            logger.info("[ControlNet] Applying dedicated Krea2 control route")
-            _apply_krea2_control(model_patched, model_patch, vae, image, strength)
+            # Krea2 path: strictly sub-classify depth vs openpose.
+            krea2_state_dict = _krea2_get_lora_state_dict(model_patch)
+            krea2_type = _classify_krea2_control_type(krea2_state_dict)
+            logger.info("[ControlNet] Krea2 sub-route: %s", krea2_type)
+
+            if krea2_type == "depth":
+                logger.info("[ControlNet] Applying dedicated Krea2 depth control route")
+                _apply_krea2_control(model_patched, model_patch, vae, image, strength)
+            elif krea2_type == "openpose":
+                logger.info("[ControlNet] Applying dedicated Krea2 openpose control route")
+                _apply_krea2_openpose_control(model_patched, model_patch, strength)
+            else:
+                raise RuntimeError(
+                    f"Unrecognized Krea2 control type: {krea2_type}. "
+                    "Expected 'depth' or 'openpose'."
+                )
         elif route == "qwenimage_standard":
             # Standard Qwen Image: use patches["double_block"] (processed by ComfyUI's _forward)
             logger.info("[ControlNet] Using DiffSynthCnetPatch (qwenimage_standard)")

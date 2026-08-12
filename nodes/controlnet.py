@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,6 +9,7 @@ import comfy.latent_formats
 import comfy.ldm.common_dit
 import comfy.ldm.lumina.controlnet
 import comfy.patcher_extension
+import comfy.conds
 from comfy.weight_adapter.lora import LoRAAdapter
 import logging
 
@@ -430,12 +433,60 @@ def _classify_krea2_control_type(state_dict):
     return "openpose"
 
 
-def _apply_krea2_openpose_control(model_patched, model_patch, strength):
+_KREA2_REF_MAX_PIXELS = 1024 * 1024
+_KREA2_REF_SNAP = 16
+
+
+def _krea2_fit_ref_image(image):
+    """Downscale (never upscale) an (B, H, W, C) control image to fit ~1MP,
+    snapped to /16 — the ai-toolkit krea2 reference-latent convention."""
+    samples = image.movedim(-1, 1)  # (B, C, H, W)
+    h, w = samples.shape[2], samples.shape[3]
+    scale = min(1.0, math.sqrt(_KREA2_REF_MAX_PIXELS / (w * h)))
+    nw = max(int(round(w * scale / _KREA2_REF_SNAP)) * _KREA2_REF_SNAP, _KREA2_REF_SNAP)
+    nh = max(int(round(h * scale / _KREA2_REF_SNAP)) * _KREA2_REF_SNAP, _KREA2_REF_SNAP)
+    if (nh, nw) == (h, w):
+        return image
+    return comfy.utils.common_upscale(samples, nw, nh, "area", "disabled").movedim(1, -1)
+
+
+def _krea2_make_ref_cond_patch(base_model, ref_latent):
+    """Build extra_conds / extra_conds_shapes patches that inject a single
+    control reference latent with the index_timestep_zero method.
+
+    The Krea2 core model consumes reference_latents natively (ref tokens are
+    appended to the image sequence and conditioned at t=0). Injection is
+    skipped when the conditioning already carries its own reference_latents
+    (e.g. TextEncodeKrea2OstrisEdit), so the two paths never double-inject.
+    """
+    orig_extra_conds = base_model.extra_conds
+    orig_extra_conds_shapes = base_model.extra_conds_shapes
+
+    def extra_conds(**kwargs):
+        out = orig_extra_conds(**kwargs)
+        if kwargs.get("reference_latents", None) is None and "ref_latents" not in out:
+            out["ref_latents"] = comfy.conds.CONDList([base_model.process_latent_in(ref_latent)])
+            out["ref_latents_method"] = comfy.conds.CONDConstant("index_timestep_zero")
+        return out
+
+    def extra_conds_shapes(**kwargs):
+        out = orig_extra_conds_shapes(**kwargs)
+        if kwargs.get("reference_latents", None) is None and "ref_latents" not in out:
+            out["ref_latents"] = [1, 16, math.prod(ref_latent.size()) // 16]
+        return out
+
+    return extra_conds, extra_conds_shapes
+
+
+def _apply_krea2_openpose_control(model_patched, model_patch, vae, image, strength):
     """Apply Krea2 openpose-style control LoRA.
 
-    Pure block LoRA patches on diffusion_model.blocks and
-    diffusion_model.txtfusion (layerwise + refiner blocks).
-    No first projection, no control latent injection.
+    Block LoRA patches on diffusion_model.blocks and diffusion_model.txtfusion
+    (layerwise + refiner blocks), plus the control image injected as a native
+    Krea2 reference latent (index_timestep_zero) through extra_conds. This is
+    the Kontext-style conditioning pathway the openpose control LoRA was
+    trained against. No first projection, no wrapper, no control-latent
+    injection in the depth sense.
     """
     state_dict = _krea2_get_lora_state_dict(model_patch)
 
@@ -458,6 +509,26 @@ def _apply_krea2_openpose_control(model_patched, model_patch, strength):
         len(patched_keys),
         float(strength),
     )
+
+    # Inject the control image as a reference latent via the native Krea2 ref
+    # pathway (ref tokens appended at t=0, index_timestep_zero method).
+    if vae is None or image is None:
+        logger.info(
+            "[Krea2OpenposeControl] vae/image missing: LoRA applied without control reference injection"
+        )
+        return
+
+    control_image = _krea2_fit_ref_image(image[:, :, :, :3].clamp(0.0, 1.0))
+    ref_latent = vae.encode(control_image)
+    logger.info(
+        "[Krea2OpenposeControl] control ref latent shape=%s",
+        tuple(ref_latent.shape),
+    )
+
+    extra_conds, extra_conds_shapes = _krea2_make_ref_cond_patch(model_patched.model, ref_latent)
+    model_patched.add_object_patch("extra_conds", extra_conds)
+    model_patched.add_object_patch("extra_conds_shapes", extra_conds_shapes)
+    logger.info("[Krea2OpenposeControl] reference latent injection armed (index_timestep_zero)")
 
 
 def _apply_krea2_control(model_patched, model_patch, vae, image, strength):
@@ -778,7 +849,7 @@ class NunchakuQwenImageDiffsynthControlnet:
                 _apply_krea2_control(model_patched, model_patch, vae, image, strength)
             elif krea2_type == "openpose":
                 logger.info("[ControlNet] Applying dedicated Krea2 openpose control route")
-                _apply_krea2_openpose_control(model_patched, model_patch, strength)
+                _apply_krea2_openpose_control(model_patched, model_patch, vae, image, strength)
             else:
                 raise RuntimeError(
                     f"Unrecognized Krea2 control type: {krea2_type}. "

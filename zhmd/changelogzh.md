@@ -5,8 +5,13 @@
   </tr>
 </table>
 
-### v2.5.4 (最新)
-- **已移除**: 取消注册 `NunchakuZImageTurboLoraStackV2`，并删除其 README 文档说明。
+### v2.5.5 (最新)
+- **已添加**: 在 `NunchakuQI&ZITDiffsynthControlnet` 中新增 Krea2 **openpose** ControlNet LoRA 支持（`krea2_turbo_openpose_controlnet.safetensors`）。
+- **互斥路由**: Krea2 路由现在会根据 LoRA 文件自动检测控制子类型 —— **depth**（`first.weight` 扩展投影）与 **openpose**（纯块 LoRA）。openpose 分支与既有的 depth / Qwen Image / Z-Image / Nunchaku 路由完全隔离；现有行为不受任何影响。
+- **原生参考潜变量条件**: 姿态图经 VAE 编码后，以原生 Krea2 参考潜变量（`index_timestep_zero`）注入 —— 这正是该 openpose 控制 LoRA 训练时所采用的条件通路（256 个块补丁，rank 32，作用于全部 28 个 DiT 块及 txtfusion 的 layerwise/refiner 块）。
+- **新增 `use_kv_cache` 选项**（默认 `True`）: 隔离参考 K/V 模式 —— 在 t=0 时执行一次参考前向，预先计算每个块的 K/V，并在每个采样步作为额外 attention key 注入。与参考工作流使用的 ai-toolkit kv_cache 训练约定一致。设为 `False` 可回退到原生 joint 模式参考。
+- **文档**: 英文 README 与中文 README 已更新，新增独立的 Krea2 Depth 控制 与 Krea2 OpenPose 控制 章节。
+- **技术详情**: 参见 [v2.5.5 发行说明](v2.5.5.md) 获取完整说明
 
 ### v2.5.3
 - **已变更**: 部分采用 PR #52 合并方案。

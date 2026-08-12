@@ -5,8 +5,14 @@
   </tr>
 </table>
 
-### v2.5.4 (latest)
-- **Removed**: Unregistered `NunchakuZImageTurboLoraStackV2` and removed its README documentation.
+### v2.5.5 (latest)
+- **Added**: Krea2 **openpose** ControlNet LoRA support (`krea2_turbo_openpose_controlnet.safetensors`) in `NunchakuQI&ZITDiffsynthControlnet`.
+- **Exclusive routing**: The Krea2 route now auto-detects the control sub-type from the LoRA file - **depth** (`first.weight` expansion) vs **openpose** (pure block LoRA). The openpose branch is fully isolated from the existing depth / Qwen Image / Z-Image / Nunchaku routes; no existing behavior is changed.
+- **Native reference-latent conditioning**: The pose image is VAE-encoded and injected as a native Krea2 reference latent (`index_timestep_zero`) - the conditioning pathway the openpose control LoRA was trained against (256 block patches, rank 32, on all 28 DiT blocks + txtfusion layerwise/refiner blocks).
+- **New `use_kv_cache` option** (default `True`): isolated reference K/V mode - one t=0 reference pass precomputes every block's K/V, injected as extra attention keys each step. Matches the ai-toolkit kv_cache training convention used by the reference workflow. Set to `False` to fall back to stock joint-mode refs.
+- **Docs**: README (EN) and Chinese README updated with dedicated Krea2 Depth Control and Krea2 OpenPose Control sections.
+- **Technical Details**: See [v2.5.5 Release Notes](v2.5.5.md) for complete explanation
+
 
 ### v2.5.3
 - **Changed**: Partial adoption of the PR #52 merge plan.

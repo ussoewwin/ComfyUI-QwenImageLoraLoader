@@ -11,6 +11,10 @@ import comfy.ldm.lumina.controlnet
 import comfy.patcher_extension
 import comfy.conds
 from comfy.weight_adapter.lora import LoRAAdapter
+from comfy.ldm.flux.layers import timestep_embedding
+from comfy.ldm.flux.math import apply_rope
+from comfy.ldm.modules.attention import optimized_attention_masked
+from einops import rearrange
 import logging
 
 logger = logging.getLogger(__name__)
@@ -478,7 +482,224 @@ def _krea2_make_ref_cond_patch(base_model, ref_latent):
     return extra_conds, extra_conds_shapes
 
 
-def _apply_krea2_openpose_control(model_patched, model_patch, vae, image, strength):
+def _krea2_patchify(x, patch):
+    """(B, C, H, W) -> (B, H/patch * W/patch, C * patch * patch) image tokens."""
+    b, c, h, w = x.shape
+    return (
+        x.reshape(b, c, h // patch, patch, w // patch, patch)
+        .permute(0, 2, 4, 1, 3, 5)
+        .reshape(b, (h // patch) * (w // patch), c * patch * patch)
+    )
+
+
+def _krea2_ref_pack(dit, ref_latents, bs, device, dtype):
+    """Pack reference latents into tokens + RoPE positions (axis-0 index 1, 2, ...).
+
+    Mirrors the ai-toolkit / ostris edit convention: each reference gets its
+    own y/x grid with axis-0 index i+1, snapped to the DiT patch size.
+    Returns (reftok (B, Lr, C*p*p), refpos (B, Lr, 3)).
+    """
+    patch = dit.patch
+    ref_tokens = []
+    ref_pos = []
+    for i, ref in enumerate(ref_latents, 1):
+        if ref.ndim == 5:  # (B, C, T, H, W) Wan21 layout, T == 1 for images
+            rb, rc, rt, rh5, rw5 = ref.shape
+            ref = ref.reshape(rb * rt, rc, rh5, rw5)
+        ref = comfy.ldm.common_dit.pad_to_patch_size(ref.to(device, dtype), (patch, patch))
+        ref = comfy.utils.repeat_to_batch_size(ref, bs)
+        rh, rw = ref.shape[-2] // patch, ref.shape[-1] // patch
+        ref_tokens.append(
+            ref.reshape(bs, ref.shape[1], rh, patch, rw, patch)
+            .permute(0, 2, 4, 1, 3, 5)
+            .reshape(bs, rh * rw, ref.shape[1] * patch * patch)
+        )
+        rid = torch.zeros(rh, rw, 3, device=device, dtype=torch.float32)
+        rid[..., 0] = float(i)
+        rid[..., 1] = torch.arange(rh, device=device, dtype=torch.float32)[:, None]
+        rid[..., 2] = torch.arange(rw, device=device, dtype=torch.float32)[None, :]
+        ref_pos.append(rid.reshape(1, rh * rw, 3).repeat(bs, 1, 1))
+    return torch.cat(ref_tokens, dim=1), torch.cat(ref_pos, dim=1)
+
+
+def _krea2_ref_attn_kv(attn, x, freqs, kv_capture=None, kv_cache=None, transformer_options={}):
+    """Krea2 Attention forward with optional K/V capture or cached-K/V injection
+    (post-RoPE, pre-GQA-expansion)."""
+    q, k, v, gate = attn.wq(x), attn.wk(x), attn.wv(x), attn.gate(x)
+    q = rearrange(q, "B L (H D) -> B H L D", H=attn.heads)
+    k = rearrange(k, "B L (H D) -> B H L D", H=attn.kvheads)
+    v = rearrange(v, "B L (H D) -> B H L D", H=attn.kvheads)
+    q, k = attn.qknorm(q, k)
+    if freqs is not None:
+        q, k = apply_rope(q, k, freqs)
+    if kv_capture is not None:
+        kv_capture.append((k, v))
+    if kv_cache is not None:
+        k = torch.cat((k, kv_cache[0].to(k.dtype)), dim=2)
+        v = torch.cat((v, kv_cache[1].to(v.dtype)), dim=2)
+    if attn.kvheads != attn.heads:
+        rep = attn.heads // attn.kvheads
+        k = k.repeat_interleave(rep, dim=1)
+        v = v.repeat_interleave(rep, dim=1)
+    out = optimized_attention_masked(
+        q, k, v, attn.heads, mask=None, skip_reshape=True,
+        transformer_options=transformer_options,
+    )
+    return attn.wo(out * F.sigmoid(gate))
+
+
+def _krea2_ref_block_forward(block, x, vec, freqs, kv_capture=None, kv_cache=None,
+                             transformer_options={}):
+    """Krea2 SingleStreamBlock forward with K/V capture / injection."""
+    prescale, preshift, pregate, postscale, postshift, postgate = block.mod(vec)
+    x = x + pregate * _krea2_ref_attn_kv(
+        block.attn,
+        (1 + prescale) * block.prenorm(x) + preshift,
+        freqs,
+        kv_capture=kv_capture,
+        kv_cache=kv_cache,
+        transformer_options=transformer_options,
+    )
+    x = x + postgate * block.mlp((1 + postscale) * block.postnorm(x) + postshift)
+    return x
+
+
+def _krea2_ref_precompute_kv(dit, x, timesteps, ref_latents, transformer_options):
+    """Run only the clean reference tokens through the blocks at t=0 and record
+    each block's post-RoPE K/V (isolated ref attention, kv_cache training mode).
+
+    The ref tokens never see text / noisy tokens, so one pass serves the whole
+    denoise — matching ai-toolkit kv_cache-trained Krea2 control LoRAs.
+    """
+    bs = x.shape[0] * (x.shape[2] if x.ndim == 5 else 1)
+    reftok, refpos = _krea2_ref_pack(dit, ref_latents, bs, x.device, x.dtype)
+    h = dit.first(reftok)
+    t0 = dit.tmlp(
+        timestep_embedding(torch.zeros_like(timesteps), dit.tdim)
+        .unsqueeze(1)
+        .to(h.dtype)
+    )
+    tvec0 = dit.tproj(t0)
+    freqs = dit.pe_embedder(refpos)
+
+    ref_kv = []
+    for block in dit.blocks:
+        cap = []
+        h = _krea2_ref_block_forward(
+            block, h, tvec0, freqs, kv_capture=cap,
+            transformer_options=transformer_options,
+        )
+        ref_kv.append(cap[0])
+    return ref_kv
+
+
+def _krea2_forward_with_cached_refs(dit, x, timesteps, context, ref_kv, transformer_options):
+    """Krea2 denoising forward with reference tokens replaced by cached K/V:
+    the live sequence is just text + noisy image tokens, and every block's
+    attention appends the cached ref K/V as extra keys."""
+    temporal = x.ndim == 5
+    if temporal:
+        b5, c5, t5, h5, w5 = x.shape
+        x = x.reshape(b5 * t5, c5, h5, w5)
+    bs, c, H_orig, W_orig = x.shape
+    patch = dit.patch
+    x = comfy.ldm.common_dit.pad_to_patch_size(x, (patch, patch))
+    H, W = x.shape[-2], x.shape[-1]
+    h_, w_ = H // patch, W // patch
+    device = x.device
+
+    context = dit._unpack_context(context)
+
+    img = dit.first(_krea2_patchify(x, patch))
+
+    t = dit.tmlp(timestep_embedding(timesteps, dit.tdim).unsqueeze(1).to(img.dtype))
+    tvec = dit.tproj(t)
+
+    context = dit.txtfusion(context, mask=None, transformer_options=transformer_options)
+    context = dit.txtmlp(context)
+
+    txtlen, imglen = context.shape[1], img.shape[1]
+    combined = torch.cat((context, img), dim=1)
+
+    txtpos = torch.zeros(bs, txtlen, 3, device=device, dtype=torch.float32)
+    imgids = torch.zeros(h_, w_, 3, device=device, dtype=torch.float32)
+    imgids[..., 1] = torch.arange(h_, device=device, dtype=torch.float32)[:, None]
+    imgids[..., 2] = torch.arange(w_, device=device, dtype=torch.float32)[None, :]
+    imgpos = imgids.reshape(1, h_ * w_, 3).repeat(bs, 1, 1)
+    pos = torch.cat((txtpos, imgpos), dim=1)
+
+    freqs = dit.pe_embedder(pos)
+
+    for block, kv in zip(dit.blocks, ref_kv):
+        combined = _krea2_ref_block_forward(
+            block, combined, tvec, freqs, kv_cache=kv,
+            transformer_options=transformer_options,
+        )
+
+    final = dit.last(combined, t)
+    out = final[:, txtlen:txtlen + imglen, :]
+    out = out.reshape(bs, h_, w_, c, patch, patch).permute(0, 3, 1, 4, 2, 5).reshape(bs, c, H, W)
+    out = out[:, :, :H_orig, :W_orig]
+    if temporal:
+        out = out.reshape(b5, t5, c, H_orig, W_orig).movedim(1, 2)
+    return out
+
+
+def _krea2_ref_fingerprint(ref_latents, bs):
+    """Cheap content key for the ref K/V cache (tensors are rebuilt per step,
+    so object identity cannot be used)."""
+    key = [bs]
+    for r in ref_latents:
+        rf = r.float()
+        key.append((tuple(r.shape), float(rf.sum()), float(rf.square().sum())))
+    return tuple(key)
+
+
+def _krea2_make_ref_kv_forward(dit):
+    """Build a diffusion_model.forward replacement that runs the reference
+    latents in isolated kv_cache mode: one t=0 ref-only pass precomputes every
+    block's K/V, reused on each denoising step as extra attention keys."""
+    orig_forward = dit.forward
+    state = {"last_sigma": None, "caches": {}}
+
+    def forward(x, timesteps, context, attention_mask=None, transformer_options={},
+                ref_latents=None, **kwargs):
+        if ref_latents is None or len(ref_latents) == 0:
+            return orig_forward(
+                x, timesteps, context, attention_mask=attention_mask,
+                transformer_options=transformer_options, **kwargs,
+            )
+
+        # New-run detection: sigmas only decrease within a run.
+        sig = float(timesteps.max())
+        sample_sigmas = transformer_options.get("sample_sigmas", None)
+        new_run = state["last_sigma"] is None or sig > state["last_sigma"]
+        if (
+            sample_sigmas is not None
+            and sig == float(sample_sigmas[0])
+            and sig != state["last_sigma"]
+        ):
+            new_run = True
+        if new_run:
+            state["caches"].clear()
+        state["last_sigma"] = sig
+
+        bs = x.shape[0] * (x.shape[2] if x.ndim == 5 else 1)
+        key = _krea2_ref_fingerprint(ref_latents, bs)
+        ref_kv = state["caches"].get(key)
+        if ref_kv is None:
+            ref_kv = _krea2_ref_precompute_kv(
+                dit, x, timesteps, ref_latents, transformer_options
+            )
+            state["caches"][key] = ref_kv
+        return _krea2_forward_with_cached_refs(
+            dit, x, timesteps, context, ref_kv, transformer_options
+        )
+
+    return forward
+
+
+def _apply_krea2_openpose_control(model_patched, model_patch, vae, image, strength, use_kv_cache=True):
     """Apply Krea2 openpose-style control LoRA.
 
     Block LoRA patches on diffusion_model.blocks and diffusion_model.txtfusion
@@ -529,6 +750,18 @@ def _apply_krea2_openpose_control(model_patched, model_patch, vae, image, streng
     model_patched.add_object_patch("extra_conds", extra_conds)
     model_patched.add_object_patch("extra_conds_shapes", extra_conds_shapes)
     logger.info("[Krea2OpenposeControl] reference latent injection armed (index_timestep_zero)")
+
+    # Isolated kv_cache mode: ref tokens never ride in the per-step sequence.
+    # One t=0 ref-only pass precomputes every block's K/V, injected as extra
+    # attention keys each step — the ai-toolkit kv_cache training convention
+    # this control LoRA was trained with (see krea2_controlnet_pose.json).
+    if use_kv_cache:
+        dit = model_patched.get_model_object("diffusion_model")
+        model_patched.add_object_patch(
+            "diffusion_model.forward",
+            _krea2_make_ref_kv_forward(dit),
+        )
+        logger.info("[Krea2OpenposeControl] kv_cache isolated-ref forward armed")
 
 
 def _apply_krea2_control(model_patched, model_patch, vae, image, strength):
@@ -792,14 +1025,15 @@ class NunchakuQwenImageDiffsynthControlnet:
                               "image": ("IMAGE",),
                               "strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
                               },
-                "optional": {"mask": ("MASK",)}}
+                "optional": {"mask": ("MASK",),
+                              "use_kv_cache": ("BOOLEAN", {"default": True, "tooltip": "Isolated reference K/V cache mode (ai-toolkit kv_cache training convention). Leave on for Krea2 control LoRAs trained with kv_cache."})}}
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "diffsynth_controlnet_nunchaku"
     EXPERIMENTAL = True
 
     CATEGORY = "advanced/loaders/qwen"
 
-    def diffsynth_controlnet_nunchaku(self, model, model_patch, vae, image, strength, mask=None):
+    def diffsynth_controlnet_nunchaku(self, model, model_patch, vae, image, strength, mask=None, use_kv_cache=True):
         model_patched = model.clone()
         image = image[:, :, :, :3]
         if mask is not None:
@@ -849,7 +1083,10 @@ class NunchakuQwenImageDiffsynthControlnet:
                 _apply_krea2_control(model_patched, model_patch, vae, image, strength)
             elif krea2_type == "openpose":
                 logger.info("[ControlNet] Applying dedicated Krea2 openpose control route")
-                _apply_krea2_openpose_control(model_patched, model_patch, vae, image, strength)
+                _apply_krea2_openpose_control(
+                    model_patched, model_patch, vae, image, strength,
+                    use_kv_cache=use_kv_cache,
+                )
             else:
                 raise RuntimeError(
                     f"Unrecognized Krea2 control type: {krea2_type}. "

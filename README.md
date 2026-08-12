@@ -81,9 +81,10 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">
 
-- **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image & Z-ImageTurbo
+- **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image, Z-ImageTurbo & Krea2 (depth / openpose)
 
-- **Krea2ControlNetLoraLoader**: Krea2 depth controlnet-lora loader
+- **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora loader (depth & openpose)
+  - Auto-detects the Krea2 control sub-type from the LoRA file: **depth** (`first.weight` expansion route) or **openpose** (pure block LoRA + native reference-latent route). Routing is strictly exclusive.
 
 <img src="images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">
 
@@ -109,7 +110,42 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
-6. Krea2 depth support and usage: add `Krea2ControlNetLoraLoader`, select your Krea2 depth controlnet-lora file (for example: `krea2-depth-control-lora.safetensors`), then connect its `MODEL_PATCH` output to `NunchakuQI&ZITDiffsynthControlnet` `model_patch`
+6. **Krea2 control support** (depth & openpose): add `Krea2ControlNetLoraLoader`, select
+   your Krea2 controlnet-lora file, then connect its `MODEL_PATCH` output to the `model_patch`
+   input of `NunchakuQI&ZITDiffsynthControlnet`. The node auto-detects the Krea2 sub-type:
+   - **Depth** (e.g. `krea2-depth-control-lora.safetensors`): expanded first-projection route
+     with control-latent injection. This is the original Krea2 depth behavior, unchanged.
+   - **OpenPose** (e.g. `krea2_turbo_openpose_controlnet.safetensors`): pure block-LoRA route on
+     `diffusion_model.blocks` + `diffusion_model.txtfusion` (layerwise/refiner), with the pose
+     image injected as a native Krea2 reference latent (`index_timestep_zero`). Keep
+     `use_kv_cache` enabled (default) - this matches the ai-toolkit kv_cache training
+     convention the openpose control LoRA was trained with.
+
+### Krea2 OpenPose Control
+
+The `krea2_turbo_openpose_controlnet.safetensors` control LoRA is applied through a dedicated,
+self-contained route in `NunchakuQI&ZITDiffsynthControlnet` (no external nodes required):
+
+1. Load the openpose control LoRA with `Krea2ControlNetLoraLoader`
+2. Connect its `MODEL_PATCH` to `NunchakuQI&ZITDiffsynthControlnet`'s `model_patch`
+3. Connect your Krea2 model, VAE and the pose image; set `strength`
+4. Keep `use_kv_cache = True` (default) for the isolated reference K/V mode
+
+**How it works:**
+- 256 block LoRA patches (rank 32) applied to all 28 DiT blocks plus the txtfusion
+  layerwise/refiner blocks
+- The pose image is VAE-encoded and injected as a native Krea2 reference latent
+  (`index_timestep_zero`), the conditioning pathway this control LoRA was trained against
+- `use_kv_cache` runs one t=0 reference pass that precomputes every block's K/V and injects
+  them as extra attention keys each step (no per-step ref tokens in the sequence)
+
+**Exclusivity:** the Krea2 route is sub-classified strictly (depth vs openpose) and the whole
+Krea2 branch is fully isolated from the Qwen Image / Z-Image / Nunchaku routes - existing
+workflows using those routes are unaffected.
+
+*Reference: ostris' `comfyui-krea2-ostris-edit` TextEncode node and pysssss'
+`krea2_controlnet_pose.json` workflow were used as reference; this repository implements the
+same pose-control effect standalone.*
 
 ## Features
 

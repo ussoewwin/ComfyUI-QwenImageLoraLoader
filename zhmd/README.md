@@ -185,6 +185,21 @@ Z-Image / Nunchaku 路由完全隔离——使用这些路由的现有工作流�
 - Nunchaku Qwen Image 模型
 - 标准 ComfyUI 工作流
 
+### AMD / ROCm 兼容性
+
+**nunchaku 仅支持 NVIDIA CUDA，在 AMD/ROCm 系统上不可用。**
+在 AMD/ROCm（或任何无法导入 `nunchaku` 包的机器）上，本自定义节点会自动检测缺失的依赖并适配：
+
+- **已禁用**：所有依赖 nunchaku 的节点将不再注册，不会出现在节点列表中：
+  - `NunchakuQwenImageLoraLoader` / `NunchakuQwenImageLoraStack`
+  - `NunchakuQwenImageLoraStackV1` / `V2` / `V3`
+  - `NunchakuZImageTurboLoraStackV1` / `V4`
+- **仍可使用**：不依赖 nunchaku 的 Krea2 ControlNet 节点保持完整功能：
+  - `Krea2ControlNetLoraLoader` — 将 Krea2 ControlNet LoRA 加载为 `MODEL_PATCH`
+  - `NunchakuQwenImageDiffsynthControlnet` — 应用控制（该节点的 Krea2 路由不需要 nunchaku；Z-Image / Nunchaku-QwenImage 路由仅在安装 nunchaku 时可用）
+
+启动时若缺少依赖，会输出 `[ROCm/AMD] nunchaku is not available...` 警告日志。如果旧工作流仍引用已禁用的节点，会收到清晰的 `RuntimeError`（"nunchaku is required..."），而非曲折的导入失败。
+
 ## 故障排除
 
 ### 错误: "ModuleNotFoundError: No module named 'nunchaku'"

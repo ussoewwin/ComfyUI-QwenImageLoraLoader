@@ -192,6 +192,29 @@ This node is designed to work with:
 - Nunchaku Qwen Image models
 - Standard ComfyUI workflows
 
+### AMD / ROCm Compatibility
+
+**nunchaku requires NVIDIA CUDA and is not available on AMD/ROCm systems.**
+On AMD/ROCm (or any machine where the `nunchaku` package cannot be imported), this
+custom node automatically detects the missing dependency and adapts:
+
+- **Disabled**: All nunchaku-dependent nodes are **not registered** and will not
+  appear in the node list:
+  - `NunchakuQwenImageLoraLoader` / `NunchakuQwenImageLoraStack`
+  - `NunchakuQwenImageLoraStackV1` / `V2` / `V3`
+  - `NunchakuZImageTurboLoraStackV1` / `V4`
+- **Still available**: The nunchaku-independent Krea2 ControlNet nodes remain fully
+  functional:
+  - `Krea2ControlNetLoraLoader` — loads a Krea2 ControlNet LoRA into a `MODEL_PATCH`
+  - `NunchakuQwenImageDiffsynthControlnet` — applies the control (the Krea2 route of
+    this node does not require nunchaku; the Z-Image / Nunchaku-QwenImage routes are
+    only reachable when nunchaku is installed)
+
+At startup, a `[ROCm/AMD] nunchaku is not available...` warning is logged when the
+dependency is missing. If a legacy workflow still references a disabled node, you
+get a clear `RuntimeError` ("nunchaku is required...") instead of an obscure import
+failure.
+
 ## Troubleshooting
 
 ### Error: "ModuleNotFoundError: No module named 'nunchaku'"

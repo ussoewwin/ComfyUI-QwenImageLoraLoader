@@ -130,8 +130,10 @@ except Exception as e:
     logger.warning(f"ControlNet node failed to load: {e}. LoRA nodes will still work.")
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
-    "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
+    **({} if not _NUNCHAKU_AVAILABLE else {
+        "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
+        "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
+    }),
     **QWEN_V2_NAMES,
     **QWEN_V3_NAMES,
     **QWEN_V1_NAMES,

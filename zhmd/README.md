@@ -7,7 +7,7 @@
   </tr>
 </table>
 
-用于 Nunchaku Qwen Image 和 Z-ImageTurbo 模型的 ComfyUI 自定义节点，支持加载和应用 LoRA（低秩适配）。兼容 ComfyUI Nodes 2.0。**v4 功能需要 Nunchaku 1.2.0+ 和 ComfyUI-Nunchaku 1.2.0+。**
+用于 Nunchaku Qwen Image 和 Z-ImageTurbo 模型的 ComfyUI 自定义节点，支持加载和应用 LoRA（低秩适配），以及 Krea2 depth/openpose ControlNet LoRA 加载器。兼容 ComfyUI Nodes 2.0。**v4 功能需要 Nunchaku 1.2.0+ 和 ComfyUI-Nunchaku 1.2.0+。**
 
 ## ⚠️ **开发状态**
 

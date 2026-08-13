@@ -26,11 +26,27 @@ def _get_compute_device() -> torch.device:
 
 # It's assumed these functions from your project are available for import.
 # If not, you'll need to provide their definitions.
-from nunchaku.lora.flux.nunchaku_converter import (
-    pack_lowrank_weight,
-    reorder_adanorm_lora_up,
-    unpack_lowrank_weight,
-)
+try:
+    from nunchaku.lora.flux.nunchaku_converter import (
+        pack_lowrank_weight,
+        reorder_adanorm_lora_up,
+        unpack_lowrank_weight,
+    )
+    _NUNCHAKU_AVAILABLE = True
+except ImportError:
+    # AMD/ROCm or missing nunchaku install: keep the module importable.
+    # Any call into these helpers raises a clear error.
+    _NUNCHAKU_AVAILABLE = False
+
+    def _nunchaku_required(*_args, **_kwargs):
+        raise RuntimeError(
+            "nunchaku is required for QwenImage/Z-ImageTurbo LoRA composition, "
+            "but it is not installed or failed to import (AMD/ROCm systems are not supported)."
+        )
+
+    pack_lowrank_weight = _nunchaku_required
+    reorder_adanorm_lora_up = _nunchaku_required
+    unpack_lowrank_weight = _nunchaku_required
 
 logger = logging.getLogger(__name__)
 

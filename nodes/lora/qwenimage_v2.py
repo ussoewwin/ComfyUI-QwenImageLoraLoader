@@ -150,7 +150,13 @@ class NunchakuQwenImageLoraStackV2:
         lora_loader_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         if lora_loader_dir not in sys.path:
             sys.path.insert(0, lora_loader_dir)
-        from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format, _log_lora_format_detection, NUNCHAKU_LOG_ENABLED
+        try:
+            from nunchaku_code.lora_qwen import _classify_and_map_key, _load_lora_state_dict, _detect_lora_format, _log_lora_format_detection, NUNCHAKU_LOG_ENABLED
+        except ImportError as e:
+            raise RuntimeError(
+                "nunchaku is required for QwenImage LoRA key mapping, "
+                "but it is not installed or failed to import."
+            ) from e
         _fn, _fs = loras_to_apply[0]
         lora_path = folder_paths.get_full_path_or_raise("loras", _fn)
         lora_state_dict = _load_lora_state_dict(lora_path)
@@ -186,7 +192,13 @@ class NunchakuQwenImageLoraStackV2:
         spec.loader.exec_module(wrappers_module)
         ComfyQwenImageWrapperV2 = wrappers_module.ComfyQwenImageWrapperV2
         
-        from nunchaku import NunchakuQwenImageTransformer2DModel
+        try:
+            from nunchaku import NunchakuQwenImageTransformer2DModel
+        except ImportError as e:
+            raise RuntimeError(
+                "nunchaku is required to apply LoRAs to Nunchaku Qwen Image models, "
+                "but it is not installed or failed to import."
+            ) from e
         
         # Debug logging
         model_wrapper_type_name = type(model_wrapper).__name__

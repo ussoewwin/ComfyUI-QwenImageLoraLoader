@@ -171,7 +171,13 @@ class NunchakuQwenImageLoraStackV1:
         spec.loader.exec_module(wrappers_module)
         ComfyQwenImageWrapper = wrappers_module.ComfyQwenImageWrapper
 
-        from nunchaku import NunchakuQwenImageTransformer2DModel
+        try:
+            from nunchaku import NunchakuQwenImageTransformer2DModel
+        except ImportError as e:
+            raise RuntimeError(
+                "nunchaku is required to apply LoRAs to Nunchaku Qwen Image models, "
+                "but it is not installed or failed to import."
+            ) from e
 
         # Debug logging
         model_wrapper_type_name = type(model_wrapper).__name__

@@ -6,9 +6,31 @@ from torch import nn
 import comfy.model_management
 import logging
 
-from nunchaku import NunchakuZImageTransformer2DModel
-from nunchaku.caching.fbcache import cache_context, create_cache_context
-from nunchaku_code.lora_qwen import compose_loras_v2, reset_lora_v2
+try:
+    from nunchaku import NunchakuZImageTransformer2DModel
+    from nunchaku.caching.fbcache import cache_context, create_cache_context
+    from nunchaku_code.lora_qwen import compose_loras_v2, reset_lora_v2
+    _NUNCHAKU_AVAILABLE = True
+except ImportError:
+    # AMD/ROCm or missing nunchaku install: keep the module importable.
+    NunchakuZImageTransformer2DModel = None
+    cache_context = None
+    create_cache_context = None
+    compose_loras_v2 = None
+    reset_lora_v2 = None
+    _NUNCHAKU_AVAILABLE = False
+
+    def compose_loras_v2(*_args, **_kwargs):
+        raise RuntimeError(
+            "nunchaku is required for LoRA composition, "
+            "but it is not installed or failed to import (AMD/ROCm systems are not supported)."
+        )
+
+    def reset_lora_v2(*_args, **_kwargs):
+        raise RuntimeError(
+            "nunchaku is required for LoRA reset, "
+            "but it is not installed or failed to import (AMD/ROCm systems are not supported)."
+        )
 
 logger = logging.getLogger(__name__)
 

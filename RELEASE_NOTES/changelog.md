@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.5.5 (latest)
+### v2.5.6 (latest)
+- **Added**: AMD/ROCm compatibility - nunchaku requires NVIDIA CUDA and is unavailable on AMD/ROCm systems. The package now probes nunchaku availability at startup (`_NUNCHAKU_AVAILABLE`) and automatically disables every nunchaku-dependent node (`NunchakuQwenImageLoraLoader/Stack`, `V1`/`V2`/`V3`, `NunchakuZImageTurboLoraStackV1`/`V4`) on such systems; they are no longer registered.
+- **Still available on AMD/ROCm**: The nunchaku-independent Krea2 ControlNet nodes remain fully functional - `Krea2ControlNetLoraLoader` and the Krea2 route of `NunchakuQI&ZITDiffsynthControlnet`.
+- **Clear errors**: Runtime nunchaku imports are guarded, so legacy workflows get a clear `RuntimeError` ("nunchaku is required...") instead of an obscure `ImportError`. Startup logs a `[ROCm/AMD] nunchaku is not available...` warning when the dependency is missing.
+- **Docs**: README (EN + ZH) updated with an AMD / ROCm compatibility section.
+- **Technical Details**: See [v2.5.6 Release Notes](v2.5.6.md) for complete explanation
+
+### v2.5.5
 - **Added**: Krea2 **openpose** ControlNet LoRA support (`krea2_turbo_openpose_controlnet.safetensors`) in `NunchakuQI&ZITDiffsynthControlnet`.
 - **Exclusive routing**: The Krea2 route now auto-detects the control sub-type from the LoRA file - **depth** (`first.weight` expansion) vs **openpose** (pure block LoRA). The openpose branch is fully isolated from the existing depth / Qwen Image / Z-Image / Nunchaku routes; no existing behavior is changed.
 - **Native reference-latent conditioning**: The pose image is VAE-encoded and injected as a native Krea2 reference latent (`index_timestep_zero`) - the conditioning pathway the openpose control LoRA was trained against (256 block patches, rank 32, on all 28 DiT blocks + txtfusion layerwise/refiner blocks).

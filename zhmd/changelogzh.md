@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.5.5 (最新)
+### v2.5.6 (最新)
+- **已添加**: AMD/ROCm 兼容性 — nunchaku 仅支持 NVIDIA CUDA，在 AMD/ROCm 系统上不可用。本包现在会在启动时探测 nunchaku 可用性（`_NUNCHAKU_AVAILABLE`），并在这类系统上自动禁用所有依赖 nunchaku 的节点（`NunchakuQwenImageLoraLoader/Stack`、`V1`/`V2`/`V3`、`NunchakuZImageTurboLoraStackV1`/`V4`）；它们将不再注册。
+- **AMD/ROCm 上仍可使用**: 不依赖 nunchaku 的 Krea2 ControlNet 节点保持完整功能 — `Krea2ControlNetLoraLoader` 以及 `NunchakuQI&ZITDiffsynthControlnet` 的 Krea2 路由。
+- **清晰的错误**: 运行时 nunchaku 导入已加防护，旧工作流会收到清晰的 `RuntimeError`（"nunchaku is required..."），而非曲折的 `ImportError`。缺少依赖时，启动时会输出 `[ROCm/AMD] nunchaku is not available...` 警告日志。
+- **文档**: README（EN + ZH）已更新，新增 AMD / ROCm 兼容性章节。
+- **技术详情**: 参见 [v2.5.6 发行说明](v2.5.6.md) 获取完整说明
+
+### v2.5.5
 - **已添加**: 在 `NunchakuQI&ZITDiffsynthControlnet` 中新增 Krea2 **openpose** ControlNet LoRA 支持（`krea2_turbo_openpose_controlnet.safetensors`）。
 - **互斥路由**: Krea2 路由现在会根据 LoRA 文件自动检测控制子类型 —— **depth**（`first.weight` 扩展投影）与 **openpose**（纯块 LoRA）。openpose 分支与既有的 depth / Qwen Image / Z-Image / Nunchaku 路由完全隔离；现有行为不受任何影响。
 - **原生参考潜变量条件**: 姿态图经 VAE 编码后，以原生 Krea2 参考潜变量（`index_timestep_zero`）注入 —— 这正是该 openpose 控制 LoRA 训练时所采用的条件通路（256 个块补丁，rank 32，作用于全部 28 个 DiT 块及 txtfusion 的 layerwise/refiner 块）。

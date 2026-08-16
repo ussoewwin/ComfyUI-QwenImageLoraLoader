@@ -5,7 +5,11 @@
   </tr>
 </table>
 
-### v2.5.6 (latest)
+### v2.5.7 (latest)
+- **Removed**: Legacy node `NunchakuQwenImageLoraStack` ("Nunchaku Qwen Image LoRA Stack (Legacy)") removed from registered node mappings and documentation. Workflows should use `NunchakuQwenImageLoraStackV1`, `V2`, or `V3` instead.
+- **Technical Details**: See [v2.5.7 Release Notes](v2.5.7.md) for complete explanation
+
+### v2.5.6
 - **Added**: AMD/ROCm compatibility - nunchaku requires NVIDIA CUDA and is unavailable on AMD/ROCm systems. The package now probes nunchaku availability at startup (`_NUNCHAKU_AVAILABLE`) and automatically disables every nunchaku-dependent node (`NunchakuQwenImageLoraLoader/Stack`, `V1`/`V2`/`V3`, `NunchakuZImageTurboLoraStackV1`/`V4`) on such systems; they are no longer registered.
 - **Still available on AMD/ROCm**: The nunchaku-independent Krea2 ControlNet nodes remain fully functional - `Krea2ControlNetLoraLoader` and the Krea2 route of `NunchakuQI&ZITDiffsynthControlnet`.
 - **Clear errors**: Runtime nunchaku imports are guarded, so legacy workflows get a clear `RuntimeError` ("nunchaku is required...") instead of an obscure `ImportError`. Startup logs a `[ROCm/AMD] nunchaku is not available...` warning when the dependency is missing.

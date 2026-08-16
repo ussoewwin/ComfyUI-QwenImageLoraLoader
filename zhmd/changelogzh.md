@@ -5,7 +5,11 @@
   </tr>
 </table>
 
-### v2.5.6 (最新)
+### v2.5.7 (最新)
+- **已移除**: 从注册节点映射及文档中移除了旧版节点 `NunchakuQwenImageLoraStack`（"Nunchaku Qwen Image LoRA Stack (Legacy)"）。请使用 `NunchakuQwenImageLoraStackV1`、`V2` 或 `V3` 替代。
+- **技术详情**: 请参阅 [v2.5.7 发行说明](v2.5.7.md) 获取完整说明
+
+### v2.5.6
 - **已添加**: AMD/ROCm 兼容性 — nunchaku 仅支持 NVIDIA CUDA，在 AMD/ROCm 系统上不可用。本包现在会在启动时探测 nunchaku 可用性（`_NUNCHAKU_AVAILABLE`），并在这类系统上自动禁用所有依赖 nunchaku 的节点（`NunchakuQwenImageLoraLoader/Stack`、`V1`/`V2`/`V3`、`NunchakuZImageTurboLoraStackV1`/`V4`）；它们将不再注册。
 - **AMD/ROCm 上仍可使用**: 不依赖 nunchaku 的 Krea2 ControlNet 节点保持完整功能 — `Krea2ControlNetLoraLoader` 以及 `NunchakuQI&ZITDiffsynthControlnet` 的 Krea2 路由。
 - **清晰的错误**: 运行时 nunchaku 导入已加防护，旧工作流会收到清晰的 `RuntimeError`（"nunchaku is required..."），而非曲折的 `ImportError`。缺少依赖时，启动时会输出 `[ROCm/AMD] nunchaku is not available...` 警告日志。

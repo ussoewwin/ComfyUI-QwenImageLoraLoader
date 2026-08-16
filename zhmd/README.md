@@ -1,4 +1,4 @@
-# ComfyUI-Nunchaku QwenImage＆ZImageTurboLoraStack
+# ComfyUI-Nunchaku QwenImage/ZImageTurboLoraStack&Multi ControlNet Loader
 
 <table align="center">
   <tr>
@@ -13,7 +13,7 @@
 
 **目前正在开发和测试中。正在大量输出调试日志。这不影响功能。**
 
-> 最新版本: [v2.5.6 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.6)
+> 最新版本: [v2.5.7 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.7)
 >
 
 ## 来源

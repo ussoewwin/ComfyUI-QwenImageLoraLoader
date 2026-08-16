@@ -1,4 +1,4 @@
-# ComfyUI-Nunchaku QwenImage＆ZImageTurboLoraStack
+# ComfyUI-Nunchaku QwenImage/ZImageTurboLoraStack&Multi ControlNet Loader
 
 <table align="center">
   <tr>
@@ -13,7 +13,7 @@ A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nun
 
 **Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
 
-> Latest release: [v2.5.6 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.6)
+> Latest release: [v2.5.7 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.7)
 > 
 
 ## Source

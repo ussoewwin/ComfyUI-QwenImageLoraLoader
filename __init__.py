@@ -72,7 +72,7 @@ except Exception as e:
 # Krea2 ControlNet LoRA loader is registered right after, unconditionally.
 if _NUNCHAKU_AVAILABLE:
     try:
-        from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader, NunchakuQwenImageLoraStack
+        from .nodes.lora.qwenimage import NunchakuQwenImageLoraLoader
         from .nodes.lora.qwenimage_v2 import GENERATED_NODES as QWEN_V2_NODES, GENERATED_DISPLAY_NAMES as QWEN_V2_NAMES
         from .nodes.lora.qwenimage_v3 import GENERATED_NODES as QWEN_V3_NODES, GENERATED_DISPLAY_NAMES as QWEN_V3_NAMES
         from .nodes.lora.qwenimage_v1 import GENERATED_NODES as QWEN_V1_NODES, GENERATED_DISPLAY_NAMES as QWEN_V1_NAMES
@@ -83,7 +83,6 @@ if _NUNCHAKU_AVAILABLE:
 
         # Add version to classes before creating NODE_CLASS_MAPPINGS
         NunchakuQwenImageLoraLoader.__version__ = __version__
-        NunchakuQwenImageLoraStack.__version__ = __version__
         for node_class in QWEN_V2_NODES.values():
             node_class.__version__ = __version__
         for node_class in QWEN_V3_NODES.values():
@@ -99,7 +98,6 @@ if _NUNCHAKU_AVAILABLE:
             node_class.__version__ = __version__
 
         NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraLoader"] = NunchakuQwenImageLoraLoader
-        NODE_CLASS_MAPPINGS["NunchakuQwenImageLoraStack"] = NunchakuQwenImageLoraStack
         NODE_CLASS_MAPPINGS.update(QWEN_V2_NODES)
         NODE_CLASS_MAPPINGS.update(QWEN_V3_NODES)
         NODE_CLASS_MAPPINGS.update(QWEN_V1_NODES)
@@ -132,7 +130,6 @@ except Exception as e:
 NODE_DISPLAY_NAME_MAPPINGS = {
     **({} if not _NUNCHAKU_AVAILABLE else {
         "NunchakuQwenImageLoraLoader": "Nunchaku Qwen Image LoRA Loader",
-        "NunchakuQwenImageLoraStack": "Nunchaku Qwen Image LoRA Stack (Legacy)",
     }),
     **QWEN_V2_NAMES,
     **QWEN_V3_NAMES,

@@ -49,10 +49,6 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/single_loader.png" alt="NunchakuQwenImageLoraLoader: Single LoRA loader" width="400">
 
-- **NunchakuQwenImageLoraStack**: Multi LoRA stacker with dynamic UI (Legacy)
-
-<img src="images/legacy_stack.png" alt="NunchakuQwenImageLoraStack: Multi LoRA stacker with dynamic UI (Legacy)" width="400">
-
 - **NunchakuQwenImageLoraStackV1**: Multi LoRA stacker with rgthree-style UI
   - Clean, minimalist design inspired by [Power Lora Loader (rgthree-comfy)](https://github.com/rgthree/rgthree-comfy). Toggle, LoRA name, and strength per row.
   - ⚠️ **Note**: Does **not** work properly with ComfyUI Nodes 2.0. Use the standard (LiteGraph) canvas.
@@ -92,7 +88,7 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 **For Nunchaku Qwen Image models:**
 1. Load your Nunchaku Qwen Image model using `Nunchaku Qwen Image DiT Loader`
-2. Add either `NunchakuQwenImageLoraLoader` or `NunchakuQwenImageLoraStack` node
+2. Add `NunchakuQwenImageLoraLoader` or `NunchakuQwenImageLoraStackV1` / `V2` / `V3` node
 3. Select your LoRA file and set the strength
 4. Connect to your workflow
 
@@ -200,7 +196,7 @@ custom node automatically detects the missing dependency and adapts:
 
 - **Disabled**: All nunchaku-dependent nodes are **not registered** and will not
   appear in the node list:
-  - `NunchakuQwenImageLoraLoader` / `NunchakuQwenImageLoraStack`
+  - `NunchakuQwenImageLoraLoader`
   - `NunchakuQwenImageLoraStackV1` / `V2` / `V3`
   - `NunchakuZImageTurboLoraStackV1` / `V4`
 - **Still available**: The nunchaku-independent Krea2 ControlNet nodes remain fully

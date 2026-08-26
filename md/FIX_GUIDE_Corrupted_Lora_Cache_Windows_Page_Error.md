@@ -162,7 +162,7 @@ def load_precompiled(
     Load a precompiled cache file and reconstruct the ``processed_groups`` dict.
 
     Returns:
-        ``{ module_key: (A, B, alpha_or_None) }`` ? identical structure to
+        ``{ module_key: (A, B, alpha_or_None) }`` — identical structure to
         what ``compose_loras_v2`` produces after the classify+fuse stage.
         Returns an empty dict on any error so the caller can fall back to
         a full re-fuse gracefully.
@@ -194,7 +194,7 @@ def load_precompiled(
         # module_key itself may contain dots but never "__"
         sep_idx = flat_key.rfind(_SEP)
         if sep_idx == -1:
-            logger.warning(f"[CACHE] Unrecognised flat key format: '{flat_key}' ? skipping.")
+            logger.warning(f"[CACHE] Unrecognised flat key format: '{flat_key}' — skipping.")
             continue
         module_key = flat_key[:sep_idx]
         role = flat_key[sep_idx + len(_SEP):]
@@ -207,7 +207,7 @@ def load_precompiled(
         alpha_tensor = parts.get(_ROLE_ALPHA)  # 1-D float32 scalar tensor or None
 
         if A is None or B is None:
-            logger.warning(f"[CACHE] Incomplete entry for '{module_key}' (missing A or B) ? skipping.")
+            logger.warning(f"[CACHE] Incomplete entry for '{module_key}' (missing A or B) — skipping.")
             continue
 
         # Convert alpha back to the same form compose_loras_v2 expects:

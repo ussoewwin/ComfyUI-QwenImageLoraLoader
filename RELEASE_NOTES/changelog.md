@@ -7,7 +7,7 @@
 
 ### v2.5.8 (latest)
 - **Fixed**: ComfyUI no longer crashes with a Windows fatal "page error" when a precompiled LoRA cache file is damaged on disk (readable header, unreadable data region). `load_precompiled()` now reads the cache as plain bytes instead of using the mmap-based `load_file`, so the same damage surfaces as an ordinary Python `OSError` and the loader falls back to a full re-fuse automatically.
-- **Technical Details**: See [v2.5.8 Release Notes](v2.5.8.md) for complete explanation
+- **Technical Details**: See [v2.5.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.8) for complete explanation
 
 ### v2.5.7
 - **Removed**: Legacy node `NunchakuQwenImageLoraStack` ("Nunchaku Qwen Image LoRA Stack (Legacy)") removed from registered node mappings and documentation. Workflows should use `NunchakuQwenImageLoraStackV1`, `V2`, or `V3` instead.

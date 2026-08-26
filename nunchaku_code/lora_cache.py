@@ -263,13 +263,21 @@ def load_precompiled(
         a full re-fuse gracefully.
     """
     try:
-        from safetensors.torch import load_file as st_load_file
+        from safetensors.torch import load as st_load_bytes
     except ImportError as exc:
         logger.error(f"[CACHE] Cannot load precompiled cache: safetensors not available. {exc}")
         return {}
 
     try:
-        flat: Dict[str, torch.Tensor] = st_load_file(str(cache_path), device="cpu")
+        # Read as plain bytes instead of ``load_file`` (mmap). A damaged cache
+        # file can still expose a readable header but fail during the mmap'd
+        # tensor read, which crashes the whole process with a Windows fatal
+        # "page error" that Python cannot catch. A plain read surfaces the same
+        # damage as an ordinary OSError, so the existing except below falls
+        # back to a full re-fuse gracefully.
+        with open(cache_path, "rb") as fh:
+            data = fh.read()
+        flat: Dict[str, torch.Tensor] = st_load_bytes(data)
     except Exception as exc:
         logger.error(f"[CACHE] Failed to load {cache_path}: {exc}")
         return {}

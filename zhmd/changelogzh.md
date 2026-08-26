@@ -5,6 +5,10 @@
   </tr>
 </table>
 
+### v2.5.8 (最新)
+- **已修复**: 当预编译 LoRA 缓存文件在磁盘上损坏（头部可读、数据区不可读）时，ComfyUI 不再因 Windows 致命 "page error" 崩溃。`load_precompiled()` 现在改为以普通字节方式读取缓存，而非使用基于 mmap 的 `load_file`，因此同一损坏会以普通 Python `OSError` 形式暴露，加载器会自动回退到完整的重新融合。
+- **技术详情**: 参见 [v2.5.8 发行说明](v2.5.8.md) 获取完整说明
+
 ### v2.5.7 (最新)
 - **已移除**: 从注册节点映射及文档中移除了旧版节点 `NunchakuQwenImageLoraStack`（"Nunchaku Qwen Image LoRA Stack (Legacy)"）。请使用 `NunchakuQwenImageLoraStackV1`、`V2` 或 `V3` 替代。
 - **技术详情**: 请参阅 [v2.5.7 发行说明](v2.5.7.md) 获取完整说明

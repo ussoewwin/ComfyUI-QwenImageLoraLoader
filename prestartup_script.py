@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 _PATCH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches")
 _NUNCHAKU_PATCH_PATH = os.path.join(_PATCH_DIR, "nunchaku_patch.py")
 _DOCSTRING_PATCH_PATH = os.path.join(_PATCH_DIR, "transformers_qwen_vl_docstring_patch.py")
+_IP_KWARGS_PATCH_PATH = os.path.join(_PATCH_DIR, "transformers_image_processor_kwargs_patch.py")
 
 
 def _load_patch_module(module_name: str, path: str):
@@ -61,6 +62,27 @@ try:
         )
 except Exception:
     logger.exception("ComfyUI-QwenImageLoraLoader prestartup: CausalLM ModelOutput docstring patch failed")
+
+# ImageProcessorKwargs docstring patch (deepseek_vl_hybrid / kimi_k25 / paddleocr_vl
+# [ERROR] "but not documented" noise): wraps get_args_doc_from_source at prestartup,
+# before any custom node imports those transformers modules.
+try:
+    _ip_kwargs_patch_module = _load_patch_module(
+        "comfyui_qwenimageloraloader_image_processor_kwargs_patch_prestartup",
+        _IP_KWARGS_PATCH_PATH,
+    )
+    if _ip_kwargs_patch_module.apply_transformers_image_processor_kwargs_patch():
+        logger.info(
+            "ComfyUI-QwenImageLoraLoader prestartup: ImageProcessorKwargs docstring patch applied"
+        )
+    else:
+        logger.debug(
+            "ComfyUI-QwenImageLoraLoader prestartup: ImageProcessorKwargs docstring patch not applied"
+        )
+except Exception:
+    logger.exception(
+        "ComfyUI-QwenImageLoraLoader prestartup: ImageProcessorKwargs docstring patch failed"
+    )
 
 if _patch_module is not None:
     try:

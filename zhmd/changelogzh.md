@@ -10,7 +10,7 @@
 - **非侵入式修复**: 不修改 `site-packages`。`prestartup_script.py` 在进程内包装 `get_args_doc_from_source`（与 v2.4.7 CausalLM docstring 补丁同一设计），使这四个字段通过回退源字典被解析。
 - **上游自动禁用（全自动）**: 每次 ComfyUI 启动都会探测上游；一旦 `transformers` 修复了 docstring，补丁会自动跳过自身。无需环境变量或用户开关。
 - **文档**: 新增英文技术说明 `md/TRANSFORMERS_IMAGE_PROCESSOR_KWARGS_DOCSTRING_PATCH.md`。
-- **技术详情**: 参见 [v2.5.9 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.9) 获取完整说明
+- **技术详情**: 参见 [v2.5.9 发行说明](v2.5.9.md) 获取完整说明
 
 ### v2.5.8
 - **已修复**: 当预编译 LoRA 缓存文件在磁盘上损坏（头部可读、数据区不可读）时，ComfyUI 不再因 Windows 致命 "page error" 崩溃。`load_precompiled()` 现在改为以普通字节方式读取缓存，而非使用基于 mmap 的 `load_file`，因此同一损坏会以普通 Python `OSError` 形式暴露，加载器会自动回退到完整的重新融合。

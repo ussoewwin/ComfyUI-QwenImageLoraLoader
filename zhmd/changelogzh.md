@@ -5,11 +5,18 @@
   </tr>
 </table>
 
-### v2.5.8 (最新)
+### v2.5.9 (最新)
+- **已修复**: ComfyUI 启动时来自 Hugging Face `transformers` `@auto_docstring` 的 `[ERROR]` 日志噪音 —— `DeepseekVLHybridImageProcessorKwargs`（`high_res_size`）、`Kimi_K25ImageProcessorKwargs`（`merge_size`）、`PaddleOCRVLImageProcessorKwargs`（`min_pixels` / `max_pixels`）共 13 行 "but not documented" 报错。上游 TypedDict docstring 无法通过校验：`high_res_size` 行多了一个前导空格导致解析器匹配不到；kimi 的 docstring 写的是 `merge_kernel_size` 而注解为 `merge_size`；paddleocr 完全未记录 `min_pixels` / `max_pixels`。
+- **非侵入式修复**: 不修改 `site-packages`。`prestartup_script.py` 在进程内包装 `get_args_doc_from_source`（与 v2.4.7 CausalLM docstring 补丁同一设计），使这四个字段通过回退源字典被解析。
+- **上游自动禁用（全自动）**: 每次 ComfyUI 启动都会探测上游；一旦 `transformers` 修复了 docstring，补丁会自动跳过自身。无需环境变量或用户开关。
+- **文档**: 新增英文技术说明 `md/TRANSFORMERS_IMAGE_PROCESSOR_KWARGS_DOCSTRING_PATCH.md`。
+- **技术详情**: 参见 [v2.5.9 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.9) 获取完整说明
+
+### v2.5.8
 - **已修复**: 当预编译 LoRA 缓存文件在磁盘上损坏（头部可读、数据区不可读）时，ComfyUI 不再因 Windows 致命 "page error" 崩溃。`load_precompiled()` 现在改为以普通字节方式读取缓存，而非使用基于 mmap 的 `load_file`，因此同一损坏会以普通 Python `OSError` 形式暴露，加载器会自动回退到完整的重新融合。
 - **技术详情**: 参见 [v2.5.8 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.8) 获取完整说明
 
-### v2.5.7 (最新)
+### v2.5.7
 - **已移除**: 从注册节点映射及文档中移除了旧版节点 `NunchakuQwenImageLoraStack`（"Nunchaku Qwen Image LoRA Stack (Legacy)"）。请使用 `NunchakuQwenImageLoraStackV1`、`V2` 或 `V3` 替代。
 - **技术详情**: 请参阅 [v2.5.7 发行说明](v2.5.7.md) 获取完整说明
 

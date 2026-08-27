@@ -28,7 +28,7 @@
 
 
 
-> 最新版本: [v2.5.8 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.8)
+> 最新版本: [v2.5.9 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.9)
 
 >
 

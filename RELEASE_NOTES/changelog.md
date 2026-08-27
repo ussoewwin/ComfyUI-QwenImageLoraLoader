@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.5.8 (latest)
+### v2.5.9 (latest)
+- **Fixed**: ComfyUI startup `[ERROR]` noise from Hugging Face `transformers` `@auto_docstring` - 13 "but not documented" lines for `DeepseekVLHybridImageProcessorKwargs` (`high_res_size`), `Kimi_K25ImageProcessorKwargs` (`merge_size`) and `PaddleOCRVLImageProcessorKwargs` (`min_pixels` / `max_pixels`). Upstream TypedDict docstrings fail validation: a stray leading space hides `high_res_size`, the kimi docstring documents `merge_kernel_size` instead of `merge_size`, and paddleocr never documents `min_pixels` / `max_pixels`.
+- **Non-invasive fix**: No `site-packages` edits. `prestartup_script.py` wraps `get_args_doc_from_source` in-process (same design as the v2.4.7 CausalLM docstring patch) so the four fields resolve through the fallback source dict.
+- **Upstream auto-disable (fully automatic)**: On every ComfyUI start the patch probes upstream; once `transformers` fixes the docstrings, the patch skips itself. No environment variables or user toggles.
+- **Docs**: English technical guide added at `md/TRANSFORMERS_IMAGE_PROCESSOR_KWARGS_DOCSTRING_PATCH.md`.
+- **Technical Details**: See [v2.5.9 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.9) for complete explanation
+
+### v2.5.8
 - **Fixed**: ComfyUI no longer crashes with a Windows fatal "page error" when a precompiled LoRA cache file is damaged on disk (readable header, unreadable data region). `load_precompiled()` now reads the cache as plain bytes instead of using the mmap-based `load_file`, so the same damage surfaces as an ordinary Python `OSError` and the loader falls back to a full re-fuse automatically.
 - **Technical Details**: See [v2.5.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.5.8) for complete explanation
 

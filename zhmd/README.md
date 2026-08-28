@@ -161,7 +161,7 @@
   - 根据 LoRA 文件自动检测 Krea2 控制子类型：**depth**（`first.weight` 扩展投影路由）或 **openpose**（纯块 LoRA + 原生参考潜变量路由）。路由严格互斥。
 
 
-<img src="../images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">
+<img src="../png/diffsynth.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
 
 
 

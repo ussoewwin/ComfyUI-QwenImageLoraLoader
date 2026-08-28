@@ -77,7 +77,10 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">
 
-- **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet** (class: `NunchakuQwenImageDiffsynthControlnet`): DiffSynth ControlNet support node for **Nunchaku Z-ImageTurbo**, standard (non-Nunchaku) Qwen Image, & Krea2 (depth / openpose). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route (quantized hidden-state scale mismatch produces broken output); use a standard bf16 Qwen Image model for the DiffSynth ControlNet route, or Nunchaku Z-Image-Turbo for the Z-Image route.
+- **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet** (class: `NunchakuQwenImageDiffsynthControlnet`): DiffSynth ControlNet support node.
+  - **Z-Image-Turbo (ZI) route**: supports **Nunchaku** (quantized) and all non-quantized / quantized Z-Image models.
+  - **Qwen Image (QI) route**: supports all **non-Nunchaku** Qwen Image models (both non-quantized and quantized, e.g. HSWQ ConvRot INT8). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route (quantized hidden-state scale mismatch produces broken output).
+  - **Krea2** (depth / openpose): Krea2 control support.
 
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora loader (depth & openpose)
   - Auto-detects the Krea2 control sub-type from the LoRA file: **depth** (`first.weight` expansion route) or **openpose** (pure block LoRA + native reference-latent route). Routing is strictly exclusive.

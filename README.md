@@ -79,6 +79,8 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 - **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet** (class: `NunchakuQwenImageDiffsynthControlnet`): DiffSynth ControlNet support node for **Nunchaku Z-ImageTurbo**, standard (non-Nunchaku) Qwen Image, & Krea2 (depth / openpose). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route (quantized hidden-state scale mismatch produces broken output); use a standard bf16 Qwen Image model for the DiffSynth ControlNet route, or Nunchaku Z-Image-Turbo for the Z-Image route.
 
+<img src="png/diffsynth.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
+
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora loader (depth & openpose)
   - Auto-detects the Krea2 control sub-type from the LoRA file: **depth** (`first.weight` expansion route) or **openpose** (pure block LoRA + native reference-latent route). Routing is strictly exclusive.
 

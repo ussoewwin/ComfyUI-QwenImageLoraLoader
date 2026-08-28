@@ -79,12 +79,10 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 - **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet** (class: `NunchakuQwenImageDiffsynthControlnet`): DiffSynth ControlNet support node for **Nunchaku Z-ImageTurbo**, standard (non-Nunchaku) Qwen Image, & Krea2 (depth / openpose). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route (quantized hidden-state scale mismatch produces broken output); use a standard bf16 Qwen Image model for the DiffSynth ControlNet route, or Nunchaku Z-Image-Turbo for the Z-Image route.
 
-<img src="png/diffsynth.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
-
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora loader (depth & openpose)
   - Auto-detects the Krea2 control sub-type from the LoRA file: **depth** (`first.weight` expansion route) or **openpose** (pure block LoRA + native reference-latent route). Routing is strictly exclusive.
 
-<img src="images/krea2_controlnet_lora.png" alt="Krea2ControlNetLoraLoader Usage" width="420">
+<img src="png/diffsynth.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
 
 ### Basic Usage
 
@@ -106,7 +104,7 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 1. Load your diffsynth ControlNet model patch using `Model Patch Loader` from [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)
 2. The `Model Patch Loader` (`ModelPatchLoaderCustom`) supports CPU offload, allowing you to load ControlNet patches to CPU memory to save VRAM
 3. Connect the `MODEL_PATCH` output to the `model_patch` input of `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` node
-4. Connect your Nunchaku Qwen Image model, VAE, and control image
+4. Connect your **standard (non-Nunchaku) bf16 Qwen Image model**, VAE, and control image (**the DiffSynth route does NOT work with Nunchaku Qwen Image** - use a standard bf16 model, or Nunchaku Z-Image-Turbo for the Z-Image route)
 5. Set the ControlNet strength and connect to your workflow
 6. **Krea2 control support** (depth & openpose): add `Krea2ControlNetLoraLoader`, select
    your Krea2 controlnet-lora file, then connect its `MODEL_PATCH` output to the `model_patch`

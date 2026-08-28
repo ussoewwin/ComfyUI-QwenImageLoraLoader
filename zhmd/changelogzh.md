@@ -12,7 +12,7 @@
   - **Qwen Image（QI 路由）**：支持所有**非 Nunchaku** 的 Qwen Image 模型（非量化与量化均支持，如 HSWQ ConvRot INT8）。**Nunchaku Qwen Image 不受支持**（量化后的 hidden-state 尺度不匹配会导致输出损坏）。QI 路由请使用标准 bf16 Qwen Image 模型，ZI 路由请使用 Nunchaku Z-Image-Turbo。
 - **已修复**: 路由分类现在能识别标准（非 Nunchaku）`QwenImageTransformer2DModel` 并路由到 `qwenimage_standard` 路径，DiffSynth ControlNet 可在标准 bf16 Qwen Image 模型上正常工作。
 - **文档**: 更新 README（EN + ZH）— 节点图片、精确的支持范围说明与用法说明。
-- **技术详情**: 参见 [v2.6.0 发布说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.0) 获取完整说明
+- **技术详情**: 参见 [v2.6.0 发行说明](v2.6.0.md) 获取完整说明
 
 ### v2.5.9
 - **已修复**: ComfyUI 启动时来自 Hugging Face `transformers` `@auto_docstring` 的 `[ERROR]` 日志噪音 —— `DeepseekVLHybridImageProcessorKwargs`（`high_res_size`）、`Kimi_K25ImageProcessorKwargs`（`merge_size`）、`PaddleOCRVLImageProcessorKwargs`（`min_pixels` / `max_pixels`）共 13 行 "but not documented" 报错。上游 TypedDict docstring 无法通过校验：`high_res_size` 行多了一个前导空格导致解析器匹配不到；kimi 的 docstring 写的是 `merge_kernel_size` 而注解为 `merge_size`；paddleocr 完全未记录 `min_pixels` / `max_pixels`。

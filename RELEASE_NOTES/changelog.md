@@ -5,7 +5,16 @@
   </tr>
 </table>
 
-### v2.5.9 (latest)
+### v2.6.0 (latest)
+- **Changed**: ControlNet node renamed from `NunchakuQI&ZITDiffsynthControlnet` to **`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`** (internal class name unchanged: `NunchakuQwenImageDiffsynthControlnet`, so existing workflows load without modification).
+- **Clarified supported model scope**:
+  - **Z-Image-Turbo (ZI) route**: supports **Nunchaku** (quantized) and all non-quantized / quantized Z-Image models.
+  - **Qwen Image (QI) route**: supports all **non-Nunchaku** Qwen Image models (both non-quantized and quantized, e.g. HSWQ ConvRot INT8). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route - the quantized hidden-state scale mismatch produces broken output. Use a standard bf16 Qwen Image model for the QI route, or Nunchaku Z-Image-Turbo for the ZI route.
+- **Fixed**: Route classification now recognizes the standard (non-Nunchaku) `QwenImageTransformer2DModel` and routes it to the `qwenimage_standard` path, so DiffSynth ControlNet works correctly with standard bf16 Qwen Image models.
+- **Docs**: README (EN + ZH) updated - node image, accurate supported-scope notation, and usage notes.
+- **Technical Details**: See [v2.6.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.0) for complete explanation
+
+### v2.5.9
 - **Fixed**: ComfyUI startup `[ERROR]` noise from Hugging Face `transformers` `@auto_docstring` - 13 "but not documented" lines for `DeepseekVLHybridImageProcessorKwargs` (`high_res_size`), `Kimi_K25ImageProcessorKwargs` (`merge_size`) and `PaddleOCRVLImageProcessorKwargs` (`min_pixels` / `max_pixels`). Upstream TypedDict docstrings fail validation: a stray leading space hides `high_res_size`, the kimi docstring documents `merge_kernel_size` instead of `merge_size`, and paddleocr never documents `min_pixels` / `max_pixels`.
 - **Non-invasive fix**: No `site-packages` edits. `prestartup_script.py` wraps `get_args_doc_from_source` in-process (same design as the v2.4.7 CausalLM docstring patch) so the four fields resolve through the fallback source dict.
 - **Upstream auto-disable (fully automatic)**: On every ComfyUI start the patch probes upstream; once `transformers` fixes the docstrings, the patch skips itself. No environment variables or user toggles.

@@ -5,7 +5,16 @@
   </tr>
 </table>
 
-### v2.5.9 (最新)
+### v2.6.0 (最新)
+- **已更改**: ControlNet 节点名称由 `NunchakuQI&ZITDiffsynthControlnet` 改为 **`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`**（内部类名不变：`NunchakuQwenImageDiffsynthControlnet`，已有工作流无需修改即可加载）。
+- **明确支持范围**:
+  - **Z-Image-Turbo（ZI 路由）**：支持 **Nunchaku**（量化）以及所有非量化 / 量化 Z-Image 模型。
+  - **Qwen Image（QI 路由）**：支持所有**非 Nunchaku** 的 Qwen Image 模型（非量化与量化均支持，如 HSWQ ConvRot INT8）。**Nunchaku Qwen Image 不受支持**（量化后的 hidden-state 尺度不匹配会导致输出损坏）。QI 路由请使用标准 bf16 Qwen Image 模型，ZI 路由请使用 Nunchaku Z-Image-Turbo。
+- **已修复**: 路由分类现在能识别标准（非 Nunchaku）`QwenImageTransformer2DModel` 并路由到 `qwenimage_standard` 路径，DiffSynth ControlNet 可在标准 bf16 Qwen Image 模型上正常工作。
+- **文档**: 更新 README（EN + ZH）— 节点图片、精确的支持范围说明与用法说明。
+- **技术详情**: 参见 [v2.6.0 发布说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.0) 获取完整说明
+
+### v2.5.9
 - **已修复**: ComfyUI 启动时来自 Hugging Face `transformers` `@auto_docstring` 的 `[ERROR]` 日志噪音 —— `DeepseekVLHybridImageProcessorKwargs`（`high_res_size`）、`Kimi_K25ImageProcessorKwargs`（`merge_size`）、`PaddleOCRVLImageProcessorKwargs`（`min_pixels` / `max_pixels`）共 13 行 "but not documented" 报错。上游 TypedDict docstring 无法通过校验：`high_res_size` 行多了一个前导空格导致解析器匹配不到；kimi 的 docstring 写的是 `merge_kernel_size` 而注解为 `merge_size`；paddleocr 完全未记录 `min_pixels` / `max_pixels`。
 - **非侵入式修复**: 不修改 `site-packages`。`prestartup_script.py` 在进程内包装 `get_args_doc_from_source`（与 v2.4.7 CausalLM docstring 补丁同一设计），使这四个字段通过回退源字典被解析。
 - **上游自动禁用（全自动）**: 每次 ComfyUI 启动都会探测上游；一旦 `transformers` 修复了 docstring，补丁会自动跳过自身。无需环境变量或用户开关。

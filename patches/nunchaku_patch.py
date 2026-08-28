@@ -14,6 +14,7 @@ _svdq_from_linear_patched: bool = False
 _qwen_apply_rotary_emb_compat_applied: bool = False
 
 _ROTARY_SHIM_TAG = "_qwen_lora_loader_rotary_shim"
+
 _NUNCHAKU_QWENIMAGE_APPLY_ROTARY_PATTERNS = (
     re.compile(
         r"from\s+comfy\.ldm\.qwen_image\.model\s+import\s+\([^)]*\bapply_rotary_emb\b",

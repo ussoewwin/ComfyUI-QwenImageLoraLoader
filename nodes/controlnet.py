@@ -51,7 +51,7 @@ def _classify_controlnet_target(model, model_patch):
     dm_name = dm.__class__.__name__
     dm_module = getattr(dm.__class__, "__module__", "")
 
-    if dm_name in ("ComfyQwenImageWrapper", "NunchakuQwenImageTransformer2DModel"):
+    if dm_name in ("ComfyQwenImageWrapper", "NunchakuQwenImageTransformer2DModel", "QwenImageTransformer2DModel"):
         return "qwenimage_standard"
 
     if dm_name == "SingleStreamDiT" or "comfy.ldm.krea2" in dm_module:
@@ -942,6 +942,11 @@ class ZImageControlPatch:
                 self.temp_data = (next_layer, self.model_patch.model.forward_control_block(next_layer, self.temp_data[1][1], img_input[:, :self.temp_data[1][1].shape[1]], None, pe, vec))
 
             if cnet_index_float == self.temp_data[0]:
+                try:
+                    with open(r"D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\_zimg_debug.log", "a", encoding="utf-8") as _f:
+                        _f.write(f"ZCNET block={block_index} res_mean={float(self.temp_data[1][0].abs().mean()):.4f} res_max={float(self.temp_data[1][0].abs().max()):.4f} img_mean={float(img.abs().mean()):.4f} str={self.strength}\n")
+                except Exception:
+                    pass
                 img[:, :self.temp_data[1][0].shape[1]] += (self.temp_data[1][0] * self.strength)
                 if cnet_blocks == self.temp_data[0] + 1:
                     self.temp_data = None
@@ -971,14 +976,18 @@ class DiffSynthCnetBlockReplace:
         self.block_index = block_index
 
     def __call__(self, args, extra_options):
+        try:
+            with open(r"D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\_cnet_debug.log", "a", encoding="utf-8") as _dbgf:
+                _dbgf.write(f"BlockReplace CALLED block={self.block_index}\n")
+        except Exception:
+            pass
         # Run the original transformer block first
         out = extra_options["original_block"](args)
 
         # Apply DiffSynth ControlNet residual
         img = out["img"]
-        
-        # We need `x` to determine target resolution for dynamic resizing, but Nunchaku doesn't pass it to patches_replace.
-        # Find `x` in the call stack (BaseModel.apply_model or ComfyQwenImageWrapper.forward):
+
+        # We need `x` to determine target resolution for dynamic resizing
         import sys
         x = None
         frame = sys._getframe()
@@ -989,12 +998,12 @@ class DiffSynthCnetBlockReplace:
                     x = candidate_x
                     break
             frame = frame.f_back
-            
+
         if x is not None:
             spacial_compression = self.cnet_patch.vae.spacial_compression_encode()
             target_h = x.shape[-2] * spacial_compression
             target_w = x.shape[-1] * spacial_compression
-            
+
             if self.cnet_patch.encoded_image is None or self.cnet_patch.encoded_image_size != (target_h, target_w):
                 logger.info(f"[ControlNet Block {self.block_index}] Resizing condition image to {target_w}x{target_h}")
                 image_scaled = comfy.utils.common_upscale(self.cnet_patch.image.movedim(-1, 1), target_w, target_h, "area", "center")
@@ -1002,7 +1011,7 @@ class DiffSynthCnetBlockReplace:
                 self.cnet_patch.encoded_image = self.cnet_patch.model_patch.model.process_input_latent_image(self.cnet_patch.encode_latent_cond(image_scaled.movedim(1, -1)))
                 self.cnet_patch.encoded_image_size = (target_h, target_w)
                 comfy.model_management.load_models_gpu(loaded_models)
-        
+
         encoded_image = self.cnet_patch.encoded_image
         if encoded_image is not None:
             control_residual = self.cnet_patch.model_patch.model.control_block(
@@ -1010,6 +1019,19 @@ class DiffSynthCnetBlockReplace:
                 encoded_image.to(img.dtype),
                 self.block_index
             )
+            if self.block_index == 0:
+                try:
+                    with open(r"D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\_cnet_debug.log", "a", encoding="utf-8") as _dbgf:
+                        _dbgf.write(
+                            "STATS img_mean={:.4f} res_mean={:.4f} res_max={:.4f} str={} enc_shape={} img_shape={}\n".format(
+                                float(img.abs().mean()),
+                                float(control_residual.abs().mean()), float(control_residual.abs().max()),
+                                float(self.cnet_patch.strength),
+                                tuple(encoded_image.shape), tuple(img.shape),
+                            )
+                        )
+                except Exception:
+                    pass
             img[:, :encoded_image.shape[1]] += control_residual * self.cnet_patch.strength
             out["img"] = img
 
@@ -1045,6 +1067,11 @@ class NunchakuQwenImageDiffsynthControlnet:
 
         route = _classify_controlnet_target(model, model_patch)
         logger.info(f"[ControlNet] route={route}")
+        try:
+            with open(r"D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\_cnet_debug.log", "a", encoding="utf-8") as _dbgf:
+                _dbgf.write(f"route={route} model_base={model.model.__class__.__name__} model_patch_model={type(model_patch.model).__name__}\n")
+        except Exception:
+            pass
 
         if route == "zimage":
             # ZImage ControlNet (works for both standard and Nunchaku Z-Image)

@@ -77,7 +77,9 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 <img src="images/zitv4_stack.png" alt="NunchakuZImageTurboLoraStackV4: Z-Image-Turbo LoRA stacker with dynamic UI - Standard ComfyUI LoRA loader format (CLIP input/output) - ComfyUI Nodes 2.0 compatible" width="400">
 
-- **NunchakuQI&ZITDiffsynthControlnet**: DiffSynth ControlNet support node for Nunchaku Qwen Image, Z-ImageTurbo & Krea2 (depth / openpose)
+- **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet** (class: `NunchakuQwenImageDiffsynthControlnet`): DiffSynth ControlNet support node for **Nunchaku Z-ImageTurbo**, standard (non-Nunchaku) Qwen Image, & Krea2 (depth / openpose). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route (quantized hidden-state scale mismatch produces broken output); use a standard bf16 Qwen Image model for the DiffSynth ControlNet route, or Nunchaku Z-Image-Turbo for the Z-Image route.
+
+<img src="images/diffsynth_controlnet.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
 
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora loader (depth & openpose)
   - Auto-detects the Krea2 control sub-type from the LoRA file: **depth** (`first.weight` expansion route) or **openpose** (pure block LoRA + native reference-latent route). Routing is strictly exclusive.
@@ -103,12 +105,12 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 1. Load your diffsynth ControlNet model patch using `Model Patch Loader` from [ComfyUI-NunchakuFluxLoraStacker](https://github.com/ussoewwin/ComfyUI-NunchakuFluxLoraStacker)
 2. The `Model Patch Loader` (`ModelPatchLoaderCustom`) supports CPU offload, allowing you to load ControlNet patches to CPU memory to save VRAM
-3. Connect the `MODEL_PATCH` output to the `model_patch` input of `NunchakuQI&ZITDiffsynthControlnet` node
+3. Connect the `MODEL_PATCH` output to the `model_patch` input of `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` node
 4. Connect your Nunchaku Qwen Image model, VAE, and control image
 5. Set the ControlNet strength and connect to your workflow
 6. **Krea2 control support** (depth & openpose): add `Krea2ControlNetLoraLoader`, select
    your Krea2 controlnet-lora file, then connect its `MODEL_PATCH` output to the `model_patch`
-   input of `NunchakuQI&ZITDiffsynthControlnet`. The node auto-detects the Krea2 sub-type:
+   input of `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`. The node auto-detects the Krea2 sub-type:
    - **Depth** (e.g. `krea2-depth-control-lora.safetensors`): expanded first-projection route
      with control-latent injection. This is the original Krea2 depth behavior, unchanged.
    - **OpenPose** (e.g. `krea2_turbo_openpose_controlnet.safetensors`): pure block-LoRA route on
@@ -119,13 +121,13 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
 
 ### Krea2 Control (Depth & OpenPose)
 
-`NunchakuQI&ZITDiffsynthControlnet` auto-detects the Krea2 control sub-type from the loaded
+`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` auto-detects the Krea2 control sub-type from the loaded
 LoRA file and applies a dedicated, self-contained route - no external nodes required.
 
 #### Krea2 Depth Control
 
 1. Load the depth control LoRA with `Krea2ControlNetLoraLoader` (e.g. `krea2-depth-control-lora.safetensors`)
-2. Connect its `MODEL_PATCH` to `NunchakuQI&ZITDiffsynthControlnet`'s `model_patch`
+2. Connect its `MODEL_PATCH` to `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`'s `model_patch`
 3. Connect your Krea2 model, VAE and the depth image; set `strength`
 
 **How it works:**
@@ -138,10 +140,10 @@ LoRA file and applies a dedicated, self-contained route - no external nodes requ
 #### Krea2 OpenPose Control
 
 The `krea2_turbo_openpose_controlnet.safetensors` control LoRA is applied through a dedicated,
-self-contained route in `NunchakuQI&ZITDiffsynthControlnet`:
+self-contained route in `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`:
 
 1. Load the openpose control LoRA with `Krea2ControlNetLoraLoader`
-2. Connect its `MODEL_PATCH` to `NunchakuQI&ZITDiffsynthControlnet`'s `model_patch`
+2. Connect its `MODEL_PATCH` to `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`'s `model_patch`
 3. Connect your Krea2 model, VAE and the pose image; set `strength`
 4. Keep `use_kv_cache = True` (default) for the isolated reference K/V mode
 

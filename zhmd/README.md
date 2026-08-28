@@ -152,7 +152,9 @@
 
 
 
-- **NunchakuQI&ZITDiffsynthControlnet**: 用于 Nunchaku Qwen Image、Z-ImageTurbo 与 Krea2（depth / openpose）的 DiffSynth ControlNet 支持节点
+- **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet**（类名: `NunchakuQwenImageDiffsynthControlnet`）: 为 **Nunchaku Z-ImageTurbo**、标准（非 Nunchaku）Qwen Image 与 Krea2（depth / openpose）提供 DiffSynth ControlNet 支持。**Nunchaku Qwen Image 不受支持**（量化后的 hidden-state 尺度不匹配会导致输出损坏）；DiffSynth ControlNet 路由请使用标准 bf16 Qwen Image 模型，Z-Image 路由请使用 Nunchaku Z-Image-Turbo。
+
+<img src="../images/diffsynth_controlnet.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
 
 
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora 加载器（depth & openpose）
@@ -201,7 +203,7 @@
 
 2. `Model Patch Loader`（即 `ModelPatchLoaderCustom` 节点）支持 CPU 卸载，允许您将 ControlNet 补丁加载到 CPU 内存以节省 VRAM
 
-3. 将 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 节点的 `model_patch` 输入端
+3. 将 `MODEL_PATCH` 输出连接到 `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` 节点的 `model_patch` 输入端
 
 4. 连接您的 Nunchaku Qwen Image 模型、VAE 和控制图像
 
@@ -209,7 +211,7 @@
 
 6. **Krea2 控制支持**（depth & openpose）：添加 `Krea2ControlNetLoraLoader`，选择你的
    Krea2 controlnet-lora 文件，然后将其 `MODEL_PATCH` 输出连接到
-   `NunchakuQI&ZITDiffsynthControlnet` 的 `model_patch` 输入端。节点会自动检测 Krea2 子类型：
+   `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` 的 `model_patch` 输入端。节点会自动检测 Krea2 子类型：
    - **Depth**（例如 `krea2-depth-control-lora.safetensors`）：扩展 first 投影路由 + 控制潜变量
      注入。这是原有的 Krea2 depth 行为，完全未改动。
    - **OpenPose**（例如 `krea2_turbo_openpose_controlnet.safetensors`）：纯块 LoRA 路由，作用于
@@ -219,13 +221,13 @@
 
 ### Krea2 控制（Depth & OpenPose）
 
-`NunchakuQI&ZITDiffsynthControlnet` 会根据加载的 LoRA 文件自动检测 Krea2 控制子类型，并应用
+`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` 会根据加载的 LoRA 文件自动检测 Krea2 控制子类型，并应用
 独立、自包含的路由——无需任何外部节点。
 
 #### Krea2 Depth 控制
 
 1. 使用 `Krea2ControlNetLoraLoader` 加载 depth 控制 LoRA（例如 `krea2-depth-control-lora.safetensors`）
-2. 将其 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 的 `model_patch` 输入端
+2. 将其 `MODEL_PATCH` 输出连接到 `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` 的 `model_patch` 输入端
 3. 连接你的 Krea2 模型、VAE 与深度图，并设置 `strength`
 
 **工作原理：**
@@ -237,10 +239,10 @@
 #### Krea2 OpenPose 控制
 
 `krea2_turbo_openpose_controlnet.safetensors` 控制 LoRA 通过
-`NunchakuQI&ZITDiffsynthControlnet` 中独立、自包含的路由应用：
+`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` 中独立、自包含的路由应用：
 
 1. 使用 `Krea2ControlNetLoraLoader` 加载 openpose 控制 LoRA
-2. 将其 `MODEL_PATCH` 输出连接到 `NunchakuQI&ZITDiffsynthControlnet` 的 `model_patch` 输入端
+2. 将其 `MODEL_PATCH` 输出连接到 `Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet` 的 `model_patch` 输入端
 3. 连接你的 Krea2 模型、VAE 与姿态图，并设置 `strength`
 4. 保持 `use_kv_cache = True`（默认值）以启用隔离参考 K/V 模式
 

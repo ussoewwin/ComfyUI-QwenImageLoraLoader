@@ -143,7 +143,7 @@ NODE_DISPLAY_NAME_MAPPINGS["Krea2ControlNetLoraLoader"] = "Krea2 controlnet lora
 
 # Add ControlNet display name only if the node was successfully loaded
 if "NunchakuQwenImageDiffsynthControlnet" in NODE_CLASS_MAPPINGS:
-    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "NunchakuQI&ZITDiffsynthControlnet"
+    NODE_DISPLAY_NAME_MAPPINGS["NunchakuQwenImageDiffsynthControlnet"] = "Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet"
 
 # Register JavaScript extensions
 WEB_DIRECTORY = "js"

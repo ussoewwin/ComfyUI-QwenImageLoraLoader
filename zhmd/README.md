@@ -154,7 +154,7 @@
 
 - **Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet**（类名: `NunchakuQwenImageDiffsynthControlnet`）: 为 **Nunchaku Z-ImageTurbo**、标准（非 Nunchaku）Qwen Image 与 Krea2（depth / openpose）提供 DiffSynth ControlNet 支持。**Nunchaku Qwen Image 不受支持**（量化后的 hidden-state 尺度不匹配会导致输出损坏）；DiffSynth ControlNet 路由请使用标准 bf16 Qwen Image 模型，Z-Image 路由请使用 Nunchaku Z-Image-Turbo。
 
-<img src="../images/diffsynth_controlnet.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
+<img src="../png/diffsynth.png" alt="Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet" width="420">
 
 
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora 加载器（depth & openpose）

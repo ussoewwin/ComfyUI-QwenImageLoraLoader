@@ -1,12 +1,14 @@
-# Nunchaku CPU Offload: `copy_params_into` `wtscale` Attribute Mismatch AssertionError & Runtime Mitigation
+# Nunchaku CPU Offload: `copy_params_into` `wtscale` Attribute Mismatch & Runtime In-Memory Mitigation
 
-This document provides a comprehensive technical breakdown of the `AssertionError: assert not hasattr(md, "wtscale")` crash that occurs during Nunchaku backend model inference (e.g., Ultimate SD Upscale tiling or multi-step sampling): **(1) Error Details, (2) Essential Root Cause, (3) Modified/Added Files, (4) Complete Unabridged Code, and (5) Technical Analysis & Significance**.
+This document provides an exhaustive technical explanation of the Nunchaku CPU Offload buffer parameter transfer issues encountered during inference (e.g., Ultimate SD Upscale tiling or multi-step sampling): **(1) Error Details (both `AssertionError` and `AttributeError`), (2) Essential Root Cause & Deep Mechanics, (3) Modified/Added Files, (4) Complete Unabridged Code (Zero Omission), and (5) Detailed Line-by-Line Technical Analysis**.
 
 ---
 
 ## 1. Error Details
 
-### Traceback
+### 1-1. Upstream Buffer Reuse Crash (`AssertionError`)
+During sampling under Nunchaku CPU Offload, transferring CPU blocks into GPU ping-pong buffers fails with `AssertionError`:
+
 ```text
 [ERROR] !!! Exception during processing !!!
 [ERROR] Traceback (most recent call last):
@@ -50,66 +52,98 @@ This document provides a comprehensive technical breakdown of the `AssertionErro
 AssertionError
 ```
 
-### Execution Context
-- During sampling, when Nunchaku's per-block CPU Offload mechanism (`CPUOffloadManager.step()`) preloads and copies a CPU transformer block into the GPU ping-pong buffer (`self.buffer_blocks`) via `load_block` -> `copy_params_into`.
+### 1-2. Attribute Deletion Forward Crash (`AttributeError`)
+If `wtscale` is deleted via `delattr(md, "wtscale")` when `hasattr(ms, "wtscale")` is False, subsequent forward execution inside `SVDQW4A4Linear.forward_quant` fails immediately because `self.wtscale` is accessed unconditionally:
+
+```text
+[ERROR] !!! Exception during processing !!! 'SVDQW4A4Linear' object has no attribute 'wtscale'
+[ERROR] Traceback (most recent call last):
+  File "D:\USERFILES\ComfyUI\ComfyUI\execution.py", line 545, in execute
+    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(...)
+  File "D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\models\qwenimage.py", line 483, in forward
+    attn_output = self.attn(...)
+  File "D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-nunchaku\models\qwenimage.py", line 280, in forward
+    img_qkv = self.to_qkv(hidden_states)
+  File "D:\USERFILES\ComfyUI\python_embeded\Lib\site-packages\nunchaku\models\linear.py", line 187, in forward
+    output = self.forward_quant(quantized_x, ascales, lora_act_out, output)
+  File "D:\USERFILES\ComfyUI\python_embeded\Lib\site-packages\nunchaku\models\linear.py", line 265, in forward_quant
+    alpha=self.wtscale,
+          ^^^^^^^^^^^^
+  File "D:\USERFILES\ComfyUI\python_embeded\Lib\site-packages\torch\nn\modules\module.py", line 1967, in __getattr__
+    raise AttributeError(
+        f"'{type(self).__name__}' object has no attribute '{name}'"
+    )
+AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'. Did you mean: 'wcscales'?
+```
 
 ---
 
-## 2. Essential Root Cause
+## 2. Essential Root Cause & Deep Mechanics
 
-### 1. Nunchaku Ping-Pong Buffer Architecture
-To minimize GPU VRAM consumption, Nunchaku retains only a minimal subset of transformer blocks on GPU. It maintains two reusable buffer blocks (`self.buffer_blocks[0]`, `self.buffer_blocks[1]`) on the GPU, alternating between them via asynchronous stream transfers (`copy_params_into`) while the compute stream executes the forward pass.
-
-In `CPUOffloadManager.__init__`, the GPU buffer blocks are initialized by **deep-copying Block 0 (`blocks[0]`)**:
+### 2-1. CPU Offload Ping-Pong Buffer Initialization
+To minimize GPU VRAM consumption, Nunchaku retains only a minimal subset of transformer blocks on GPU. In `CPUOffloadManager.__init__` (`nunchaku.models.utils`), two GPU buffer blocks are allocated by deep-copying Block 0:
 ```python
 self.buffer_blocks = [copy.deepcopy(blocks[0]), copy.deepcopy(blocks[0])]
 ```
+During execution, `CPUOffloadManager.step()` invokes `self.load_block(self.current_block_idx + 1)`, which calls `copy_params_into(block, self.buffer_blocks[block_idx % 2], non_blocking=True)` to stream weights from CPU memory into the alternate GPU buffer.
 
-### 2. Upstream Flawed Assertion in `copy_params_into`
-In the upstream Nunchaku library (`nunchaku/utils.py`), parameter transfer is implemented as follows:
+### 2-2. `SVDQW4A4Linear` Class Contract for `wtscale`
+In `nunchaku.models.linear.SVDQW4A4Linear.__init__`:
+```python
+if precision == "nvfp4":
+    self.wcscales = nn.Parameter(
+        torch.ones(out_features, dtype=torch_dtype, device=device), requires_grad=False
+    )
+    self.wtscale = 1.0
+else:
+    self.wtscale = None
+    self.wcscales = None
+```
+- For `precision == "nvfp4"`, `self.wtscale` is a `float` (`1.0` or model global scale).
+- For `precision == "int4"`, `self.wtscale` is `None`.
+- In `SVDQW4A4Linear.forward_quant` (line 265), the CUDA GEMM kernel `svdq_gemm_w4a4_cuda` is called with argument `alpha=self.wtscale`. The attribute `self.wtscale` **must always exist** on every `SVDQW4A4Linear` instance.
+
+### 2-3. Why Upstream `copy_params_into` Fails
+In upstream `nunchaku.utils.copy_params_into`:
 ```python
 for ms, md in zip(src.modules(), dst.modules()):
-    # wtscale is a special case which is a float on the CPU
     if hasattr(ms, "wtscale"):
         assert hasattr(md, "wtscale")
         md.wtscale = ms.wtscale
     else:
-        assert not hasattr(md, "wtscale")  # <-- Flawed assertion
+        assert not hasattr(md, "wtscale")  # <-- Flawed upstream assertion
 ```
-
-### 3. Failure Mechanism
-1. **Initial Buffer Allocation**:
-   - Because Block 0 contains quantized linear layers with a CPU float attribute `wtscale` (weight quantization scale), the GPU buffer blocks `md` initially inherit `wtscale` on those modules.
-2. **Subsequent Block Transfer**:
-   - As sampling progresses, subsequent blocks (e.g., Block 1, non-quantized layers, or blocks modified with custom LoRA / planar injection) are transferred into the same GPU buffer slot `md`.
-   - In these modules, the source block `ms` does not have a `wtscale` attribute.
-3. **Assertion Breakdown**:
-   - `hasattr(ms, "wtscale")` evaluates to `False`, entering the `else:` branch.
-   - The assertion `assert not hasattr(md, "wtscale")` asserts that the destination buffer module `md` must not possess `wtscale`.
-   - However, **the recycled buffer `md` still retains the `wtscale` attribute from Block 0 (or a preceding quantized block)**.
-   - Consequently, `hasattr(md, "wtscale")` is `True`, the assertion fails, and Python raises `AssertionError`, terminating the workflow immediately.
+1. **Positional Misalignment**: `zip(src.modules(), dst.modules())` iterates submodules in depth-first search order. If `dst` has custom wrappers, hooks, or LoRA planar injection layers that alter the child submodule count, `ms` and `md` become misaligned.
+2. **Buffer Reuse Assertion Collision**: Even in a standard model, when a non-quantized module or a module where `hasattr(ms, "wtscale") == False` is evaluated, the `else:` branch executes `assert not hasattr(md, "wtscale")`. Because `md` is a recycled GPU buffer from Block 0 (which contains quantized linear modules), `md` still has `hasattr(md, "wtscale") == True`, immediately raising `AssertionError`.
+3. **Flawed Deletion Remedy**: If `delattr(md, "wtscale")` is used to bypass the assertion, `md` is stripped of `wtscale`. When `md` is an instance of `SVDQW4A4Linear`, its `forward_quant` subsequently crashes with `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'`.
 
 ---
 
 ## 3. Modified and Added Files
 
-- **`D:\USERFILES\GitHub\ComfyUI-QwenImageLoraLoader\patches\nunchaku_patch.py`**
-- **`D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-QwenImageLoraLoader\patches\nunchaku_patch.py`**
-- **`D:\USERFILES\GitHub\ComfyUI-QwenImageLoraLoader\md\NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md`**
+| File Path | Location | Purpose |
+|---|---|---|
+| [`patches/nunchaku_patch.py`](file:///D:/USERFILES/GitHub/ComfyUI-QwenImageLoraLoader/patches/nunchaku_patch.py) | `ComfyUI-QwenImageLoraLoader` | Implementation of `_safe_copy_params_into` and `apply_nunchaku_copy_params_patch` |
+| [`md/NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md`](file:///D:/USERFILES/GitHub/ComfyUI-QwenImageLoraLoader/md/NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md) | `ComfyUI-QwenImageLoraLoader` | Complete technical specification and architectural documentation |
 
 ---
 
-## 4. Complete Unabridged Code
+## 4. Complete Unabridged Code (Zero Omission)
 
-### 1. Global State Definition
+The following represents the complete, verbatim implementation added to `patches/nunchaku_patch.py`:
+
 ```python
+# ---------------------------------------------------------------------------
+# Global flag definition (top of patches/nunchaku_patch.py)
+# ---------------------------------------------------------------------------
 _svdq_from_linear_patched: bool = False
 _qwen_apply_rotary_emb_compat_applied: bool = False
 _copy_params_patched: bool = False
-```
 
-### 2. Safe Implementation and Hook Integration
-```python
+
+# ---------------------------------------------------------------------------
+# Safe In-Memory Parameter Copying and Upstream Patch
+# ---------------------------------------------------------------------------
 def _safe_copy_params_into(src: torch.nn.Module, dst: torch.nn.Module, non_blocking: bool = True):
     """
     Safely copy parameters and buffers from src to dst by name matching (with positional fallback),
@@ -230,23 +264,31 @@ def apply_nunchaku_patch():
 
 ---
 
-## 5. Technical Analysis & Significance
+## 5. Detailed Line-by-Line Technical Analysis
 
-### 1. `_safe_copy_params_into`
-- **Key-Matched Parameter and Buffer Copying**:
-  Matches parameter and buffer tensors by name (`named_parameters()`, `named_buffers()`) before copying, with a fallback to positional iteration. This guarantees that custom module augmentations (such as LoRA weights or adapters) do not shift subsequent tensor transfers.
-- **Strict Preservation of `wtscale` and Execution Safety**:
-  - When `ms` has `wtscale`, `md.wtscale` is assigned directly from `ms.wtscale`.
-  - When `ms` does not have `wtscale` but `md` is a quantized layer (e.g. `SVDQW4A4Linear`), `md.wtscale` is reset to its clean default (`1.0` for nvfp4, `None` for int4) rather than deleted via `delattr`.
-  - This completely prevents both upstream's `AssertionError` and downstream's `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'` during `forward_quant`.
+### 5-1. `_safe_copy_params_into` Analysis
+1. **Context Management (`with torch.no_grad():`)**:
+   - Ensures parameter and buffer copy operations do not track history or allocate autograd graph nodes, maintaining maximum execution speed and zero VRAM leak.
+2. **Key-Matched Parameter and Buffer Copying**:
+   - `dict(src.named_parameters())` and `dict(dst.named_parameters())` match tensors by fully-qualified module parameter names (e.g., `"attn.to_qkv.qweight"`).
+   - If parameter keys match, each tensor is copied directly to its exact counterpart using `pd.copy_(src_params[name], non_blocking=non_blocking)`.
+   - If keys diverge (e.g. dynamic runtime wrapping), a fallback to positional `zip()` executes safely.
+3. **Key-Matched Module Synchronization**:
+   - `src.named_modules()` and `dst.named_modules()` align module hierarchies accurately.
+4. **Attribute Preservation Without Deletion**:
+   - **`if hasattr(ms, "wtscale"): md.wtscale = ms.wtscale`**: When the source module has `wtscale`, its value is assigned to `md.wtscale`.
+   - **`elif hasattr(md, "wtscale"): md.wtscale = 1.0 if precision == "nvfp4" else None`**: When the source module lacks `wtscale` but `md` has `wtscale` (or is an `SVDQW4A4Linear`), `md.wtscale` is assigned the valid default value based on `md.precision` instead of deleting the attribute.
+   - **Zero Assertion**: The invalid assertion `assert not hasattr(md, "wtscale")` is entirely eliminated.
 
-### 2. `apply_nunchaku_copy_params_patch`
-- **Idempotency & Re-entrancy Protection**:
-  Controlled by `_copy_params_patched` to prevent redundant re-patching across multiple node invocations.
-- **Dual-Namespace In-Memory Monkey Patching**:
-  `nunchaku.models.utils` imports `copy_params_into` via `from ..utils import copy_params_into`. Replacing the function symbol in both `nunchaku.utils` and `nunchaku.models.utils` ensures that `CPUOffloadManager.load_block` calls `_safe_copy_params_into` directly.
-- **Zero Third-Party Library File Modifications**:
-  No files in `site-packages` or disk binaries are touched; all patching occurs strictly in Python process memory at runtime.
+### 5-2. `apply_nunchaku_copy_params_patch` Analysis
+1. **Idempotency Guard (`_copy_params_patched`)**:
+   - Ensures that repeated node executions or multiple loaders do not re-apply the patch unnecessarily.
+2. **Dual-Namespace In-Memory Monkey Patching**:
+   - `nunchaku.models.utils` imports `copy_params_into` from `nunchaku.utils` (`from ..utils import copy_params_into`).
+   - Patching both `sys.modules["nunchaku.utils"].copy_params_into` and `sys.modules["nunchaku.models.utils"].copy_params_into` ensures that `CPUOffloadManager.load_block` executes `_safe_copy_params_into` under all import conditions.
+3. **Pure In-Memory Execution**:
+   - No files in `site-packages` or disk binaries are modified. The disk installation remains 100% clean and pristine.
 
-### 3. Integration into `apply_nunchaku_patch`
-- Automatically applied during node initialization alongside other Nunchaku upstream compatibility fixes (`apply_rotary_emb`, `SVDQW4A4Linear` lazy initialization), activating proactive protection upon ComfyUI startup.
+### 5-3. Integration into `apply_nunchaku_patch`
+- `apply_nunchaku_copy_params_patch()` is invoked during `apply_nunchaku_patch()`.
+- Whenever ComfyUI initializes `ComfyUI-QwenImageLoraLoader`, the patch activates proactively, guaranteeing seamless inference across standard sampling, USDU tiling, LoRA injection, and custom pipelines without user intervention.

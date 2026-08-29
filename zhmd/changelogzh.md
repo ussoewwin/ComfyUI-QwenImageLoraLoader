@@ -5,7 +5,15 @@
   </tr>
 </table>
 
-### v2.6.1 (最新)
+### v2.6.2 (最新)
+- **已修复**: Nunchaku CPU Offload 参数复制（`copy_params_into`）期间的 `AssertionError: assert not hasattr(md, "wtscale")` 报错。
+  - Nunchaku 的 `CPUOffloadManager` 通过深拷贝 Block 0 创建两个 GPU ping-pong 缓冲区（`buffer_blocks`）并交替使用。
+  - 当传输源模块不包含量化 `wtscale` 属性的后续块（例如非量化层、注入 LoRA 的模块或 USDU 分块采样）时，由于循环使用的 GPU 缓冲区残留了先前迭代的 `wtscale` 属性，导致上游 `assert not hasattr(md, "wtscale")` 断言失败崩溃。
+  - `patches/nunchaku_patch.py` 现提供内存运行时动态补丁（`apply_nunchaku_copy_params_patch`），替换 `nunchaku.utils` 与 `nunchaku.models.utils` 中的 `copy_params_into`，在存在时安全赋值 `md.wtscale`，不存在时干净执行 `delattr(md, "wtscale")`，无需修改任何 `site-packages` 磁盘文件。
+- **文档**: 新增英文技术文档 `md/NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md`。
+- **技术详情**: 参见 [v2.6.2 发行说明](v2.6.2.md) 获取完整说明
+
+### v2.6.1
 - **已记录**: LoRA 型 ControlNet 无法用于 Nunchaku Qwen Image（例如 `qwen_image_union_diffsynth_lora.safetensors`）。调查结果：
   - 该 LoRA（Comfy-Org 的 Qwen-Image-DiffSynth-ControlNets，原为 DiffSynth-Studio 的 Qwen-Image-In-Context-Control-Union）是对全部 60 个 transformer 块的 rank 64 全量 LoRA，**没有任何控制注入机制**；条件必须作为参考潜在（ref）token 从外部注入。
   - **ref-concat**（`index` / `index_timestep_zero`）在 Nunchaku Qwen Image 上会产生**双重结构伪影**（参考图像被绘制为内部小图）。

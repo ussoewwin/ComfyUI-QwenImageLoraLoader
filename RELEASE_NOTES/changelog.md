@@ -5,7 +5,15 @@
   </tr>
 </table>
 
-### v2.6.1 (latest)
+### v2.6.2 (latest)
+- **Fixed**: `AssertionError: assert not hasattr(md, "wtscale")` during Nunchaku CPU Offload parameter copying (`copy_params_into`).
+  - Nunchaku's `CPUOffloadManager` alternates between two GPU ping-pong buffers (`buffer_blocks`) created by deepcopying Block 0.
+  - When transferring subsequent blocks where source modules do not contain quantized `wtscale` attributes (e.g. non-quantized layers, LoRA injected modules, or USDU tiled sampling), upstream `assert not hasattr(md, "wtscale")` failed because the recycled GPU buffer retained stale `wtscale` attributes from previous iterations.
+  - `patches/nunchaku_patch.py` now provides an in-memory runtime monkey patch (`apply_nunchaku_copy_params_patch`) replacing `copy_params_into` in both `nunchaku.utils` and `nunchaku.models.utils` to safely assign `md.wtscale` if present and cleanly `delattr(md, "wtscale")` if absent, without altering any `site-packages` files.
+- **Docs**: English technical guide added at `md/NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md`.
+- **Technical Details**: See [v2.6.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.2) for complete explanation
+
+### v2.6.1
 - **Documented**: LoRA-type ControlNet is **not usable** with Nunchaku Qwen Image (e.g. `qwen_image_union_diffsynth_lora.safetensors`). Investigation results:
   - This LoRA (Comfy-Org's Qwen-Image-DiffSynth-ControlNets, originally DiffSynth-Studio's Qwen-Image-In-Context-Control-Union) is a full rank-64 LoRA over all 60 transformer blocks with **no control-injection machinery**; the condition must be injected externally as reference-latent (ref) tokens.
   - **ref-concat** (`index` / `index_timestep_zero`) produces a **double-structure artifact** (the ref image is drawn as an inner picture) on Nunchaku Qwen Image.

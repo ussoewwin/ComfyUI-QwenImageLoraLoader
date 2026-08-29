@@ -81,6 +81,7 @@ By default, detailed debug logs are **muted**. If you want detailed debug output
   - **Z-Image-Turbo (ZI) route**: supports **Nunchaku** (quantized) and all non-quantized / quantized Z-Image models.
   - **Qwen Image (QI) route**: supports all **non-Nunchaku** Qwen Image models (both non-quantized and quantized, e.g. HSWQ ConvRot INT8). **Nunchaku Qwen Image is NOT supported** by the DiffSynth route (quantized hidden-state scale mismatch produces broken output).
     - For **Nunchaku Qwen Image**, use Alibaba's [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union) instead.
+    - It is a **standard (non-model-patch) ControlNet**: it works with ComfyUI's normal ControlNet application flow (Apply ControlNet style), so it can be used directly with Nunchaku Qwen Image without this node's DiffSynth route.
   - **Krea2** (depth / openpose): Krea2 control support.
 
 - **Krea2ControlNetLoraLoader**: Krea2 controlnet-lora loader (depth & openpose)

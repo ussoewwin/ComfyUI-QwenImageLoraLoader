@@ -6,10 +6,11 @@
 </table>
 
 ### v2.6.2 (latest)
-- **Fixed**: `AssertionError: assert not hasattr(md, "wtscale")` during Nunchaku CPU Offload parameter copying (`copy_params_into`).
+- **Fixed**: `AssertionError: assert not hasattr(md, "wtscale")` and `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'` during Nunchaku CPU Offload parameter copying (`copy_params_into`).
   - Nunchaku's `CPUOffloadManager` alternates between two GPU ping-pong buffers (`buffer_blocks`) created by deepcopying Block 0.
   - When transferring subsequent blocks where source modules do not contain quantized `wtscale` attributes (e.g. non-quantized layers, LoRA injected modules, or USDU tiled sampling), upstream `assert not hasattr(md, "wtscale")` failed because the recycled GPU buffer retained stale `wtscale` attributes from previous iterations.
-  - `patches/nunchaku_patch.py` now provides an in-memory runtime monkey patch (`apply_nunchaku_copy_params_patch`) replacing `copy_params_into` in both `nunchaku.utils` and `nunchaku.models.utils` to safely assign `md.wtscale` if present and cleanly `delattr(md, "wtscale")` if absent, without altering any `site-packages` files.
+  - `patches/nunchaku_patch.py` now provides an in-memory runtime monkey patch (`apply_nunchaku_copy_params_patch`) replacing `copy_params_into` in both `nunchaku.utils` and `nunchaku.models.utils`.
+  - The patch uses **key-matched parameter/buffer copying** (`named_parameters`, `named_buffers`, `named_modules`) to eliminate misalignment from LoRA layers, safely synchronizes `wtscale` when present, and sets valid defaults (`1.0` for nvfp4, `None` for int4) when absent without attribute deletion (`delattr`), leaving `site-packages` 100% clean.
 - **Docs**: English technical guide added at `md/NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md`.
 - **Technical Details**: See [v2.6.2 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.2) for complete explanation
 

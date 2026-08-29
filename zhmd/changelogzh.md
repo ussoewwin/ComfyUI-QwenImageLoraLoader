@@ -6,10 +6,11 @@
 </table>
 
 ### v2.6.2 (最新)
-- **已修复**: Nunchaku CPU Offload 参数复制（`copy_params_into`）期间的 `AssertionError: assert not hasattr(md, "wtscale")` 报错。
+- **已修复**: Nunchaku CPU Offload 参数复制（`copy_params_into`）期间的 `AssertionError: assert not hasattr(md, "wtscale")` 及 `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'` 报错。
   - Nunchaku 的 `CPUOffloadManager` 通过深拷贝 Block 0 创建两个 GPU ping-pong 缓冲区（`buffer_blocks`）并交替使用。
   - 当传输源模块不包含量化 `wtscale` 属性的后续块（例如非量化层、注入 LoRA 的模块或 USDU 分块采样）时，由于循环使用的 GPU 缓冲区残留了先前迭代的 `wtscale` 属性，导致上游 `assert not hasattr(md, "wtscale")` 断言失败崩溃。
-  - `patches/nunchaku_patch.py` 现提供内存运行时动态补丁（`apply_nunchaku_copy_params_patch`），替换 `nunchaku.utils` 与 `nunchaku.models.utils` 中的 `copy_params_into`，在存在时安全赋值 `md.wtscale`，不存在时干净执行 `delattr(md, "wtscale")`，无需修改任何 `site-packages` 磁盘文件。
+  - `patches/nunchaku_patch.py` 现提供内存运行时动态补丁（`apply_nunchaku_copy_params_patch`），替换 `nunchaku.utils` 与 `nunchaku.models.utils` 中的 `copy_params_into`。
+  - 补丁采用**键名精确匹配的参数/缓冲区复制**（`named_parameters`、`named_buffers`、`named_modules`）以消除 LoRA 层带来的位置错位，存在时安全同步 `wtscale`，不存在时赋予合法的默认值（`nvfp4` 为 `1.0`，`int4` 为 `None`）而非执行属性删除（`delattr`），保持 `site-packages` 100% 纯净未修改。
 - **文档**: 新增英文技术文档 `md/NUNCHAKU_OFFLOAD_WTSCALE_ASSERTION_FIX.md`。
 - **技术详情**: 参见 [v2.6.2 发行说明](v2.6.2.md) 获取完整说明
 

@@ -265,6 +265,16 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 
 ## Known Limitations
 
+### ControlNet on Nunchaku Qwen Image
+Nunchaku Qwen Image models **cannot use** either of the two custom ControlNet formats below:
+
+- **Model-patch type ControlNet** (e.g. DiffSynth block-wise ControlNet with `control_block` weights): **not usable**.
+  - Reason: Nunchaku's W4A4 quantization amplifies internal hidden states far beyond the standard scale (measured ~29x on `to_qkv`, ~760x on MLP, block output mean ~1.4e5 vs standard ~0.3-5). The BlockWise ControlNet residual is trained for standard-scale hidden states, so it gets buried (control becomes invisible), and naive rescaling breaks the channel structure (glitched output).
+- **LoRA-type ControlNet** (e.g. `qwen_image_union_diffsynth_lora.safetensors`): **not usable**.
+  - Reason: This LoRA requires reference-latent (ref) tokens in the sequence (ref-concat style). On Nunchaku Qwen Image, ref-concat produces a double-structure artifact (the ref image is drawn as an inner picture). The isolated kv_cache injection style does not steer generation at all with this LoRA. Neither injection style works correctly on Nunchaku.
+
+**Use a standard (non-model-patch) ControlNet instead**, such as Alibaba's [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union), which is a standard ControlNet that works with ComfyUI's normal Apply ControlNet flow and can be used directly with Nunchaku Qwen Image.
+
 ### LoKR (Lycoris) LoRA Support
 - **Status**: ❌ **Not Supported**
 - **Issue**: LoRAs in LoKR format (created by Lycoris) are **not supported**.

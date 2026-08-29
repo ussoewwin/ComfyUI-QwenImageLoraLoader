@@ -13,7 +13,7 @@
   - 双重结构伪影**并非 Nunchaku 特有**：即使在标准 bf16 Qwen Image 模型上，该 LoRA 也会绘制内部小图（bf16 还会额外绘制外部画面，而 Nunchaku 不会）。
 - **推荐**: 对于 Nunchaku Qwen Image，请使用**标准（非 model-patch）ControlNet**，例如阿里巴巴的 [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union)，通过 ComfyUI 常规的 Apply ControlNet 流程使用。
 - **文档**: 更新 README 的 "Known Limitations"，补充了 Nunchaku Qwen Image 上 **model-patch 型** 与 **LoRA 型** ControlNet 的详细技术背景。
-- **技术详情**: 参见 [v2.6.1 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.1) 获取完整说明（发行说明待发布）
+- **技术详情**: 参见 [v2.6.1 发行说明](v2.6.1.md) 获取完整说明
 
 ### v2.6.0
 - **已更改**: ControlNet 节点名称由 `NunchakuQI&ZITDiffsynthControlnet` 改为 **`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`**（内部类名不变：`NunchakuQwenImageDiffsynthControlnet`，已有工作流无需修改即可加载）。

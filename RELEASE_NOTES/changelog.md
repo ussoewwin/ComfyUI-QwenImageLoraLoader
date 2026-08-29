@@ -13,7 +13,7 @@
   - The double-structure artifact is **not Nunchaku-specific**: even with a standard bf16 Qwen Image model, this LoRA draws the inner small picture (bf16 additionally renders the outer picture; Nunchaku does not).
 - **Recommended**: For Nunchaku Qwen Image, use a **standard (non-model-patch) ControlNet**, e.g. Alibaba's [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union), via ComfyUI's normal Apply ControlNet flow.
 - **Docs**: README "Known Limitations" updated with detailed technical background for **model-patch type** and **LoRA-type** ControlNet on Nunchaku Qwen Image.
-- **Technical Details**: See [v2.6.1 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.1) for complete explanation (release notes to be published)
+- **Technical Details**: See [v2.6.1 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.1) for complete explanation
 
 ### v2.6.0
 - **Changed**: ControlNet node renamed from `NunchakuQI&ZITDiffsynthControlnet` to **`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`** (internal class name unchanged: `NunchakuQwenImageDiffsynthControlnet`, so existing workflows load without modification).

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 _svdq_from_linear_patched: bool = False
 _qwen_apply_rotary_emb_compat_applied: bool = False
+_copy_params_patched: bool = False
 
 _ROTARY_SHIM_TAG = "_qwen_lora_loader_rotary_shim"
 
@@ -413,14 +414,61 @@ def forward_with_manual_planar_injection(
     return encoder_hidden_states, hidden_states
 
 
+def _safe_copy_params_into(src: torch.nn.Module, dst: torch.nn.Module, non_blocking: bool = True):
+    """
+    Safely copy parameters and buffers from src to dst without failing on wtscale attribute mismatch.
+    """
+    with torch.no_grad():
+        for ps, pd in zip(src.parameters(), dst.parameters()):
+            pd.copy_(ps, non_blocking=non_blocking)
+        for bs, bd in zip(src.buffers(), dst.buffers()):
+            bd.copy_(bs, non_blocking=non_blocking)
+
+        for ms, md in zip(src.modules(), dst.modules()):
+            if hasattr(ms, "wtscale"):
+                md.wtscale = ms.wtscale
+            elif hasattr(md, "wtscale"):
+                delattr(md, "wtscale")
+
+
+def apply_nunchaku_copy_params_patch() -> bool:
+    """
+    Patch nunchaku copy_params_into to safely handle wtscale attribute differences
+    when reusing buffer_blocks during CPU offloading.
+    """
+    global _copy_params_patched
+    if _copy_params_patched:
+        return True
+    applied = False
+    for mod_name in ("nunchaku.utils", "nunchaku.models.utils"):
+        try:
+            if mod_name in sys.modules:
+                mod = sys.modules[mod_name]
+                if hasattr(mod, "copy_params_into"):
+                    mod.copy_params_into = _safe_copy_params_into
+                    applied = True
+            else:
+                import importlib
+                mod = importlib.import_module(mod_name)
+                mod.copy_params_into = _safe_copy_params_into
+                applied = True
+        except Exception:
+            pass
+    if applied:
+        _copy_params_patched = True
+        logger.info("Patched nunchaku.copy_params_into for safe CPU offload buffer parameter copying.")
+    return applied
+
+
 def apply_nunchaku_patch():
     """
-    Apply ComfyUI-nunchaku compatibility patches (LoRA planar injection + lazy Linear fixes).
+    Apply ComfyUI-nunchaku compatibility patches (LoRA planar injection + lazy Linear fixes + safe copy_params_into).
     Returns True if at least one patch was applied or was already active.
     """
     rotary_compat = apply_qwen_image_apply_rotary_emb_compat()
     lazy_from = apply_svdqw4a4_lazy_linear_patch()
     lazy_fuse = apply_nunchaku_zimage_fuse_lazy_linear_patch()
+    copy_params_ok = apply_nunchaku_copy_params_patch()
     if not lazy_fuse:
         schedule_nunchaku_zimage_fuse_patch_retries()
 
@@ -455,4 +503,5 @@ def apply_nunchaku_patch():
     except Exception as e:
         logger.error("Failed to apply Nunchaku planar patch: %s", e)
 
-    return planar_ok or lazy_from or rotary_compat
+    return planar_ok or lazy_from or rotary_compat or copy_params_ok
+

@@ -5,7 +5,17 @@
   </tr>
 </table>
 
-### v2.6.0 (最新)
+### v2.6.1 (最新)
+- **已记录**: LoRA 型 ControlNet 无法用于 Nunchaku Qwen Image（例如 `qwen_image_union_diffsynth_lora.safetensors`）。调查结果：
+  - 该 LoRA（Comfy-Org 的 Qwen-Image-DiffSynth-ControlNets，原为 DiffSynth-Studio 的 Qwen-Image-In-Context-Control-Union）是对全部 60 个 transformer 块的 rank 64 全量 LoRA，**没有任何控制注入机制**；条件必须作为参考潜在（ref）token 从外部注入。
+  - **ref-concat**（`index` / `index_timestep_zero`）在 Nunchaku Qwen Image 上会产生**双重结构伪影**（参考图像被绘制为内部小图）。
+  - **隔离 kv_cache 注入**（Krea2 openpose 方式）对该 LoRA **完全无法引导生成**。
+  - 双重结构伪影**并非 Nunchaku 特有**：即使在标准 bf16 Qwen Image 模型上，该 LoRA 也会绘制内部小图（bf16 还会额外绘制外部画面，而 Nunchaku 不会）。
+- **推荐**: 对于 Nunchaku Qwen Image，请使用**标准（非 model-patch）ControlNet**，例如阿里巴巴的 [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union)，通过 ComfyUI 常规的 Apply ControlNet 流程使用。
+- **文档**: 更新 README 的 "Known Limitations"，补充了 Nunchaku Qwen Image 上 **model-patch 型** 与 **LoRA 型** ControlNet 的详细技术背景。
+- **技术详情**: 参见 [v2.6.1 发行说明](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.1) 获取完整说明（发行说明待发布）
+
+### v2.6.0
 - **已更改**: ControlNet 节点名称由 `NunchakuQI&ZITDiffsynthControlnet` 改为 **`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`**（内部类名不变：`NunchakuQwenImageDiffsynthControlnet`，已有工作流无需修改即可加载）。
 - **明确支持范围**:
   - **Z-Image-Turbo（ZI 路由）**：支持 **Nunchaku**（量化）以及所有非量化 / 量化 Z-Image 模型。

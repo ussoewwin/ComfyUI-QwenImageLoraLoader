@@ -269,7 +269,12 @@ ComfyUI\python_embeded\python.exe -m pip install --upgrade diffusers
 Nunchaku Qwen Image models **cannot use** either of the two custom ControlNet formats below:
 
 - **Model-patch type ControlNet** (e.g. DiffSynth block-wise ControlNet with `control_block` weights): **not usable**.
-  - Reason: Nunchaku's W4A4 quantization amplifies internal hidden states far beyond the standard scale (measured ~29x on `to_qkv`, ~760x on MLP, block output mean ~1.4e5 vs standard ~0.3-5). The BlockWise ControlNet residual is trained for standard-scale hidden states, so it gets buried (control becomes invisible), and naive rescaling breaks the channel structure (glitched output).
+  - Reason: the failure is **not** in the ControlNet model itself (the `QwenImageBlockWiseControlNet` decode is correct), but in the **nunchaku W4A4-quantized Qwen Image model's internal hidden-state scale**:
+    - The nunchaku `SVDQW4A4Linear` (W4A4, activations also quantized) amplifies hidden states inside each transformer block (measured: `to_qkv` ~29x, MLP ~760x amplification; block output mean ~1.4e5, whereas Z-Image stays at standard scale ~0.3-5).
+    - Hidden states also have severely non-uniform **per-channel scales** (channel RMS spread up to ~1500x), caused by accumulated W4A4 group scales.
+    - BlockWise ControlNet (`QwenImageBlockWiseControlNet`) is trained for **standard-scale** hidden states. Its residual is ~0.3% of the nunchaku hidden-state magnitude, so the control is effectively invisible; naive residual rescaling breaks the channel structure and produces glitched output.
+    - Z-Image is unaffected because its nunchaku implementation (`NextDiT`) keeps hidden states at standard scale.
+  - This is a nunchaku Qwen Image limitation (similar to upstream issue #711), not a bug in the ControlNet model itself.
 - **LoRA-type ControlNet** (e.g. `qwen_image_union_diffsynth_lora.safetensors`): **not usable**.
   - Reason: This LoRA requires reference-latent (ref) tokens in the sequence (ref-concat style). On Nunchaku Qwen Image, ref-concat produces a double-structure artifact (the ref image is drawn as an inner picture). The isolated kv_cache injection style does not steer generation at all with this LoRA. Neither injection style works correctly on Nunchaku.
 

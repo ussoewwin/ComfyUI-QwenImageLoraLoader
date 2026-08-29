@@ -276,7 +276,13 @@ Nunchaku Qwen Image models **cannot use** either of the two custom ControlNet fo
     - Z-Image is unaffected because its nunchaku implementation (`NextDiT`) keeps hidden states at standard scale.
   - This is a nunchaku Qwen Image limitation (similar to upstream issue #711), not a bug in the ControlNet model itself.
 - **LoRA-type ControlNet** (e.g. `qwen_image_union_diffsynth_lora.safetensors`): **not usable**.
-  - Reason: This LoRA requires reference-latent (ref) tokens in the sequence (ref-concat style). On Nunchaku Qwen Image, ref-concat produces a double-structure artifact (the ref image is drawn as an inner picture). The isolated kv_cache injection style does not steer generation at all with this LoRA. Neither injection style works correctly on Nunchaku.
+  - Background: this LoRA (from Comfy-Org's Qwen-Image-DiffSynth-ControlNets, originally DiffSynth-Studio's Qwen-Image-In-Context-Control-Union) is a full LoRA over all 60 transformer blocks (rank 64 on every attention / MLP / modulation module). It contains **no control-injection machinery** (no `control_img_in`, no `control_blocks`, no `controlnet_x_embedder`), so the condition must be injected externally as reference-latent (ref) tokens.
+  - What we tested on Nunchaku Qwen Image:
+    - **ref-concat (`index`)**: produces a double-structure artifact — the ref image (the condition) is drawn as an inner picture inside the generated image. The inner picture does follow the canny structure, but the layout is broken (picture-in-picture), so it cannot be used as a proper ControlNet.
+    - **ref-concat (`index_timestep_zero`)**: the inner picture becomes a copy of the source image (the edit-style conditioning keeps the ref content too strongly), so canny control is effectively lost.
+    - **isolated kv_cache injection** (the Krea2 openpose style): does **not steer generation at all** with this LoRA — the LoRA does not respond to K/V-cached ref conditioning.
+  - Note: the double-structure artifact is **not specific to Nunchaku** — even with a standard bf16 Qwen Image model, this LoRA produces an inner small picture (the difference is only that bf16 also renders the outer picture, while Nunchaku does not).
+  - Conclusion: neither ref injection style works correctly on Nunchaku Qwen Image. Use a standard (non-model-patch) ControlNet instead (see below).
 
 **Use a standard (non-model-patch) ControlNet instead**, such as Alibaba's [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union), which is a standard ControlNet that works with ComfyUI's normal Apply ControlNet flow and can be used directly with Nunchaku Qwen Image.
 

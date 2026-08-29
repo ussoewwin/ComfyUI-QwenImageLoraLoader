@@ -112,19 +112,45 @@ _copy_params_patched: bool = False
 ```python
 def _safe_copy_params_into(src: torch.nn.Module, dst: torch.nn.Module, non_blocking: bool = True):
     """
-    Safely copy parameters and buffers from src to dst without failing on wtscale attribute mismatch.
+    Safely copy parameters and buffers from src to dst by name matching (with positional fallback),
+    and correctly synchronize wtscale attribute without attribute deletion.
     """
     with torch.no_grad():
-        for ps, pd in zip(src.parameters(), dst.parameters()):
-            pd.copy_(ps, non_blocking=non_blocking)
-        for bs, bd in zip(src.buffers(), dst.buffers()):
-            bd.copy_(bs, non_blocking=non_blocking)
+        src_params = dict(src.named_parameters())
+        dst_params = dict(dst.named_parameters())
+        if src_params and dst_params and set(src_params.keys()) == set(dst_params.keys()):
+            for name, pd in dst_params.items():
+                pd.copy_(src_params[name], non_blocking=non_blocking)
+        else:
+            for ps, pd in zip(src.parameters(), dst.parameters()):
+                pd.copy_(ps, non_blocking=non_blocking)
 
-        for ms, md in zip(src.modules(), dst.modules()):
-            if hasattr(ms, "wtscale"):
-                md.wtscale = ms.wtscale
-            elif hasattr(md, "wtscale"):
-                delattr(md, "wtscale")
+        src_buffers = dict(src.named_buffers())
+        dst_buffers = dict(dst.named_buffers())
+        if src_buffers and dst_buffers and set(src_buffers.keys()) == set(dst_buffers.keys()):
+            for name, bd in dst_buffers.items():
+                bd.copy_(src_buffers[name], non_blocking=non_blocking)
+        else:
+            for bs, bd in zip(src.buffers(), dst.buffers()):
+                bd.copy_(bs, non_blocking=non_blocking)
+
+        src_modules = dict(src.named_modules())
+        dst_modules = dict(dst.named_modules())
+        if src_modules and dst_modules and set(src_modules.keys()) == set(dst_modules.keys()):
+            for name, md in dst_modules.items():
+                ms = src_modules[name]
+                if hasattr(ms, "wtscale"):
+                    md.wtscale = ms.wtscale
+                elif hasattr(md, "wtscale"):
+                    precision = getattr(md, "precision", "int4")
+                    md.wtscale = 1.0 if precision == "nvfp4" else None
+        else:
+            for ms, md in zip(src.modules(), dst.modules()):
+                if hasattr(ms, "wtscale"):
+                    md.wtscale = ms.wtscale
+                elif hasattr(md, "wtscale"):
+                    precision = getattr(md, "precision", "int4")
+                    md.wtscale = 1.0 if precision == "nvfp4" else None
 
 
 def apply_nunchaku_copy_params_patch() -> bool:
@@ -207,25 +233,12 @@ def apply_nunchaku_patch():
 ## 5. Technical Analysis & Significance
 
 ### 1. `_safe_copy_params_into`
-- **Strict Preservation of Tensor & Buffer Copying**:
-  ```python
-  for ps, pd in zip(src.parameters(), dst.parameters()):
-      pd.copy_(ps, non_blocking=non_blocking)
-  for bs, bd in zip(src.buffers(), dst.buffers()):
-      bd.copy_(bs, non_blocking=non_blocking)
-  ```
-  Operates under the exact same `torch.no_grad()` context as upstream, performing asynchronous memory copies without autograd overhead.
-- **Dynamic Attribute Synchronization Without Assertions**:
-  ```python
-  for ms, md in zip(src.modules(), dst.modules()):
-      if hasattr(ms, "wtscale"):
-          md.wtscale = ms.wtscale
-      elif hasattr(md, "wtscale"):
-          delattr(md, "wtscale")
-  ```
-  - When the source module `ms` has `wtscale`, `md.wtscale` is assigned directly.
-  - When `ms` does not have `wtscale`, any stale `wtscale` attribute on `md` left over from prior iterations is deleted via `delattr(md, "wtscale")`.
-  - This guarantees that `dst` perfectly mirrors `src` in module topology and attributes, eliminating the invalid `AssertionError` across any heterogeneous block structure or LoRA configuration.
+- **Key-Matched Parameter and Buffer Copying**:
+  Matches parameter and buffer tensors by name (`named_parameters()`, `named_buffers()`) before copying, with a fallback to positional iteration. This guarantees that custom module augmentations (such as LoRA weights or adapters) do not shift subsequent tensor transfers.
+- **Strict Preservation of `wtscale` and Execution Safety**:
+  - When `ms` has `wtscale`, `md.wtscale` is assigned directly from `ms.wtscale`.
+  - When `ms` does not have `wtscale` but `md` is a quantized layer (e.g. `SVDQW4A4Linear`), `md.wtscale` is reset to its clean default (`1.0` for nvfp4, `None` for int4) rather than deleted via `delattr`.
+  - This completely prevents both upstream's `AssertionError` and downstream's `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'` during `forward_quant`.
 
 ### 2. `apply_nunchaku_copy_params_patch`
 - **Idempotency & Re-entrancy Protection**:

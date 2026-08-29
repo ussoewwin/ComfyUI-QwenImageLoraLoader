@@ -416,19 +416,45 @@ def forward_with_manual_planar_injection(
 
 def _safe_copy_params_into(src: torch.nn.Module, dst: torch.nn.Module, non_blocking: bool = True):
     """
-    Safely copy parameters and buffers from src to dst without failing on wtscale attribute mismatch.
+    Safely copy parameters and buffers from src to dst by name matching (with positional fallback),
+    and correctly synchronize wtscale attribute without attribute deletion.
     """
     with torch.no_grad():
-        for ps, pd in zip(src.parameters(), dst.parameters()):
-            pd.copy_(ps, non_blocking=non_blocking)
-        for bs, bd in zip(src.buffers(), dst.buffers()):
-            bd.copy_(bs, non_blocking=non_blocking)
+        src_params = dict(src.named_parameters())
+        dst_params = dict(dst.named_parameters())
+        if src_params and dst_params and set(src_params.keys()) == set(dst_params.keys()):
+            for name, pd in dst_params.items():
+                pd.copy_(src_params[name], non_blocking=non_blocking)
+        else:
+            for ps, pd in zip(src.parameters(), dst.parameters()):
+                pd.copy_(ps, non_blocking=non_blocking)
 
-        for ms, md in zip(src.modules(), dst.modules()):
-            if hasattr(ms, "wtscale"):
-                md.wtscale = ms.wtscale
-            elif hasattr(md, "wtscale"):
-                delattr(md, "wtscale")
+        src_buffers = dict(src.named_buffers())
+        dst_buffers = dict(dst.named_buffers())
+        if src_buffers and dst_buffers and set(src_buffers.keys()) == set(dst_buffers.keys()):
+            for name, bd in dst_buffers.items():
+                bd.copy_(src_buffers[name], non_blocking=non_blocking)
+        else:
+            for bs, bd in zip(src.buffers(), dst.buffers()):
+                bd.copy_(bs, non_blocking=non_blocking)
+
+        src_modules = dict(src.named_modules())
+        dst_modules = dict(dst.named_modules())
+        if src_modules and dst_modules and set(src_modules.keys()) == set(dst_modules.keys()):
+            for name, md in dst_modules.items():
+                ms = src_modules[name]
+                if hasattr(ms, "wtscale"):
+                    md.wtscale = ms.wtscale
+                elif hasattr(md, "wtscale"):
+                    precision = getattr(md, "precision", "int4")
+                    md.wtscale = 1.0 if precision == "nvfp4" else None
+        else:
+            for ms, md in zip(src.modules(), dst.modules()):
+                if hasattr(ms, "wtscale"):
+                    md.wtscale = ms.wtscale
+                elif hasattr(md, "wtscale"):
+                    precision = getattr(md, "precision", "int4")
+                    md.wtscale = 1.0 if precision == "nvfp4" else None
 
 
 def apply_nunchaku_copy_params_patch() -> bool:

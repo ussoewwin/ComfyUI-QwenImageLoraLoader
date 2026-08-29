@@ -5,7 +5,17 @@
   </tr>
 </table>
 
-### v2.6.0 (latest)
+### v2.6.1 (latest)
+- **Documented**: LoRA-type ControlNet is **not usable** with Nunchaku Qwen Image (e.g. `qwen_image_union_diffsynth_lora.safetensors`). Investigation results:
+  - This LoRA (Comfy-Org's Qwen-Image-DiffSynth-ControlNets, originally DiffSynth-Studio's Qwen-Image-In-Context-Control-Union) is a full rank-64 LoRA over all 60 transformer blocks with **no control-injection machinery**; the condition must be injected externally as reference-latent (ref) tokens.
+  - **ref-concat** (`index` / `index_timestep_zero`) produces a **double-structure artifact** (the ref image is drawn as an inner picture) on Nunchaku Qwen Image.
+  - **isolated kv_cache injection** (Krea2 openpose style) does **not steer generation at all** with this LoRA.
+  - The double-structure artifact is **not Nunchaku-specific**: even with a standard bf16 Qwen Image model, this LoRA draws the inner small picture (bf16 additionally renders the outer picture; Nunchaku does not).
+- **Recommended**: For Nunchaku Qwen Image, use a **standard (non-model-patch) ControlNet**, e.g. Alibaba's [Qwen-Image-2512-Fun-Controlnet-Union](https://huggingface.co/alibaba-pai/Qwen-Image-2512-Fun-Controlnet-Union), via ComfyUI's normal Apply ControlNet flow.
+- **Docs**: README "Known Limitations" updated with detailed technical background for **model-patch type** and **LoRA-type** ControlNet on Nunchaku Qwen Image.
+- **Technical Details**: See [v2.6.1 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.1) for complete explanation (release notes to be published)
+
+### v2.6.0
 - **Changed**: ControlNet node renamed from `NunchakuQI&ZITDiffsynthControlnet` to **`Nunchaku ZI Diffsynth Controlnet&Krea2 LoRA ControlNet`** (internal class name unchanged: `NunchakuQwenImageDiffsynthControlnet`, so existing workflows load without modification).
 - **Clarified supported model scope**:
   - **Z-Image-Turbo (ZI) route**: supports **Nunchaku** (quantized) and all non-quantized / quantized Z-Image models.

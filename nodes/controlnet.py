@@ -711,10 +711,29 @@ def _apply_krea2_openpose_control(model_patched, model_patch, vae, image, streng
     """
     state_dict = _krea2_get_lora_state_dict(model_patch)
 
+    # Fast sanity check: a Krea2 openpose control LoRA must contain
+    # *.lora_A/*.lora_B pairs targeting diffusion_model.blocks / txtfusion.
+    # Files without any such pair (e.g. SDXL LLLite controlnets or plain
+    # controlnet state dicts) can never match - fail with an explicit,
+    # actionable message instead of the generic "no patches matched" error.
+    has_krea2_lora_pair = any(
+        key.endswith((".lora_A.weight", ".lora_B.weight")) for key in state_dict
+    )
+    if not has_krea2_lora_pair:
+        sample_keys = sorted(state_dict.keys())[:3]
+        raise RuntimeError(
+            "Selected controlnet file is not a Krea2 block LoRA (no *.lora_A/*.lora_B "
+            f"pairs found; sample keys: {sample_keys}). For Krea2 openpose control, "
+            "load the Krea2 openpose control LoRA (e.g. krea2_turbo_openpose_controlnet.safetensors) "
+            "in the Krea2 ControlNet LoRA loader. SDXL ControlNet / LLLite files are not compatible."
+        )
+
     lora_patches = _krea2_build_block_patches(state_dict, model_patched)
     if not lora_patches:
         raise RuntimeError(
-            "No block LoRA patches matched the current Krea2 model for openpose control."
+            "No block LoRA patches matched the current Krea2 model for openpose control. "
+            "The file contains *.lora_A/*.lora_B pairs but none target "
+            "diffusion_model.blocks.* or diffusion_model.txtfusion.* of the loaded Krea2 model."
         )
 
     patched_keys = model_patched.add_patches(

@@ -67,6 +67,17 @@ except Exception as e:
     logger.error(f"Error importing/applying Nunchaku monkey patch: {e}")
 # -----------------------------------------
 
+# --- SAM3 segmentation-head scalp patch (upstream PR #15979 parity) ---
+try:
+    from .patches.sam3_seg_features_scalp_patch import apply_sam3_seg_features_scalp_patch
+    if apply_sam3_seg_features_scalp_patch():
+        logger.info("Applied SAM3 seg_features scalp patch (empty-mask fix).")
+    else:
+        logger.debug("SAM3 seg_features scalp patch not applied (SAM3 not available).")
+except Exception as e:
+    logger.debug(f"Error importing/applying SAM3 seg_features scalp patch: {e}")
+# -----------------------------------------
+
 # Nunchaku-dependent LoRA nodes are registered only when nunchaku is available
 # (NVIDIA CUDA). On AMD/ROCm systems they are skipped; the nunchaku-independent
 # Krea2 ControlNet LoRA loader is registered right after, unconditionally.

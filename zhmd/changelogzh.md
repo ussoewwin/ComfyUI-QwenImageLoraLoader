@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.2 (最新)
+### v2.6.3 (最新)
+- **新增**: 针对 SAM3（Segment Anything 3）非 multiplex 检查点的上游兼容补丁 — `patches/sam3_seg_features_scalp_patch.py` 修复使用文本提示运行时**掩码为空 / 接近全黑**的问题。
+  - 根本原因: ComfyUI 的 `SAM3Detector._detect` 将全部 4 个 FPN 层级传给 `SegmentationHead`，而 `scalp=1` 仅保留 3 个给编码器；head 随后用空间错误的 `encoder_visual` 裁剪替换最小的 36px 层级，导致所有掩码 logit 偏向负值。
+  - 修复: 补丁预裁剪输入并临时将 `self.scalp` 设为 0 再调用原始 `_detect`，使分割头与编码器接收相同层级。
+  - **上游合并后自动失效**（Comfy-Org/ComfyUI PR #15979），对 multiplex 模型（SAM3.1，scalp=0）为**无操作**。
+- **技术详情**: 参见 [v2.6.3 发布说明](v2.6.3.md)
+
+### v2.6.2
 - **已修复**: Nunchaku CPU Offload 参数复制（`copy_params_into`）期间的 `AssertionError: assert not hasattr(md, "wtscale")` 及 `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'` 报错。
   - Nunchaku 的 `CPUOffloadManager` 通过深拷贝 Block 0 创建两个 GPU ping-pong 缓冲区（`buffer_blocks`）并交替使用。
   - 当传输源模块不包含量化 `wtscale` 属性的后续块（例如非量化层、注入 LoRA 的模块或 USDU 分块采样）时，由于循环使用的 GPU 缓冲区残留了先前迭代的 `wtscale` 属性，导致上游 `assert not hasattr(md, "wtscale")` 断言失败崩溃。

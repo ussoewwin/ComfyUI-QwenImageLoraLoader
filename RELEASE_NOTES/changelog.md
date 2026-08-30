@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.2 (latest)
+### v2.6.3 (latest)
+- **Added**: Upstream compatibility patch for SAM3 (Segment Anything 3) non-multiplex checkpoints — `patches/sam3_seg_features_scalp_patch.py` fixes **empty / near-black masks** when running SAM3 with text prompts.
+  - Root cause: ComfyUI's `SAM3Detector._detect` passes all 4 FPN levels to `SegmentationHead` while `scalp=1` keeps only 3 for the encoder; the head then replaces the smallest 36px level with a spatially-wrong crop of `encoder_visual`, biasing all mask logits negative.
+  - Fix: the patch pre-scales the inputs and temporarily sets `self.scalp = 0` while calling the original `_detect`, so the segmentation head receives the same levels as the encoder.
+  - **Inert when the upstream fix is merged** (Comfy-Org/ComfyUI PR #15979) and a **no-op** for multiplex models (SAM3.1, scalp=0).
+- **Technical Details**: See [v2.6.3 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.3)
+
+### v2.6.2
 - **Fixed**: `AssertionError: assert not hasattr(md, "wtscale")` and `AttributeError: 'SVDQW4A4Linear' object has no attribute 'wtscale'` during Nunchaku CPU Offload parameter copying (`copy_params_into`).
   - Nunchaku's `CPUOffloadManager` alternates between two GPU ping-pong buffers (`buffer_blocks`) created by deepcopying Block 0.
   - When transferring subsequent blocks where source modules do not contain quantized `wtscale` attributes (e.g. non-quantized layers, LoRA injected modules, or USDU tiled sampling), upstream `assert not hasattr(md, "wtscale")` failed because the recycled GPU buffer retained stale `wtscale` attributes from previous iterations.

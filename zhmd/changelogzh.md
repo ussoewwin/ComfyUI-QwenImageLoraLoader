@@ -5,7 +5,15 @@
   </tr>
 </table>
 
-### v2.6.3 (最新)
+### v2.6.4 (最新)
+- **新增**：rgthree-comfy logo 路由自防御补丁 —— `patches/rgthree_logo_route_guard.py` 会校验 rgthree 从 `tool.comfy.Icon` 缓存的返回内容，非 SVG（代理 / 强制门户 / CDN 错误页）时回退到 rgthree 自带的 logo。
+  - 未做校验时，`rgthree-comfy/py/server/routes_config.py:get_logo` 中的 `str.format()` 会对每个请求抛出 `ValueError: unexpected '{' in field name`（错误内容被缓存，直到重启），而仅让异常消失会把错误页当作 logo 渲染。
+  - 在 `routes_config` 已导入时立即应用，并在 `PromptServer` 启动时再次应用（UI 会在任何提示运行前请求 logo）。正常 SVG 内容原样透传。
+- **移除**：`patches/sam3_seg_features_scalp_patch.py` —— 上游 Comfy-Org/ComfyUI PR #15979 已合并且 ComfyUI v0.35.0+ 已内置，该兼容补丁成为无效代码（仅删除该补丁，其他补丁未动）。
+- **文档**：新增技术指南 `md/RGTHREE_LOGO_GUARD_AND_SAM3_PATCH_REMOVAL.md`。
+- **技术细节**：参见 [v2.6.4 发布说明](v2.6.4.md)。
+
+### v2.6.3
 - **新增**: 针对 SAM3（Segment Anything 3）非 multiplex 检查点的上游兼容补丁 — `patches/sam3_seg_features_scalp_patch.py` 修复使用文本提示运行时**掩码为空 / 接近全黑**的问题。
   - 根本原因: ComfyUI 的 `SAM3Detector._detect` 将全部 4 个 FPN 层级传给 `SegmentationHead`，而 `scalp=1` 仅保留 3 个给编码器；head 随后用空间错误的 `encoder_visual` 裁剪替换最小的 36px 层级，导致所有掩码 logit 偏向负值。
   - 修复: 补丁预裁剪输入并临时将 `self.scalp` 设为 0 再调用原始 `_detect`，使分割头与编码器接收相同层级。

@@ -5,7 +5,15 @@
   </tr>
 </table>
 
-### v2.6.3 (latest)
+### v2.6.4 (latest)
+- **Added**: Self-defense guard for rgthree-comfy's logo routes - `patches/rgthree_logo_route_guard.py` validates the markup rgthree caches from `tool.comfy.Icon` and falls back to rgthree's bundled logo when the response is not SVG (a proxy / captive portal / CDN error page).
+  - Without validation, `str.format()` in `rgthree-comfy/py/server/routes_config.py:get_logo` raised `ValueError: unexpected '{' in field name` for every request (the bad payload is cached until restart), and stopping the exception alone served the error page as the logo.
+  - Applied when `routes_config` is already imported and again on `PromptServer` startup, since the UI requests the logo before any prompt runs. A valid SVG payload is passed through untouched.
+- **Removed**: `patches/sam3_seg_features_scalp_patch.py` - upstream Comfy-Org/ComfyUI PR #15979 is merged and present in ComfyUI v0.35.0+, so this parity patch was inert dead weight (removal is scoped to that patch only).
+- **Docs**: Technical guide added at `md/RGTHREE_LOGO_GUARD_AND_SAM3_PATCH_REMOVAL.md`.
+- **Technical Details**: See [v2.6.4 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.4)
+
+### v2.6.3
 - **Added**: Upstream compatibility patch for SAM3 (Segment Anything 3) non-multiplex checkpoints — `patches/sam3_seg_features_scalp_patch.py` fixes **empty / near-black masks** when running SAM3 with text prompts.
   - Root cause: ComfyUI's `SAM3Detector._detect` passes all 4 FPN levels to `SegmentationHead` while `scalp=1` keeps only 3 for the encoder; the head then replaces the smallest 36px level with a spatially-wrong crop of `encoder_visual`, biasing all mask logits negative.
   - Fix: the patch pre-scales the inputs and temporarily sets `self.scalp = 0` while calling the original `_detect`, so the segmentation head receives the same levels as the encoder.

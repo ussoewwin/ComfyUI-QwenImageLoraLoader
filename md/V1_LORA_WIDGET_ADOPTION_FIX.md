@@ -131,14 +131,14 @@ The two files differ in only 3 lines (the module log line, the extension name, a
 
 Both files were copied to the runtime installation:
 
-- `D:\USERFILES\ComfyUI\ComfyUI\custom_nodes\ComfyUI-QwenImageLoraLoader\js\`
+- `custom_nodes/ComfyUI-QwenImageLoraLoader/js/`
 - Verified: SHA256 match (`z_qwen_lora_dynamic_v1.js` = `71790E5457DE98B3…`, `zimageturbo_lora_dynamic_v1.js` = `1592A39BEBA8C638…`)
 - `git status` in that clone shows only these two files modified; nothing else changed
 
 ### 3.3 Scripts created for verification (reference material, not deliverables, not added to the repository)
 
-- `…\workspace\.openclaw\tmp\pr54\harness\test.mjs` (V1, both files, 4 behaviours × 2 frontend contracts)
-- `…\workspace\.openclaw\tmp\pr54\harness\test2.mjs` (V2/V3/V4 and widgethider, 3 contracts × 4 files)
+- `harness/test.mjs` (V1, both files, 4 behaviours × 2 frontend contracts)
+- `harness/test2.mjs` (V2/V3/V4 and widgethider, 3 contracts × 4 files)
 - Both load the repository's real JS files unmodified and drive them.
 
 ---

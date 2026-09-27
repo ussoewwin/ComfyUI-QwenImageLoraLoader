@@ -8,8 +8,8 @@
 ### v2.6.5 (latest)
 - **Fixed**: V1 LoRA stack nodes (`NunchakuQwenImageLoraStackV1`, `NunchakuZImageTurboLoraStackV1`) lost their row interactions once the ComfyUI frontend began adopting custom widgets into concrete classes: right-click row hit detection, the custom 4-item menu (toggle / move up / move down / remove), row reordering, and the row cleanup on workflow load all stopped working.
   - Root cause: widget adoption keeps the same widget object but replaces its prototype (`adoptConcreteWidget`), so `w instanceof NunchakuLoraWidget` became permanently `false`; the four checks in `js/z_qwen_lora_dynamic_v1.js` and `js/zimageturbo_lora_dynamic_v1.js` therefore never matched.
-  - Fix (PR #54, contributed by DrJKL): use each node's existing live `loraWidgets` membership as the identity contract instead of `instanceof` - 4 lines per file, with no persisted branding and no new state. Behaviour is unchanged on frontends that do not perform widget adoption.
-  - Scope: widget adoption exists from ComfyUI_frontend v1.53.3 onward (upstream tracking issue Comfy-Org/ComfyUI_frontend#17817). The V2/V3/V4 stacks and `widgethider.js` were verified unaffected.
+  - Fix ([PR #54](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/54), contributed by DrJKL): use each node's existing live `loraWidgets` membership as the identity contract instead of `instanceof` - 4 lines per file, with no persisted branding and no new state. Behaviour is unchanged on frontends that do not perform widget adoption.
+  - Scope: widget adoption exists from ComfyUI_frontend v1.53.3 onward (upstream tracking issue [Comfy-Org/ComfyUI_frontend#17817](https://github.com/Comfy-Org/ComfyUI_frontend/issues/17817)). The V2/V3/V4 stacks and `widgethider.js` were verified unaffected.
 - **Technical Details**: See [v2.6.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.5)
 
 ### v2.6.4

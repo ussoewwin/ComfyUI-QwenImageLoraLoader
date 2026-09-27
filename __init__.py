@@ -67,19 +67,6 @@ except Exception as e:
     logger.error(f"Error importing/applying Nunchaku monkey patch: {e}")
 # -----------------------------------------
 
-# --- rgthree logo route guard (self-defense until rgthree-comfy#763 lands) ---
-try:
-    from .patches.rgthree_logo_route_guard import apply_rgthree_logo_guard
-    if apply_rgthree_logo_guard():
-        logger.info("Applied rgthree logo route guard (non-SVG payloads use the bundled logo).")
-    else:
-        logger.debug(
-            "rgthree logo route guard: rgthree-comfy not loaded yet; retrying at every prompt."
-        )
-except Exception as e:
-    logger.debug(f"Error importing/applying rgthree logo route guard: {e}")
-# -----------------------------------------
-
 # -----------------------------------------
 
 # Nunchaku-dependent LoRA nodes are registered only when nunchaku is available

@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.4 (latest)
+### v2.6.5 (latest)
+- **Fixed**: V1 LoRA stack nodes (`NunchakuQwenImageLoraStackV1`, `NunchakuZImageTurboLoraStackV1`) lost their row interactions once the ComfyUI frontend began adopting custom widgets into concrete classes: right-click row hit detection, the custom 4-item menu (toggle / move up / move down / remove), row reordering, and the row cleanup on workflow load all stopped working.
+  - Root cause: widget adoption keeps the same widget object but replaces its prototype (`adoptConcreteWidget`), so `w instanceof NunchakuLoraWidget` became permanently `false`; the four checks in `js/z_qwen_lora_dynamic_v1.js` and `js/zimageturbo_lora_dynamic_v1.js` therefore never matched.
+  - Fix (PR #54, contributed by DrJKL): use each node's existing live `loraWidgets` membership as the identity contract instead of `instanceof` - 4 lines per file, with no persisted branding and no new state. Behaviour is unchanged on frontends that do not perform widget adoption.
+  - Scope: widget adoption exists from ComfyUI_frontend v1.53.3 onward (upstream tracking issue Comfy-Org/ComfyUI_frontend#17817). The V2/V3/V4 stacks and `widgethider.js` were verified unaffected.
+- **Technical Details**: See [v2.6.5 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.5)
+
+### v2.6.4
 - **Added**: Self-defense guard for rgthree-comfy's logo routes - `patches/rgthree_logo_route_guard.py` validates the markup rgthree caches from `tool.comfy.Icon` and falls back to rgthree's bundled logo when the response is not SVG (a proxy / captive portal / CDN error page).
   - Without validation, `str.format()` in `rgthree-comfy/py/server/routes_config.py:get_logo` raised `ValueError: unexpected '{' in field name` for every request (the bad payload is cached until restart), and stopping the exception alone served the error page as the logo.
   - Applied when `routes_config` is already imported and again on `PromptServer` startup, since the UI requests the logo before any prompt runs. A valid SVG payload is passed through untouched.

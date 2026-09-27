@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.4 (最新)
+### v2.6.5 (最新)
+- **已修复**：ComfyUI 前端开始把自定义部件“采用”为具象类之后，V1 LoRA 堆叠节点（`NunchakuQwenImageLoraStackV1`、`NunchakuZImageTurboLoraStackV1`）丢失了行交互：右键行命中检测、自定义四项菜单（开关 / 上移 / 下移 / 移除）、行的上下移动、以及载入工作流时的行清理全部失效。
+  - 根因：部件采用会保留同一个部件对象但替换其 prototype（`adoptConcreteWidget`），因此 `w instanceof NunchakuLoraWidget` 恒为 `false`，`js/z_qwen_lora_dynamic_v1.js` 与 `js/zimageturbo_lora_dynamic_v1.js` 中的 4 处判定不再命中。
+  - 修复（PR #54，由 DrJKL 贡献）：改用各节点已有的实时 `loraWidgets` 成员关系作为身份契约，替代 `instanceof`，每文件 4 行，不添加持久化标记、不新增状态。在没有部件采用机制的前端上行为不变。
+  - 影响范围：部件采用机制自 ComfyUI_frontend v1.53.3 起存在（上游追踪 issue Comfy-Org/ComfyUI_frontend#17817）。V2/V3/V4 与 `widgethider.js` 已实测不受影响。
+- **技术详情**：参阅 [v2.6.5 发布说明](v2.6.5.md)。
+
+### v2.6.4
 - **新增**：rgthree-comfy logo 路由自防御补丁 —— `patches/rgthree_logo_route_guard.py` 会校验 rgthree 从 `tool.comfy.Icon` 缓存的返回内容，非 SVG（代理 / 强制门户 / CDN 错误页）时回退到 rgthree 自带的 logo。
   - 未做校验时，`rgthree-comfy/py/server/routes_config.py:get_logo` 中的 `str.format()` 会对每个请求抛出 `ValueError: unexpected '{' in field name`（错误内容被缓存，直到重启），而仅让异常消失会把错误页当作 logo 渲染。
   - 在 `routes_config` 已导入时立即应用，并在 `PromptServer` 启动时再次应用（UI 会在任何提示运行前请求 logo）。正常 SVG 内容原样透传。

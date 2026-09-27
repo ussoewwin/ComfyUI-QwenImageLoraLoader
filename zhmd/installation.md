@@ -61,7 +61,7 @@ git clone https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git
 
 ## 系统要求
 
-- Python 3.11+
+- Python 3.12+
 - ComfyUI（建议使用最新版本）
 - ComfyUI-nunchaku（必需）
 - 支持 CUDA 的 GPU（可选，但建议用于性能）

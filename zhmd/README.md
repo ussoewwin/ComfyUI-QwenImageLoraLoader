@@ -297,7 +297,7 @@ Z-Image / Nunchaku 路由完全隔离——使用这些路由的现有工作流�
 
 - PyTorch
 
-- Python 3.11+
+- Python 3.12+
 
 
 

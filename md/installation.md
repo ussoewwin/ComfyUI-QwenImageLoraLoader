@@ -61,7 +61,7 @@ Then restart ComfyUI.
 
 ## Requirements
 
-- Python 3.11+
+- Python 3.12+
 - ComfyUI (latest version recommended)
 - ComfyUI-nunchaku (required)
 - CUDA-capable GPU (optional, but recommended for performance)

@@ -185,7 +185,7 @@ same pose-control effect standalone.*
 - ComfyUI
 - ComfyUI-nunchaku plugin (official version, no modification required)
 - PyTorch
-- Python 3.11+
+- Python 3.12+
 
 ## Compatibility
 

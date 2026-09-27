@@ -255,7 +255,7 @@ app.registerExtension({
 
       // If no slot was clicked, check if the click was on our LoraWidget
       const widget = this.widgets.find(w => {
-        return w instanceof NunchakuLoraWidget &&
+        return this.loraWidgets.includes(w) &&
           canvasY > (this.pos[1] + w.last_y) &&
           canvasY < (this.pos[1] + w.last_y + WIDGET_HEIGHT);
       });
@@ -269,7 +269,7 @@ app.registerExtension({
 
     // Show custom menu when the dummy slot is detected
     nodeType.prototype.getSlotMenuOptions = function (slot) {
-      if (slot && slot.widget instanceof NunchakuLoraWidget) {
+      if (slot && this.loraWidgets.includes(slot.widget)) {
         const widget = slot.widget;
         return [
           {
@@ -306,7 +306,7 @@ app.registerExtension({
       const idx = this.widgets.indexOf(widget);
       const targetIdx = idx + dir;
       // Ensure move range stays between LoraWidgets (prevent moving past or onto model/cpu_offload widgets)
-      if (this.widgets[targetIdx] instanceof NunchakuLoraWidget) {
+      if (this.loraWidgets.includes(this.widgets[targetIdx])) {
         this.widgets.splice(idx, 1);
         this.widgets.splice(targetIdx, 0, widget);
         this.setDirtyCanvas(true);
@@ -319,7 +319,7 @@ app.registerExtension({
       onConfigure?.apply(this, arguments);
       if (info.widgets_values) {
         // Clear initialized widgets
-        this.widgets = this.widgets.filter(w => !(w instanceof NunchakuLoraWidget));
+        this.widgets = this.widgets.filter(w => !this.loraWidgets.includes(w));
         this.loraWidgets = [];
 
         // Recover LoRA rows from serialized data

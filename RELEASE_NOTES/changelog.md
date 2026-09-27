@@ -5,7 +5,13 @@
   </tr>
 </table>
 
-### v2.6.5 (latest)
+### v2.6.6 (latest)
+- **Removed**: `patches/rgthree_logo_route_guard.py` - the self-defense guard for rgthree-comfy's logo route is no longer needed, now that [rgthree-comfy#763](https://github.com/rgthree/rgthree-comfy/pull/763) (contributed by ussoewwin) is merged upstream; the matching import / call block was also removed from `__init__.py`.
+  - The guard only validated the markup rgthree fetches for its logo and fell back to the bundled SVG when the response was not SVG; with the upstream fix in place (already present in the installed rgthree-comfy as commit `17f1848`), it is redundant.
+  - Nothing else changed: no other patch, module or node behaviour is affected (verified - no remaining references to the removed patch anywhere in the code base, and the syntax check passes).
+- **Technical Details**: See [v2.6.6 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.6)
+
+### v2.6.5
 - **Fixed**: V1 LoRA stack nodes (`NunchakuQwenImageLoraStackV1`, `NunchakuZImageTurboLoraStackV1`) lost their row interactions once the ComfyUI frontend began adopting custom widgets into concrete classes: right-click row hit detection, the custom 4-item menu (toggle / move up / move down / remove), row reordering, and the row cleanup on workflow load all stopped working.
   - Root cause: widget adoption keeps the same widget object but replaces its prototype (`adoptConcreteWidget`), so `w instanceof NunchakuLoraWidget` became permanently `false`; the four checks in `js/z_qwen_lora_dynamic_v1.js` and `js/zimageturbo_lora_dynamic_v1.js` therefore never matched.
   - Fix ([PR #54](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/54), contributed by DrJKL): use each node's existing live `loraWidgets` membership as the identity contract instead of `instanceof` - 4 lines per file, with no persisted branding and no new state. Behaviour is unchanged on frontends that do not perform widget adoption.

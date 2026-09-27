@@ -283,6 +283,8 @@ Z-Image / Nunchaku 路由完全隔离——使用这些路由的现有工作流�
 
 - **PR #49 已合并 (v2.4.0)**: 添加了 Nunchaku Qwen Image LoRA Stack V1，rgthree 风格 UI ([PR #49](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/49)) - **特别感谢**: 我们非常感谢 [@avan06](https://github.com/avan06) 提出了受 Power Lora Loader (rgthree-comfy) 启发的简洁、极简界面。此贡献带来了优雅的 LoRA 行布局，包含切换、LoRA 名称和强度控制。我们长期以来一直感觉到需要这样的 UI，但由于技术能力无法实现；此 PR 满足了这一需求。
 
+- **PR #54 已合并 (v2.6.5)**: 修复了 ComfyUI 前端开始把自定义部件“采用”为具象类之后 V1 LoRA 的行交互问题 ([PR #54](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/pull/54)) - **特别感谢**: 我们非常感谢 [@DrJKL](https://github.com/DrJKL) 诊断并修复了我们完全未能发现的问题。前端会保留同一个部件对象但替换其 prototype，从而静默地使 V1 堆叠的 `w instanceof NunchakuLoraWidget` 判定失效；此 PR 改用节点自身已有的实时 `loraWidgets` 成员关系作为身份契约，恢复了右键行命中检测、四项菜单、行的上下移动以及载入工作流时的行清理。它是每文件仅 4 行的最小改动，并已通过针对真实前端的浏览器回归测试验证。
+
 
 
 ## 要求

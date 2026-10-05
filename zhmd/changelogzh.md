@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.6 (最新)
+### v2.6.7 (最新)
+- **已修复**：ComfyUI >= 0.38 下对 Nunchaku Z-Image 模型执行任何 `model.clone()` 时抛出 `TypeError: ZImageModelPatcher.__init__() got an unexpected keyword argument 'fast_disk'`（例如采样过程中 EasyCache 节点会调用 `model.clone()`；升级 ComfyUI v0.38.1 后出现）。
+  - 根因：ComfyUI v0.38 的 `ModelPatcher.clone()` 重新实例化子类时必定传入 `fast_disk=`，而上游 ComfyUI-nunchaku（已停止开发）的 `ZImageModelPatcher.__init__` 只声明 `(model, load_device, offload_device, size, weight_inplace_update)`。clone 失败还会在 GC 时对半成品对象连带抛出 `AttributeError: 'ZImageModelPatcher' object has no attribute 'pinned'`。
+  - 修复：`patches/nunchaku_patch.py` 新增 `apply_nunchaku_zimage_fast_disk_patch()` —— 内存运行时包装，让 `ZImageModelPatcher.__init__` 接受并保存 `fast_disk`，nunchaku 包文件本身 100% 不动。幂等（带标记的包装器）；若未来 nunchaku 版本已声明该参数则自动 no-op；仅通过 `sys.modules` 扫描定位类（绝不重新 import，保证打补丁的就是 ComfyUI 实际在用的类对象）；加载顺序竞态与 fuse 补丁共用已有的重试定时器。
+  - 实测：独立构造测试通过（fast_disk 正确保存，`svdq_backup`/`pinned` 完好，旧式调用不受影响）；完整混合工作流（HSWQ ConvRot NVFP4 UNet + INT8 ControlNet patches + EasyCache clone）端到端无错误跑通。
+- **技术详情**：参阅 [v2.6.7 发布说明](v2.6.7.md)。
+
+### v2.6.6
 - **已移除**：`patches/rgthree_logo_route_guard.py` —— 由于 [rgthree-comfy#763](https://github.com/rgthree/rgthree-comfy/pull/763)（由 ussoewwin 提交）已在上游合并，rgthree logo 路由的自防御补丁不再需要；同时删除了 `__init__.py` 中对应的 import 与调用块。
   - 该补丁原本只校验 rgthree 为其 logo 抓取的内容，并在非 SVG 时回退到随包 SVG；上游修正到位后（本机安装的 rgthree-comfy 中已包含提交 `17f1848`），它已成为冗余。
   - 其他内容未做任何改动：其他补丁、模块与节点行为均不受影响（已实测——代码库中无残留引用，语法检查通过）。

@@ -1,4 +1,5 @@
 
+import inspect
 import logging
 import os
 import re
@@ -11,6 +12,8 @@ import torch
 logger = logging.getLogger(__name__)
 
 _svdq_from_linear_patched: bool = False
+_zimage_fast_disk_patched: bool = False
+_ZIMAGE_FAST_DISK_TAG = "_qwen_lora_loader_zimage_fast_disk_patch"
 _qwen_apply_rotary_emb_compat_applied: bool = False
 _copy_params_patched: bool = False
 
@@ -322,7 +325,10 @@ def schedule_nunchaku_zimage_fuse_patch_retries() -> None:
     import threading
 
     def try_once(attempt: int = 0) -> None:
-        if apply_nunchaku_zimage_fuse_lazy_linear_patch():
+        fuse_ok = apply_nunchaku_zimage_fuse_lazy_linear_patch()
+        if fuse_ok:
+            apply_nunchaku_zimage_fast_disk_patch()
+        if fuse_ok and _zimage_fast_disk_patched:
             return
         if attempt < 24:
             threading.Timer(0.25, lambda: try_once(attempt + 1)).start()
@@ -486,6 +492,75 @@ def apply_nunchaku_copy_params_patch() -> bool:
     return applied
 
 
+def apply_nunchaku_zimage_fast_disk_patch() -> bool:
+    """
+    Patch ``ZImageModelPatcher.__init__`` to accept the ``fast_disk`` keyword that
+    ComfyUI >= 0.38 ``ModelPatcher.clone()`` always passes.
+
+    Upstream nunchaku (development stopped) has::
+
+        def __init__(self, model, load_device, offload_device, size=0, weight_inplace_update=False)
+
+    but v0.38 clone calls ``class_(..., weight_inplace_update=..., fast_disk=...)``,
+    so every ``model.clone()`` on a nunchaku Z-Image model (e.g. EasyCache node)
+    raises ``TypeError: ZImageModelPatcher.__init__() got an unexpected keyword
+    argument 'fast_disk'``. Wrapping the subclass __init__ to swallow/forward the
+    kwarg keeps nunchaku untouched and is version-safe: if a future build already
+    declares ``fast_disk`` this patch no-ops.
+    """
+    global _zimage_fast_disk_patched
+    if _zimage_fast_disk_patched:
+        return True
+
+    # Scan sys.modules ONLY. Never importlib.import_module here: ComfyUI loads
+    # packs under names like ``custom_nodes.ComfyUI-nunchaku.model_patcher.zimage``,
+    # so importing ``model_patcher.zimage`` would create a *second* module
+    # instance and patch a class nobody uses. The retry timer handles the case
+    # where this pack's __init__ runs before ComfyUI-nunchaku is imported.
+    target_class = None
+    for module_name, module in list(sys.modules.items()):
+        if module is None:
+            continue
+        candidate = getattr(module, "ZImageModelPatcher", None)
+        if isinstance(candidate, type) and (
+            "nunchaku" in module_name or module_name.endswith("model_patcher.zimage")
+        ):
+            target_class = candidate
+            logger.info("Found ZImageModelPatcher in %s for fast_disk compat.", module_name)
+            break
+
+    if target_class is None:
+        return False
+
+    original_init = target_class.__init__
+    if getattr(original_init, _ZIMAGE_FAST_DISK_TAG, False):
+        _zimage_fast_disk_patched = True
+        return True
+
+    try:
+        already_supports = "fast_disk" in inspect.signature(original_init).parameters
+    except (TypeError, ValueError):
+        already_supports = False
+    if already_supports:
+        _zimage_fast_disk_patched = True
+        logger.info("ZImageModelPatcher.__init__ already accepts fast_disk; compat skipped.")
+        return True
+
+    def patched_init(self, *args, **kwargs):
+        fast_disk = kwargs.pop("fast_disk", None)
+        original_init(self, *args, **kwargs)
+        # Parent ModelPatcher.__init__ stores fast_disk; set it explicitly so the
+        # clone chain (and __del__/pin paths) see a consistent attribute even if
+        # the installed ComfyUI parent predates the parameter.
+        self.fast_disk = bool(fast_disk) if fast_disk is not None else getattr(self, "fast_disk", False)
+
+    setattr(patched_init, _ZIMAGE_FAST_DISK_TAG, True)
+    target_class.__init__ = patched_init
+    _zimage_fast_disk_patched = True
+    logger.info("Patched ZImageModelPatcher.__init__ for ComfyUI >= 0.38 fast_disk clone kwarg.")
+    return True
+
+
 def apply_nunchaku_patch():
     """
     Apply ComfyUI-nunchaku compatibility patches (LoRA planar injection + lazy Linear fixes + safe copy_params_into).
@@ -494,8 +569,9 @@ def apply_nunchaku_patch():
     rotary_compat = apply_qwen_image_apply_rotary_emb_compat()
     lazy_from = apply_svdqw4a4_lazy_linear_patch()
     lazy_fuse = apply_nunchaku_zimage_fuse_lazy_linear_patch()
+    fast_disk_ok = apply_nunchaku_zimage_fast_disk_patch()
     copy_params_ok = apply_nunchaku_copy_params_patch()
-    if not lazy_fuse:
+    if not lazy_fuse or not fast_disk_ok:
         schedule_nunchaku_zimage_fuse_patch_retries()
 
     planar_ok = False
@@ -529,5 +605,5 @@ def apply_nunchaku_patch():
     except Exception as e:
         logger.error("Failed to apply Nunchaku planar patch: %s", e)
 
-    return planar_ok or lazy_from or rotary_compat or copy_params_ok
+    return planar_ok or lazy_from or rotary_compat or copy_params_ok or fast_disk_ok
 

@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.7 (最新)
+### v2.6.8 (最新)
+- **已修复**：ComfyUI v0.44.0 下，Qwen Image ControlNet 经 `ComfyQwenImageWrapper` 重复执行时抛出 `RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu`。
+  - 根因：ComfyUI v0.44.0 在模块加入核心的权重供给契约之前，会让权重保持文件形态留在 CPU 侧。Qwen Image ControlNet 直接调用 `base_model.img_in()`，绕过了 wrapper 的 forward，因此这些模块从未加入契约，线性层拿到 CUDA 输入却配着 CPU 权重（`comfy/ldm/qwen_image/controlnet.py:151`）。
+  - 修复：`ComfyQwenImageWrapper.__init__` 现在把 ControlNet 借用的 5 个模块属性（`img_in`、`txt_in`、`txt_norm`、`time_text_embed`、`pe_embedder`）及其子模块纳入 cast 契约。该集合之外的模块不动，已加入契约的模块保持原样。
+  - 实测：关闭契约时同一 `RuntimeError` 复现；开启后该层返回 CUDA 结果（对单位权重 `maxdiff` 为 0.0），5 个属性之外的模块 `comfy_cast_weights` 仍为 `False`。
+- **技术详情**：参阅 [v2.6.8 发布说明](v2.6.8.md)。
+
+### v2.6.7
 - **已修复**：ComfyUI >= 0.38 下对 Nunchaku Z-Image 模型执行任何 `model.clone()` 时抛出 `TypeError: ZImageModelPatcher.__init__() got an unexpected keyword argument 'fast_disk'`（例如采样过程中 EasyCache 节点会调用 `model.clone()`；升级 ComfyUI v0.38.1 后出现）。
   - 根因：ComfyUI v0.38 的 `ModelPatcher.clone()` 重新实例化子类时必定传入 `fast_disk=`，而上游 ComfyUI-nunchaku（已停止开发）的 `ZImageModelPatcher.__init__` 只声明 `(model, load_device, offload_device, size, weight_inplace_update)`。clone 失败还会在 GC 时对半成品对象连带抛出 `AttributeError: 'ZImageModelPatcher' object has no attribute 'pinned'`。
   - 修复：`patches/nunchaku_patch.py` 新增 `apply_nunchaku_zimage_fast_disk_patch()` —— 内存运行时包装，让 `ZImageModelPatcher.__init__` 接受并保存 `fast_disk`，nunchaku 包文件本身 100% 不动。幂等（带标记的包装器）；若未来 nunchaku 版本已声明该参数则自动 no-op；仅通过 `sys.modules` 扫描定位类（绝不重新 import，保证打补丁的就是 ComfyUI 实际在用的类对象）；加载顺序竞态与 fuse 补丁共用已有的重试定时器。

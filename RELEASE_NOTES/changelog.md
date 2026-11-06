@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.7 (latest)
+### v2.6.8 (latest)
+- **Fixed**: `RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu` when a Qwen Image ControlNet runs through `ComfyQwenImageWrapper` on repeated executions under ComfyUI v0.44.0.
+  - Root cause: ComfyUI v0.44.0 keeps weights in their file form until a module takes part in the core weight-supply contract. Qwen Image ControlNet calls `base_model.img_in()` directly and bypasses the wrapper's forward pass, so those modules never joined the contract and the linear received a CUDA input against a CPU weight (`comfy/ldm/qwen_image/controlnet.py:151`).
+  - Fix: `ComfyQwenImageWrapper.__init__` now opts the five module attributes that ControlNet borrows (`img_in`, `txt_in`, `txt_norm`, `time_text_embed`, `pe_embedder`) and their children into the cast contract. Modules outside that set are untouched, and modules already opted in are left as-is.
+  - Verified: with the contract disabled the same `RuntimeError` reproduces; with it enabled the layer returns a CUDA result (`maxdiff` 0.0 against the identity weight), and modules outside the five attributes keep `comfy_cast_weights = False`.
+- **Technical Details**: See [v2.6.8 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.8)
+
+### v2.6.7
 - **Fixed**: `TypeError: ZImageModelPatcher.__init__() got an unexpected keyword argument 'fast_disk'` on every `model.clone()` with a Nunchaku Z-Image model under ComfyUI >= 0.38 (e.g. the EasyCache node calls `model.clone()` during sampling; seen after upgrading to ComfyUI v0.38.1).
   - Root cause: ComfyUI v0.38 `ModelPatcher.clone()` now always passes `fast_disk=` when re-instantiating the patcher subclass, while upstream ComfyUI-nunchaku (development stopped) declares only `(model, load_device, offload_device, size, weight_inplace_update)` on `ZImageModelPatcher.__init__`. The failed clone also produced a follow-up `AttributeError: 'ZImageModelPatcher' object has no attribute 'pinned'` from half-constructed objects at GC time.
   - Fix: `patches/nunchaku_patch.py` now provides `apply_nunchaku_zimage_fast_disk_patch()` - an in-memory runtime wrapper that lets `ZImageModelPatcher.__init__` accept and store `fast_disk`, leaving the nunchaku package files 100% untouched. It is idempotent (tagged wrapper), a no-op if a future nunchaku build already declares the parameter, and discovers the class through a `sys.modules` scan only (never re-importing, so the class actually used by ComfyUI is the one patched); load-order races are covered by the existing retry timer alongside the fuse-patch.

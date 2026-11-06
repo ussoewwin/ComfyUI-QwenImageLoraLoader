@@ -37,6 +37,20 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+# Module attributes that Qwen Image ControlNet accesses on the base model
+# directly (comfy/ldm/qwen_image/controlnet.py), bypassing this wrapper's
+# forward pass. They have to take part in ComfyUI's weight-supply contract
+# themselves, otherwise the weight stays in its file/CPU form and the linear
+# gets a CUDA input against a CPU weight.
+_CONTROLNET_BORROWED_MODULES = (
+    "img_in",
+    "txt_in",
+    "txt_norm",
+    "time_text_embed",
+    "pe_embedder",
+)
+
+
 class ComfyQwenImageWrapper(nn.Module):
     """
     Wrapper for NunchakuQwenImageTransformer2DModel to support ComfyUI workflows.
@@ -95,6 +109,30 @@ class ComfyQwenImageWrapper(nn.Module):
         # shared transformer, because the ret_model wrapper (W2) may have already
         # composed LoRA into it.
         self._has_ever_had_loras = False
+
+        # v0.44.0 keeps weights in their file form until a module takes part in
+        # ComfyUI's weight-supply contract. ControlNet calls base_model.img_in()
+        # directly and bypasses this wrapper's forward pass, so the modules it
+        # borrows have to opt in themselves.
+        self._enable_weight_supply_contract(model)
+
+    @staticmethod
+    def _enable_weight_supply_contract(model):
+        """Opt the modules ControlNet borrows into ComfyUI's cast contract."""
+        for attribute in _CONTROLNET_BORROWED_MODULES:
+            root = getattr(model, attribute, None)
+            if root is None:
+                continue
+            seen = set()
+            stack = [root]
+            while stack:
+                module = stack.pop()
+                if id(module) in seen:
+                    continue
+                seen.add(id(module))
+                if hasattr(module, "comfy_cast_weights") and not module.comfy_cast_weights:
+                    module.comfy_cast_weights = True
+                stack.extend(module.children())
 
     def process_img(self, x, index=0, h_offset=0, w_offset=0):
         """

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 _PATCH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches")
 _NUNCHAKU_PATCH_PATH = os.path.join(_PATCH_DIR, "nunchaku_patch.py")
+_DOCSTRING_PATCH_PATH = os.path.join(_PATCH_DIR, "transformers_qwen_vl_docstring_patch.py")
 _IP_KWARGS_PATCH_PATH = os.path.join(_PATCH_DIR, "transformers_image_processor_kwargs_patch.py")
 
 
@@ -47,6 +48,20 @@ if _patch_module is not None:
         logger.exception(
             "ComfyUI-QwenImageLoraLoader prestartup: torch warning suppression failed"
         )
+
+try:
+    _docstring_patch_module = _load_patch_module(
+        "comfyui_qwenimageloraloader_docstring_patch_prestartup",
+        _DOCSTRING_PATCH_PATH,
+    )
+    if _docstring_patch_module.apply_transformers_causal_lm_docstring_patch():
+        logger.info("ComfyUI-QwenImageLoraLoader prestartup: CausalLM ModelOutput docstring patch applied")
+    else:
+        logger.debug(
+            "ComfyUI-QwenImageLoraLoader prestartup: CausalLM ModelOutput docstring patch not applied"
+        )
+except Exception:
+    logger.exception("ComfyUI-QwenImageLoraLoader prestartup: CausalLM ModelOutput docstring patch failed")
 
 # ImageProcessorKwargs docstring patch (deepseek_vl_hybrid / kimi_k25 / paddleocr_vl
 # [ERROR] "but not documented" noise): wraps get_args_doc_from_source at prestartup,

@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.8 (latest)
+### v2.6.9 (latest)
+- **Removed**: `patches/transformers_qwen_vl_docstring_patch.py` and its `prestartup_script.py` wiring - the Qwen3-VL / Qwen2.5-VL `[ERROR] ... loss/logits ... but not documented` import noise no longer occurs on transformers 5.23.0, so the preventive wrapper is dead weight.
+  - Why it is no longer needed: transformers 5.23.0 no longer merges `CausalLMOutputWithPast` docs into a model-specific `ModelOutputArgs` subclass for those modelings - `qwen3_vl` / `qwen2_5_vl` return `CausalLMOutputWithPast` directly and the only custom output class is `BaseModelOutputWithDeepstackFeatures`, so the validation that printed the line never runs.
+  - Verified with the patch absent: importing `transformers.models.qwen3_vl.modeling_qwen3_vl` and `transformers.models.qwen2_5_vl.modeling_qwen2_5_vl` emits 0 `[ERROR]` lines on stdout and 0 on stderr.
+  - Scope: only the Qwen VL patch was removed; `patches/transformers_image_processor_kwargs_patch.py` (deepseek_vl_hybrid / kimi_k25 / paddleocr_vl) is untouched.
+- **Technical Details**: See [v2.6.9 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.6.9)
+
+### v2.6.8
 - **Fixed**: `RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu` when a Qwen Image ControlNet runs through `ComfyQwenImageWrapper` on repeated executions under ComfyUI v0.44.0.
   - Root cause: ComfyUI v0.44.0 keeps weights in their file form until a module takes part in the core weight-supply contract. Qwen Image ControlNet calls `base_model.img_in()` directly and bypasses the wrapper's forward pass, so those modules never joined the contract and the linear received a CUDA input against a CPU weight (`comfy/ldm/qwen_image/controlnet.py:151`).
   - Fix: `ComfyQwenImageWrapper.__init__` now opts the five module attributes that ControlNet borrows (`img_in`, `txt_in`, `txt_norm`, `time_text_embed`, `pe_embedder`) and their children into the cast contract. Modules outside that set are untouched, and modules already opted in are left as-is.

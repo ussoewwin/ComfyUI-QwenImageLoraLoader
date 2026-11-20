@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.8 (最新)
+### v2.6.9 (最新)
+- **已移除**：`patches/transformers_qwen_vl_docstring_patch.py` 及其在 `prestartup_script.py` 中的接线 —— transformers 5.23.0 上不再出现 Qwen3-VL / Qwen2.5-VL 的 `[ERROR] ... loss/logits ... but not documented` 导入噪声，该预防性包装已成为冗余。
+  - 不再需要的原因：transformers 5.23.0 不再为这两个 modeling 把 `CausalLMOutputWithPast` 的文档合并进模型专属的 `ModelOutputArgs` 子类 —— `qwen3_vl` / `qwen2_5_vl` 直接返回 `CausalLMOutputWithPast`，唯一的自定义输出类为 `BaseModelOutputWithDeepstackFeatures`，因此打印该行的校验不再触发。
+  - 实测（无该补丁）：导入 `transformers.models.qwen3_vl.modeling_qwen3_vl` 与 `transformers.models.qwen2_5_vl.modeling_qwen2_5_vl`，stdout 的 `[ERROR]` 为 0 行、stderr 为 0 行。
+  - 范围：仅移除 Qwen VL 这一支；`patches/transformers_image_processor_kwargs_patch.py`（deepseek_vl_hybrid / kimi_k25 / paddleocr_vl）未动。
+- **技术详情**：参阅 [v2.6.9 发布说明](v2.6.9.md)。
+
+### v2.6.8
 - **已修复**：ComfyUI v0.44.0 下，Qwen Image ControlNet 经 `ComfyQwenImageWrapper` 重复执行时抛出 `RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu`。
   - 根因：ComfyUI v0.44.0 在模块加入核心的权重供给契约之前，会让权重保持文件形态留在 CPU 侧。Qwen Image ControlNet 直接调用 `base_model.img_in()`，绕过了 wrapper 的 forward，因此这些模块从未加入契约，线性层拿到 CUDA 输入却配着 CPU 权重（`comfy/ldm/qwen_image/controlnet.py:151`）。
   - 修复：`ComfyQwenImageWrapper.__init__` 现在把 ControlNet 借用的 5 个模块属性（`img_in`、`txt_in`、`txt_norm`、`time_text_embed`、`pe_embedder`）及其子模块纳入 cast 契约。该集合之外的模块不动，已加入契约的模块保持原样。

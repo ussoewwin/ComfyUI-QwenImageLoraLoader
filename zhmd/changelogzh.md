@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.9 (最新)
+### v2.7.0 (最新)
+- **新增**：恢复 `patches/transformers_qwen_vl_docstring_patch.py` 及其在 `prestartup_script.py` 中的接线 —— 低于 5.23 的 transformers 在导入 `qwen3_vl` / `qwen2_5_vl` 时仍会打印 `[ERROR] ... loss/logits ... but not documented`，这些用户需要该防护。
+  - v2.6.9 删除该补丁的依据是 transformers 5.23.0 不再通过 `ModelOutputArgs` 合并父类文档。该结论只对 5.23.0 及之后成立；更早版本仍会合并，因此那两行 `[ERROR]` 仍会出现。
+  - 新栈上的行为不变：两道门都恢复，导入探测在子进程中执行，导入干净时不安装任何包装（transformers 5.23.0：stdout 与 stderr 的 `[ERROR]` 均为 0 行）。
+  - 新栈上的成本：每次启动一次子进程导入（开发机实测 29.82 秒），最终落在跳过分支。
+- **技术详情**：参阅 [v2.7.0 发布说明](v2.7.0.md)。
+
+### v2.6.9
 - **已移除**：`patches/transformers_qwen_vl_docstring_patch.py` 及其在 `prestartup_script.py` 中的接线 —— transformers 5.23.0 上不再出现 Qwen3-VL / Qwen2.5-VL 的 `[ERROR] ... loss/logits ... but not documented` 导入噪声，该预防性包装已成为冗余。
   - 不再需要的原因：transformers 5.23.0 不再为这两个 modeling 把 `CausalLMOutputWithPast` 的文档合并进模型专属的 `ModelOutputArgs` 子类 —— `qwen3_vl` / `qwen2_5_vl` 直接返回 `CausalLMOutputWithPast`，唯一的自定义输出类为 `BaseModelOutputWithDeepstackFeatures`，因此打印该行的校验不再触发。
   - 实测（无该补丁）：导入 `transformers.models.qwen3_vl.modeling_qwen3_vl` 与 `transformers.models.qwen2_5_vl.modeling_qwen2_5_vl`，stdout 的 `[ERROR]` 为 0 行、stderr 为 0 行。

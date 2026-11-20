@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.6.9 (latest)
+### v2.7.0 (latest)
+- **Added**: `patches/transformers_qwen_vl_docstring_patch.py` and its `prestartup_script.py` wiring are restored - transformers releases older than 5.23 still print `[ERROR] ... loss/logits ... but not documented` when `qwen3_vl` / `qwen2_5_vl` are imported, and those users need the guard.
+  - v2.6.9 removed the patch on the evidence that transformers 5.23.0 no longer merges the parent docs through `ModelOutputArgs`. That evidence holds for 5.23.0 and later only; older releases still merge, so the two `[ERROR]` lines still appear there.
+  - Behaviour on new stacks is unchanged: both gates are back, the import probe runs in a subprocess, and nothing is installed when the import is clean (transformers 5.23.0: 0 `[ERROR]` lines on stdout and 0 on stderr).
+  - Cost on new stacks: one subprocess import per start (measured 29.82 s on the development machine) that ends in the skip branch.
+- **Technical Details**: See [v2.7.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.7.0)
+
+### v2.6.9
 - **Removed**: `patches/transformers_qwen_vl_docstring_patch.py` and its `prestartup_script.py` wiring - the Qwen3-VL / Qwen2.5-VL `[ERROR] ... loss/logits ... but not documented` import noise no longer occurs on transformers 5.23.0, so the preventive wrapper is dead weight.
   - Why it is no longer needed: transformers 5.23.0 no longer merges `CausalLMOutputWithPast` docs into a model-specific `ModelOutputArgs` subclass for those modelings - `qwen3_vl` / `qwen2_5_vl` return `CausalLMOutputWithPast` directly and the only custom output class is `BaseModelOutputWithDeepstackFeatures`, so the validation that printed the line never runs.
   - Verified with the patch absent: importing `transformers.models.qwen3_vl.modeling_qwen3_vl` and `transformers.models.qwen2_5_vl.modeling_qwen2_5_vl` emits 0 `[ERROR]` lines on stdout and 0 on stderr.

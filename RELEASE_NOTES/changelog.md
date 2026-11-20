@@ -6,7 +6,7 @@
 </table>
 
 ### v2.7.0 (latest)
-- **Added**: `patches/transformers_qwen_vl_docstring_patch.py` and its `prestartup_script.py` wiring are restored - transformers releases older than 5.23 still print `[ERROR] ... loss/logits ... but not documented` when `qwen3_vl` / `qwen2_5_vl` are imported, and those users need the guard.
+- **Added**: `patches/transformers_qwen_vl_docstring_patch.py` and its `prestartup_script.py` wiring are restored for users who have not updated transformers - releases older than 5.23 still print `[ERROR] ... loss/logits ... but not documented` when `qwen3_vl` / `qwen2_5_vl` are imported, and those users need the guard.
   - v2.6.9 removed the patch on the evidence that transformers 5.23.0 no longer merges the parent docs through `ModelOutputArgs`. That evidence holds for 5.23.0 and later only; older releases still merge, so the two `[ERROR]` lines still appear there.
   - Behaviour on new stacks is unchanged: both gates are back, the import probe runs in a subprocess, and nothing is installed when the import is clean (transformers 5.23.0: 0 `[ERROR]` lines on stdout and 0 on stderr).
   - Cost on new stacks: one subprocess import per start (measured 29.82 s on the development machine) that ends in the skip branch.

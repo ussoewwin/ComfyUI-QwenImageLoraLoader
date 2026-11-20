@@ -6,7 +6,7 @@
 </table>
 
 ### v2.7.0 (最新)
-- **新增**：恢复 `patches/transformers_qwen_vl_docstring_patch.py` 及其在 `prestartup_script.py` 中的接线 —— 低于 5.23 的 transformers 在导入 `qwen3_vl` / `qwen2_5_vl` 时仍会打印 `[ERROR] ... loss/logits ... but not documented`，这些用户需要该防护。
+- **新增**：为尚未更新 transformers 的用户恢复 `patches/transformers_qwen_vl_docstring_patch.py` 及其在 `prestartup_script.py` 中的接线 —— 低于 5.23 的版本在导入 `qwen3_vl` / `qwen2_5_vl` 时仍会打印 `[ERROR] ... loss/logits ... but not documented`，这些用户需要该防护。
   - v2.6.9 删除该补丁的依据是 transformers 5.23.0 不再通过 `ModelOutputArgs` 合并父类文档。该结论只对 5.23.0 及之后成立；更早版本仍会合并，因此那两行 `[ERROR]` 仍会出现。
   - 新栈上的行为不变：两道门都恢复，导入探测在子进程中执行，导入干净时不安装任何包装（transformers 5.23.0：stdout 与 stderr 的 `[ERROR]` 均为 0 行）。
   - 新栈上的成本：每次启动一次子进程导入（开发机实测 29.82 秒），最终落在跳过分支。

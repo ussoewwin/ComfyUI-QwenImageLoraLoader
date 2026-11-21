@@ -36,19 +36,6 @@ try:
 except Exception:
     logger.exception("ComfyUI-QwenImageLoraLoader prestartup: failed to load nunchaku patch module")
 
-# Install the cosmetic 'Torch already imported' warning filter first, before any
-# prestartup step imports comfy.ldm (which imports torch) and before main.py logs it.
-if _patch_module is not None:
-    try:
-        if _patch_module.suppress_torch_preimport_warning():
-            logger.debug(
-                "ComfyUI-QwenImageLoraLoader prestartup: torch pre-import warning suppressed"
-            )
-    except Exception:
-        logger.exception(
-            "ComfyUI-QwenImageLoraLoader prestartup: torch warning suppression failed"
-        )
-
 try:
     _docstring_patch_module = _load_patch_module(
         "comfyui_qwenimageloraloader_docstring_patch_prestartup",

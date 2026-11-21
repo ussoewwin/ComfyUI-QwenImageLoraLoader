@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 import inspect
 import logging
 import os
@@ -6,8 +8,6 @@ import re
 import sys
 import types
 from typing import Callable, Optional, Tuple
-
-import torch
 
 logger = logging.getLogger(__name__)
 
@@ -28,66 +28,6 @@ _NUNCHAKU_QWENIMAGE_APPLY_ROTARY_PATTERNS = (
         r"from\s+comfy\.ldm\.qwen_image\.model\s+import\s+[^\n#]*\bapply_rotary_emb\b",
     ),
 )
-
-_torch_preimport_warning_suppressed: bool = False
-_TORCH_PREIMPORT_WARNING_MARKER = "Torch already imported"
-
-
-def _torch_warning_suppression_disabled_by_env() -> bool:
-    value = os.environ.get("QWENIMAGE_SUPPRESS_TORCH_WARNING", "").strip().lower()
-    return value in ("0", "false", "no", "off", "disable", "disabled")
-
-
-class _TorchPreimportWarningFilter(logging.Filter):
-    """Drop ComfyUI's cosmetic 'Torch already imported' warning.
-
-    The apply_rotary_emb compat shim must run in prestartup (before ComfyUI-nunchaku
-    loads), and installing it requires importing comfy.ldm modules, which import torch.
-    ComfyUI main.py then warns that torch entered sys.modules early. cuda_malloc and all
-    CUDA env setup already ran before prestartup, so the early import is harmless; this
-    filter hides only that single message and then lets every record through.
-    """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self._suppressed = False
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        if self._suppressed:
-            return True
-        try:
-            message = record.getMessage()
-        except Exception:
-            return True
-        if _TORCH_PREIMPORT_WARNING_MARKER in message:
-            self._suppressed = True
-            return False
-        return True
-
-
-def suppress_torch_preimport_warning() -> bool:
-    """Install a one-shot root-logger filter hiding the cosmetic torch pre-import warning.
-
-    Must be called during prestartup (before ComfyUI main.py logs the warning).
-    Set QWENIMAGE_SUPPRESS_TORCH_WARNING=0 to keep the warning visible.
-    """
-    global _torch_preimport_warning_suppressed
-    if _torch_preimport_warning_suppressed:
-        return True
-    if _torch_warning_suppression_disabled_by_env():
-        logger.info(
-            "Torch pre-import warning suppression skipped "
-            "(QWENIMAGE_SUPPRESS_TORCH_WARNING is disabled)"
-        )
-        return False
-    try:
-        logging.getLogger().addFilter(_TorchPreimportWarningFilter())
-        _torch_preimport_warning_suppressed = True
-        return True
-    except Exception as exc:
-        logger.debug("Failed to install torch pre-import warning filter: %s", exc)
-        return False
-
 
 def _rotary_compat_disabled_by_env() -> bool:
     value = os.environ.get("QWENIMAGE_ROTARY_COMPAT", "").strip().lower()
@@ -145,56 +85,130 @@ def _nunchaku_qwenimage_still_imports_apply_rotary_emb() -> Optional[bool]:
     return False
 
 
-def apply_qwen_image_apply_rotary_emb_compat() -> bool:
-    """
-    ComfyUI >= 0.24 removed comfy.ldm.qwen_image.model.apply_rotary_emb.
-    ComfyUI-nunchaku still imports it; alias to comfy.ldm.flux.math.apply_rope1
-    only when the import is still required and ComfyUI has not restored the symbol.
-    """
+_ROTARY_TARGET_MODULE = "comfy.ldm.qwen_image.model"
+_ROTARY_PARENT_MODULE = "comfy.ldm.qwen_image"
+_rotary_hook_installed: bool = False
+
+
+def _install_rotary_alias(qwen_image_model) -> bool:
+    """Alias apply_rope1 onto an already imported comfy.ldm.qwen_image.model module."""
     global _qwen_apply_rotary_emb_compat_applied
+    if qwen_image_model is None:
+        return False
+    if _rotary_shim_installed_on(qwen_image_model):
+        _qwen_apply_rotary_emb_compat_applied = True
+        return True
+    if _comfyui_has_native_apply_rotary_emb(qwen_image_model):
+        logger.info(
+            "apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb"
+        )
+        return False
+
+    nunchaku_needs = _nunchaku_qwenimage_still_imports_apply_rotary_emb()
+    if nunchaku_needs is False:
+        logger.info(
+            "apply_rotary_emb compat skipped: ComfyUI-nunchaku no longer imports apply_rotary_emb"
+        )
+        return False
+
+    from comfy.ldm.flux.math import apply_rope1
+
+    qwen_image_model.apply_rotary_emb = _mark_rotary_shim(apply_rope1)
+    _qwen_apply_rotary_emb_compat_applied = True
+    logger.info(
+        "Patched comfy.ldm.qwen_image.model.apply_rotary_emb -> apply_rope1 "
+        "(ComfyUI-nunchaku Qwen Image compat)"
+    )
+    return True
+
+
+class _RotaryAliasLoader:
+    """Loader wrapper that applies the alias right after the target module executes."""
+
+    def __init__(self, loader) -> None:
+        self._loader = loader
+
+    def __getattr__(self, item):
+        return getattr(self._loader, item)
+
+    def create_module(self, spec):
+        return self._loader.create_module(spec)
+
+    def exec_module(self, module):
+        self._loader.exec_module(module)
+        try:
+            _install_rotary_alias(module)
+        except Exception as exc:
+            logger.error("Failed to apply apply_rotary_emb compat patch: %s", exc)
+
+
+class _RotaryCompatFinder:
+    """Resolve comfy.ldm.qwen_image.model through its parent package without importing it.
+
+    Importing comfy here would pull torch during prestartup, which is exactly the state
+    ComfyUI warns about. The finder only wraps the loader, so comfy and torch enter
+    sys.modules at the moment the model module is actually imported, as usual.
+    """
+
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname != _ROTARY_TARGET_MODULE or fullname in sys.modules:
+            return None
+        parent = sys.modules.get(_ROTARY_PARENT_MODULE)
+        parent_path = list(getattr(parent, "__path__", None) or [])
+        if not parent_path:
+            return None
+        import importlib.machinery
+
+        spec = importlib.machinery.PathFinder.find_spec(fullname, parent_path)
+        if spec is None or spec.loader is None:
+            return spec
+        spec.loader = _RotaryAliasLoader(spec.loader)
+        return spec
+
+
+def apply_qwen_image_apply_rotary_emb_compat() -> bool:
+    """Arm the apply_rotary_emb compat shim without importing comfy or torch.
+
+    ComfyUI >= 0.24 removed comfy.ldm.qwen_image.model.apply_rotary_emb and
+    ComfyUI-nunchaku still imports it. The alias is applied by an import hook: at once
+    if the module is already imported, otherwise as soon as it is imported - which is
+    still before ComfyUI-nunchaku reads the symbol.
+    """
+    global _qwen_apply_rotary_emb_compat_applied, _rotary_hook_installed
     if _qwen_apply_rotary_emb_compat_applied:
         return True
-
     if _rotary_compat_disabled_by_env():
         logger.info(
             "apply_rotary_emb compat skipped (QWENIMAGE_ROTARY_COMPAT is disabled)"
         )
         return False
 
+    loaded = sys.modules.get(_ROTARY_TARGET_MODULE)
+    if loaded is not None:
+        try:
+            return _install_rotary_alias(loaded)
+        except Exception as e:
+            logger.error("Failed to apply apply_rotary_emb compat patch: %s", e)
+            return False
+
+    if _rotary_hook_installed:
+        return True
     try:
-        import comfy.ldm.qwen_image.model as qwen_image_model
-        from comfy.ldm.flux.math import apply_rope1
-
-        if _rotary_shim_installed_on(qwen_image_model):
-            _qwen_apply_rotary_emb_compat_applied = True
-            return True
-
-        if _comfyui_has_native_apply_rotary_emb(qwen_image_model):
-            logger.info(
-                "apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb"
-            )
-            return False
-
-        nunchaku_needs = _nunchaku_qwenimage_still_imports_apply_rotary_emb()
-        if nunchaku_needs is False:
-            logger.info(
-                "apply_rotary_emb compat skipped: ComfyUI-nunchaku no longer imports apply_rotary_emb"
-            )
-            return False
-
-        qwen_image_model.apply_rotary_emb = _mark_rotary_shim(apply_rope1)
-        _qwen_apply_rotary_emb_compat_applied = True
+        sys.meta_path.insert(0, _RotaryCompatFinder())
+        _rotary_hook_installed = True
         logger.info(
-            "Patched comfy.ldm.qwen_image.model.apply_rotary_emb -> apply_rope1 "
-            "(ComfyUI-nunchaku Qwen Image compat)"
+            "apply_rotary_emb compat armed: alias applies when comfy.ldm.qwen_image.model "
+            "is imported (torch is not imported during prestartup)"
         )
         return True
     except Exception as e:
-        logger.error("Failed to apply apply_rotary_emb compat patch: %s", e)
+        logger.error("Failed to arm apply_rotary_emb compat hook: %s", e)
         return False
 
 
 def _torch_device_fallback() -> torch.device:
+    import torch
+
     try:
         import comfy.model_management as mm
 
@@ -425,6 +439,8 @@ def _safe_copy_params_into(src: torch.nn.Module, dst: torch.nn.Module, non_block
     Safely copy parameters and buffers from src to dst by name matching (with positional fallback),
     and correctly synchronize wtscale attribute without attribute deletion.
     """
+    import torch
+
     with torch.no_grad():
         src_params = dict(src.named_parameters())
         dst_params = dict(dst.named_parameters())

@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 
-console.log("★★★ zimageturbo_lora_dynamic_v3.js: Z-Image-Turbo LoRA Stack V3 ★★★");
+console.log("*** zimageturbo_lora_dynamic_v3.js: Z-Image-Turbo LoRA Stack V3 ***");
 
 const HIDDEN_TAG = "tschide";
 
@@ -83,12 +83,12 @@ app.registerExtension({
 
 
         const ensureControlWidget = () => {
-            const name = "🔢 LoRA Count";
+            const name = " LoRA Count";
 
             // Remove old button widgets
             for (let i = node.widgets.length - 1; i >= 0; i--) {
                 const w = node.widgets[i];
-                if (w.name === "🔢 Set LoRA Count" || w.type === "button") {
+                if (w.name === " Set LoRA Count" || w.type === "button") {
                     node.widgets.splice(i, 1);
                 }
             }
@@ -197,7 +197,7 @@ app.registerExtension({
 
         node.onPropertyChanged = function (property, value) {
             if (property === "visibleLoraCount") {
-                const w = this.widgets.find(x => x.name === "🔢 LoRA Count");
+                const w = this.widgets.find(x => x.name === " LoRA Count");
                 if (w) w.value = value.toString();
                 this.updateLoraSlots();
             }

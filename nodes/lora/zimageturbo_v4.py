@@ -158,10 +158,10 @@ class NunchakuZImageTurboLoraStackV4:
             status_parts.append(f"final_enabled={enabled}")
             
             if enabled and lora_name and lora_name != "None" and abs(lora_strength) > 1e-5:
-                status_parts.append("→ APPLIED ✓")
+                status_parts.append("-> APPLIED OK")
                 loras_to_apply.append((lora_name, lora_strength))
             else:
-                status_parts.append("→ SKIPPED ✗")
+                status_parts.append("-> SKIPPED X")
             
             logger.info(f"[LoRA Stack Status] {' | '.join(status_parts)}")
         
@@ -234,7 +234,7 @@ class NunchakuZImageTurboLoraStackV4:
                                     logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
                         else:
                             # Unsupported format only: Skip loop to prevent freeze.
-                            logger.warning(f"⚠️  Unsupported LoRA format detected (No standard keys).")
+                            logger.warning(f"[warn]  Unsupported LoRA format detected (No standard keys).")
                             logger.warning(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
                             logger.warning(f"   Note: This LoRA will likely have no effect or will be skipped entirely.")
                         
@@ -320,9 +320,9 @@ class NunchakuZImageTurboLoraStackV4:
                     # Warn if no weights would be processed (same as v3 compose_loras_v2)
                     if not processed_groups:
                         if lora_format == "Unknown/Unsupported":
-                            logger.error(f"❌ {lora_name}: No weights were processed - LoRA format is unsupported and will be skipped!")
+                            logger.error(f"[X] {lora_name}: No weights were processed - LoRA format is unsupported and will be skipped!")
                         else:
-                            logger.warning(f"⚠️  {lora_name}: No weights were processed - this LoRA will have no effect!")
+                            logger.warning(f"[warn]  {lora_name}: No weights were processed - this LoRA will have no effect!")
                             if lora_grouped:
                                 logger.warning(f"   Debug: {len(lora_grouped)} base keys were grouped but none were processed:")
                                 for bk, lw in list(lora_grouped.items())[:10]:
@@ -369,7 +369,7 @@ class NunchakuZImageTurboLoraStackV4:
             # Wrapped model (e.g., ComfyZImageTurboWrapper): get underlying model
             transformer = model_wrapper.model
         else:
-            logger.error(f"❌ Unsupported model type: {model_wrapper_type_name} from {model_wrapper_module}")
+            logger.error(f"[X] Unsupported model type: {model_wrapper_type_name} from {model_wrapper_module}")
             logger.error("V4 requires NextDiT model. Falling back to standard loader.")
             # Fallback to standard loader
             from comfy.sd import load_lora_for_models
@@ -392,9 +392,9 @@ class NunchakuZImageTurboLoraStackV4:
         logger.info(f"Applying {len(lora_configs)} LoRA(s) using compose_loras_v2...")
         try:
             compose_loras_v2(transformer, lora_configs, apply_awq_mod=False)
-            logger.info(f"✅ Successfully applied {len(lora_configs)} LoRA(s) using compose_loras_v2")
+            logger.info(f"[OK] Successfully applied {len(lora_configs)} LoRA(s) using compose_loras_v2")
         except Exception as e:
-            logger.error(f"❌ Failed to apply LoRAs using compose_loras_v2: {e}")
+            logger.error(f"[X] Failed to apply LoRAs using compose_loras_v2: {e}")
             logger.error("Falling back to standard loader.")
             # Fallback to standard loader
             from comfy.sd import load_lora_for_models

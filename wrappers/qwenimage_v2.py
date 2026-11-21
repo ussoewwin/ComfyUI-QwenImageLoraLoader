@@ -70,7 +70,7 @@ class ComfyQwenImageWrapperV2(nn.Module):
         self.vram_margin_gb = vram_margin_gb
 
         # Log CPU offload setting on initialization
-        logger.info(f"[V2 Node] 🔧 CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
+        logger.info(f"[V2 Node] [tool] CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
 
         self.customized_forward = customized_forward
         self.forward_kwargs = forward_kwargs or {}
@@ -227,7 +227,7 @@ class ComfyQwenImageWrapperV2(nn.Module):
 
             # --- END NEW VRAM CHECK ---
 
-            # 4. Build cache args — same pattern as the V1 wrapper.
+            # 4. Build cache args - same pattern as the V1 wrapper.
             try:
                 _comfy_base = str(Path(folder_paths.models_dir).parent)
             except Exception:
@@ -245,7 +245,7 @@ class ComfyQwenImageWrapperV2(nn.Module):
                     _any_save_flag = True
 
             # 5. Compose LoRAs using v2-specific function.
-            logger.info(f"[V2 Node] 🔧 Forward pass: calling compose_loras_v2_v2 with apply_awq_mod={self.apply_awq_mod} (type: {type(self.apply_awq_mod).__name__})")
+            logger.info(f"[V2 Node] [tool] Forward pass: calling compose_loras_v2_v2 with apply_awq_mod={self.apply_awq_mod} (type: {type(self.apply_awq_mod).__name__})")
             is_supported_format = compose_loras_v2_v2(
                 self.model,
                 _lora_configs_clean,

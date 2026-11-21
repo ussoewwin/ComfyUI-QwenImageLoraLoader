@@ -168,10 +168,10 @@ class NunchakuZImageTurboLoraStackV2:
             status_parts.append(f"final_enabled={enabled}")
             
             if enabled and lora_name and lora_name != "None" and abs(lora_strength) > 1e-5:
-                status_parts.append("→ APPLIED ✓")
+                status_parts.append("-> APPLIED OK")
                 loras_to_apply.append((lora_name, lora_strength))
             else:
-                status_parts.append("→ SKIPPED ✗")
+                status_parts.append("-> SKIPPED X")
             
             logger.info(f"[LoRA Stack Status] {' | '.join(status_parts)}")
         
@@ -217,7 +217,7 @@ class NunchakuZImageTurboLoraStackV2:
                             logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
                 else:
                     # Unsupported format only: Skip loop to prevent freeze.
-                    logger.warning(f"⚠️  Unsupported LoRA format detected (No standard keys).")
+                    logger.warning(f"[warn]  Unsupported LoRA format detected (No standard keys).")
                     logger.warning(f"   Skipping detailed key inspection of {len(first_lora_state_dict)} keys to prevent console freeze.")
                     logger.warning(f"   Note: This LoRA will likely have no effect or will be skipped entirely.")
                 

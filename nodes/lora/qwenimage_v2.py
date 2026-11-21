@@ -176,7 +176,7 @@ class NunchakuQwenImageLoraStackV2:
                     else:
                         logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
             else:
-                logger.warning("⚠️  Unsupported LoRA format detected (No standard keys).")
+                logger.warning("[warn]  Unsupported LoRA format detected (No standard keys).")
                 logger.warning(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
                 logger.warning("   Note: This LoRA will likely have no effect or will be skipped entirely.")
             logger.info("--- DEBUG: End key inspection ---")
@@ -203,32 +203,32 @@ class NunchakuQwenImageLoraStackV2:
         # Debug logging
         model_wrapper_type_name = type(model_wrapper).__name__
         model_wrapper_module = type(model_wrapper).__module__
-        logger.info(f"🔍 Model wrapper type: '{model_wrapper_type_name}'")
-        logger.info(f"🔍 Model wrapper module: {model_wrapper_module}")
-        logger.info(f"🔍 Type repr: {repr(type(model_wrapper))}")
-        logger.info(f"🔍 Has 'model' attr? {hasattr(model_wrapper, 'model')}")
-        logger.info(f"🔍 Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
+        logger.info(f"[i] Model wrapper type: '{model_wrapper_type_name}'")
+        logger.info(f"[i] Model wrapper module: {model_wrapper_module}")
+        logger.info(f"[i] Type repr: {repr(type(model_wrapper))}")
+        logger.info(f"[i] Has 'model' attr? {hasattr(model_wrapper, 'model')}")
+        logger.info(f"[i] Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
         
         # Check if it's already wrapped with V2 wrapper
         if hasattr(model_wrapper, 'model') and hasattr(model_wrapper, 'loras'):
             # Check if it's a V2 wrapper (has apply_awq_mod attribute)
             if hasattr(model_wrapper, 'apply_awq_mod'):
                 # Already wrapped with V2 wrapper, proceed normally
-                logger.info("✅ Model is already wrapped with V2 wrapper (detected via attributes)")
-                logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
+                logger.info("[OK] Model is already wrapped with V2 wrapper (detected via attributes)")
+                logger.info(f"[box] Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
                 # Update CPU offload setting if different
                 if model_wrapper.cpu_offload_setting != cpu_offload:
-                    logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
+                    logger.info(f"[reload] Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
                     model_wrapper.cpu_offload_setting = cpu_offload
                 
                 # Update AWQ mod setting if different
                 if model_wrapper.apply_awq_mod != apply_awq_mod:
-                    logger.info(f"🔄 Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to '{apply_awq_mod}'")
+                    logger.info(f"[reload] Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to '{apply_awq_mod}'")
                     model_wrapper.apply_awq_mod = apply_awq_mod
                 transformer = model_wrapper.model
             else:
                 # Wrapped with V1/V3 wrapper, need to re-wrap with V2
-                logger.info("🔄 Model is wrapped with V1/V3 wrapper, re-wrapping with V2 wrapper")
+                logger.info("[reload] Model is wrapped with V1/V3 wrapper, re-wrapping with V2 wrapper")
                 # Extract the underlying model
                 if hasattr(model_wrapper, 'model'):
                     transformer = model_wrapper.model
@@ -250,10 +250,10 @@ class NunchakuQwenImageLoraStackV2:
                 transformer = wrapped_model.model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith("NunchakuQwenImageTransformer2DModel"):
             # Not wrapped yet, need to wrap it first with V2 wrapper
-            logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapperV2")
+            logger.info("[tool] Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapperV2")
             
             # Create V2 wrapper
-            logger.info(f"📦 Creating ComfyQwenImageWrapperV2 with cpu_offload='{cpu_offload}', apply_awq_mod='{apply_awq_mod}'")
+            logger.info(f"[box] Creating ComfyQwenImageWrapperV2 with cpu_offload='{cpu_offload}', apply_awq_mod='{apply_awq_mod}'")
             wrapped_model = ComfyQwenImageWrapperV2(
                 model_wrapper,
                 getattr(model_wrapper, 'config', {}),
@@ -269,7 +269,7 @@ class NunchakuQwenImageLoraStackV2:
             model_wrapper = wrapped_model
             transformer = model_wrapper.model
         else:
-            logger.error(f"❌ Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
+            logger.error(f"[X] Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
             logger.error("Please use 'Nunchaku Qwen Image DiT Loader'.")
             raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {model_wrapper_type_name}.")
 

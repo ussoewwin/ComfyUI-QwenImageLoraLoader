@@ -66,7 +66,7 @@ class ComfyZImageTurboWrapper(nn.Module):
         self.vram_margin_gb = vram_margin_gb
 
         # Log CPU offload setting on initialization
-        logger.info(f"🔧 CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
+        logger.info(f"[tool] CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
 
         self.customized_forward = customized_forward
         self.forward_kwargs = forward_kwargs or {}

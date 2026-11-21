@@ -36,7 +36,7 @@ class NunchakuQwenImageLoraStackV2:
         """
         Detect changes to trigger node re-execution.
         Returns a hash of relevant parameters to detect changes.
-        Note: model is intentionally excluded — ComfyUI does not pass MODEL-type
+        Note: model is intentionally excluded - ComfyUI does not pass MODEL-type
         inputs (which come from other nodes' outputs) to IS_CHANGED.
         Including it would cause a TypeError, which ComfyUI converts to NaN,
         making the node always re-execute on every generation.
@@ -174,10 +174,10 @@ class NunchakuQwenImageLoraStackV2:
             status_parts.append(f"final_enabled={enabled}")
 
             if enabled and lora_name and lora_name != "None" and abs(lora_strength) > 1e-5:
-                status_parts.append("→ APPLIED ✓")
+                status_parts.append("-> APPLIED OK")
                 loras_to_apply.append((lora_name, lora_strength))
             else:
-                status_parts.append("→ SKIPPED ✗")
+                status_parts.append("-> SKIPPED X")
 
             logger.info(f"[LoRA Stack Status] {' | '.join(status_parts)}")
 
@@ -218,7 +218,7 @@ class NunchakuQwenImageLoraStackV2:
                     else:
                         logger.warning(f"Key: {key} -> UNMATCHED (Ignored)")
             else:
-                logger.warning("⚠️  Unsupported LoRA format detected (No standard keys).")
+                logger.warning("[warn]  Unsupported LoRA format detected (No standard keys).")
                 logger.warning(f"   Skipping detailed key inspection of {len(lora_state_dict)} keys to prevent console freeze.")
                 logger.warning("   Note: This LoRA will likely have no effect or will be skipped entirely.")
             logger.info("--- DEBUG: End key inspection ---")
@@ -244,29 +244,29 @@ class NunchakuQwenImageLoraStackV2:
         # Debug logging
         model_wrapper_type_name = type(model_wrapper).__name__
         model_wrapper_module = type(model_wrapper).__module__
-        logger.info(f"🔍 Model wrapper type: '{model_wrapper_type_name}'")
-        logger.info(f"🔍 Model wrapper module: {model_wrapper_module}")
-        logger.info(f"🔍 Type repr: {repr(type(model_wrapper))}")
-        logger.info(f"🔍 Has 'model' attr? {hasattr(model_wrapper, 'model')}")
-        logger.info(f"🔍 Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
+        logger.info(f"[i] Model wrapper type: '{model_wrapper_type_name}'")
+        logger.info(f"[i] Model wrapper module: {model_wrapper_module}")
+        logger.info(f"[i] Type repr: {repr(type(model_wrapper))}")
+        logger.info(f"[i] Has 'model' attr? {hasattr(model_wrapper, 'model')}")
+        logger.info(f"[i] Has 'loras' attr? {hasattr(model_wrapper, 'loras')}")
 
         # Check if it's already wrapped
         if hasattr(model_wrapper, "model") and hasattr(model_wrapper, "loras"):
-            logger.info("✅ Model is already wrapped (detected via attributes)")
-            logger.info(f"📦 Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
+            logger.info("[OK] Model is already wrapped (detected via attributes)")
+            logger.info(f"[box] Current CPU offload setting: '{model_wrapper.cpu_offload_setting}'")
             if model_wrapper.cpu_offload_setting != cpu_offload:
-                logger.info(f"🔄 Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
+                logger.info(f"[reload] Updating CPU offload setting from '{model_wrapper.cpu_offload_setting}' to '{cpu_offload}'")
                 model_wrapper.cpu_offload_setting = cpu_offload
             # V3: Always ensure apply_awq_mod is True (no switch, always enabled)
             if hasattr(model_wrapper, "apply_awq_mod") and model_wrapper.apply_awq_mod != True:
-                logger.info(f"🔄 Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to 'True' (V3: always enabled)")
+                logger.info(f"[reload] Updating AWQ mod setting from '{model_wrapper.apply_awq_mod}' to 'True' (V3: always enabled)")
                 model_wrapper.apply_awq_mod = True
             transformer = model_wrapper.model
         elif model_wrapper_type_name == "NunchakuQwenImageTransformer2DModel" or model_wrapper_type_name.endswith(
             "NunchakuQwenImageTransformer2DModel"
         ):
-            logger.info("🔧 Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
-            logger.info(f"📦 Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}', apply_awq_mod=True (V3: always enabled)")
+            logger.info("[tool] Wrapping NunchakuQwenImageTransformer2DModel with ComfyQwenImageWrapper")
+            logger.info(f"[box] Creating ComfyQwenImageWrapper with cpu_offload='{cpu_offload}', apply_awq_mod=True (V3: always enabled)")
             wrapped_model = ComfyQwenImageWrapper(
                 model_wrapper,
                 getattr(model_wrapper, "config", {}),
@@ -280,7 +280,7 @@ class NunchakuQwenImageLoraStackV2:
             model_wrapper = wrapped_model
             transformer = model_wrapper.model
         else:
-            logger.error(f"❌ Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
+            logger.error(f"[X] Model type mismatch! Type: {model_wrapper_type_name}, Module: {model_wrapper_module}")
             logger.error("Please use 'Nunchaku Qwen Image DiT Loader'.")
             raise TypeError(f"This LoRA loader only works with Nunchaku Qwen Image models, but got {model_wrapper_type_name}.")
 

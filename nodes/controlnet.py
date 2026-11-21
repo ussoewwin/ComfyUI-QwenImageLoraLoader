@@ -443,7 +443,7 @@ _KREA2_REF_SNAP = 16
 
 def _krea2_fit_ref_image(image):
     """Downscale (never upscale) an (B, H, W, C) control image to fit ~1MP,
-    snapped to /16 — the ai-toolkit krea2 reference-latent convention."""
+    snapped to /16 - the ai-toolkit krea2 reference-latent convention."""
     samples = image.movedim(-1, 1)  # (B, C, H, W)
     h, w = samples.shape[2], samples.shape[3]
     scale = min(1.0, math.sqrt(_KREA2_REF_MAX_PIXELS / (w * h)))
@@ -569,7 +569,7 @@ def _krea2_ref_precompute_kv(dit, x, timesteps, ref_latents, transformer_options
     each block's post-RoPE K/V (isolated ref attention, kv_cache training mode).
 
     The ref tokens never see text / noisy tokens, so one pass serves the whole
-    denoise — matching ai-toolkit kv_cache-trained Krea2 control LoRAs.
+    denoise - matching ai-toolkit kv_cache-trained Krea2 control LoRAs.
     """
     bs = x.shape[0] * (x.shape[2] if x.ndim == 5 else 1)
     reftok, refpos = _krea2_ref_pack(dit, ref_latents, bs, x.device, x.dtype)
@@ -772,7 +772,7 @@ def _apply_krea2_openpose_control(model_patched, model_patch, vae, image, streng
 
     # Isolated kv_cache mode: ref tokens never ride in the per-step sequence.
     # One t=0 ref-only pass precomputes every block's K/V, injected as extra
-    # attention keys each step — the ai-toolkit kv_cache training convention
+    # attention keys each step - the ai-toolkit kv_cache training convention
     # this control LoRA was trained with (see krea2_controlnet_pose.json).
     if use_kv_cache:
         dit = model_patched.get_model_object("diffusion_model")

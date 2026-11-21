@@ -98,10 +98,10 @@ class NunchakuZImageTurboLoraStackV1:
             status_parts.extend([f"stack_enabled={stack_enabled}", f"enabled_{i}={enabled}"])
 
             if enabled and lora_name and lora_name != "None" and abs(lora_strength) > 1e-5:
-                status_parts.append("→ APPLIED ✓")
+                status_parts.append("-> APPLIED OK")
                 loras_to_apply.append((lora_name, lora_strength))
             else:
-                status_parts.append("→ SKIPPED ✗")
+                status_parts.append("-> SKIPPED X")
 
             logger.info(f"[LoRA Stack Status] {' | '.join(status_parts)}")
 
@@ -119,7 +119,7 @@ class NunchakuZImageTurboLoraStackV1:
         elif hasattr(model_wrapper, "model"):
             transformer = model_wrapper.model
         else:
-            logger.error(f"❌ Unsupported model type: {model_wrapper_type_name} from {model_wrapper_module}")
+            logger.error(f"[X] Unsupported model type: {model_wrapper_type_name} from {model_wrapper_module}")
             logger.error("V1 requires NextDiT model. Falling back to standard loader.")
             from comfy.sd import load_lora_for_models
             ret_model, ret_clip = model, clip
@@ -151,9 +151,9 @@ class NunchakuZImageTurboLoraStackV1:
         logger.info(f"Applying {len(lora_configs)} LoRA(s) using compose_loras_v2...")
         try:
             compose_loras_v2(transformer, lora_configs, apply_awq_mod=False)
-            logger.info(f"✅ Successfully applied {len(lora_configs)} LoRA(s)")
+            logger.info(f"[OK] Successfully applied {len(lora_configs)} LoRA(s)")
         except Exception as e:
-            logger.error(f"❌ Failed to apply LoRAs: {e}")
+            logger.error(f"[X] Failed to apply LoRAs: {e}")
             from comfy.sd import load_lora_for_models
             ret_model, ret_clip = model, clip
             for lora_name, lora_strength in loras_to_apply:

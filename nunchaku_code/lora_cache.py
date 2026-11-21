@@ -1,20 +1,20 @@
 """
-lora_cache.py — Pre-compiled LoRA structural cache utilities.
+lora_cache.py - Pre-compiled LoRA structural cache utilities.
 
 Provides save/load helpers for caching the result of the expensive
-classify → fuse pipeline in compose_loras_v2.  The cache stores the
+classify -> fuse pipeline in compose_loras_v2.  The cache stores the
 raw fused (A, B, alpha) tensor pairs *before* strength scaling so that
 the strength slider still works correctly at inference time.
 
 Cache layout on disk:
   ComfyUI/models/SVDQLora/
-    <lora_stem>_precompiled.safetensors   ← fused tensors
-    <lora_stem>_precompiled.safetensors.meta.json ← mtime sidecar
+    <lora_stem>_precompiled.safetensors   <- fused tensors
+    <lora_stem>_precompiled.safetensors.meta.json <- mtime sidecar
 
 Tensor key format inside the .safetensors file:
-  "<module_key>__A"           → fused A tensor  [rank, in_features]
-  "<module_key>__B"           → fused B tensor  [out_features, rank]  (NOT strength-scaled)
-  "<module_key>__alpha"       → alpha scalar as float32 1-D tensor (optional, omitted if None)
+  "<module_key>__A"           -> fused A tensor  [rank, in_features]
+  "<module_key>__B"           -> fused B tensor  [out_features, rank]  (NOT strength-scaled)
+  "<module_key>__alpha"       -> alpha scalar as float32 1-D tensor (optional, omitted if None)
 
 Sidecar JSON format:
   {
@@ -177,7 +177,7 @@ def save_precompiled(
         return
 
     if not processed_groups:
-        logger.warning("[CACHE] processed_groups is empty — nothing to save.")
+        logger.warning("[CACHE] processed_groups is empty - nothing to save.")
         return
 
     flat: Dict[str, torch.Tensor] = {}
@@ -207,7 +207,7 @@ def save_precompiled(
                 flat[f"{module_key}{_SEP}{_ROLE_ALPHA}"] = torch.tensor([float(alpha)], dtype=torch.float32)
 
     if not flat:
-        logger.warning("[CACHE] No valid tensors to write after filtering — cache not saved.")
+        logger.warning("[CACHE] No valid tensors to write after filtering - cache not saved.")
         return
 
     try:
@@ -217,7 +217,7 @@ def save_precompiled(
         tmp_path = cache_path.with_suffix(".safetensors.tmp")
         st_save_file(flat, str(tmp_path))
         os.replace(str(tmp_path), str(cache_path))
-        logger.info(f"[CACHE SAVE] Written {len(processed_groups)} module entries → {cache_path}")
+        logger.info(f"[CACHE SAVE] Written {len(processed_groups)} module entries -> {cache_path}")
     except Exception as exc:
         logger.error(f"[CACHE] Failed to write {cache_path}: {exc}")
         # Clean up temp file if it was created
@@ -257,7 +257,7 @@ def load_precompiled(
     Load a precompiled cache file and reconstruct the ``processed_groups`` dict.
 
     Returns:
-        ``{ module_key: (A, B, alpha_or_None) }`` — identical structure to
+        ``{ module_key: (A, B, alpha_or_None) }`` - identical structure to
         what ``compose_loras_v2`` produces after the classify+fuse stage.
         Returns an empty dict on any error so the caller can fall back to
         a full re-fuse gracefully.
@@ -289,7 +289,7 @@ def load_precompiled(
         # module_key itself may contain dots but never "__"
         sep_idx = flat_key.rfind(_SEP)
         if sep_idx == -1:
-            logger.warning(f"[CACHE] Unrecognised flat key format: '{flat_key}' — skipping.")
+            logger.warning(f"[CACHE] Unrecognised flat key format: '{flat_key}' - skipping.")
             continue
         module_key = flat_key[:sep_idx]
         role = flat_key[sep_idx + len(_SEP):]
@@ -302,7 +302,7 @@ def load_precompiled(
         alpha_tensor = parts.get(_ROLE_ALPHA)  # 1-D float32 scalar tensor or None
 
         if A is None or B is None:
-            logger.warning(f"[CACHE] Incomplete entry for '{module_key}' (missing A or B) — skipping.")
+            logger.warning(f"[CACHE] Incomplete entry for '{module_key}' (missing A or B) - skipping.")
             continue
 
         # Convert alpha back to the same form compose_loras_v2 expects:
@@ -313,5 +313,5 @@ def load_precompiled(
 
         processed_groups[module_key] = (A, B, alpha)
 
-    logger.info(f"[CACHE LOAD] Loaded {len(processed_groups)} module entries ← {cache_path.name}")
+    logger.info(f"[CACHE LOAD] Loaded {len(processed_groups)} module entries <- {cache_path.name}")
     return processed_groups

@@ -2,8 +2,8 @@
 Patch transformers auto_docstring for Qwen VL CausalLM ModelOutput classes.
 
 When Hugging Face transformers merges CausalLMOutputWithPast docs into Qwen VL
-ModelOutput subclasses, validation falls back to ModelOutputArgs — which lacks
-loss/logits — and prints [ERROR] at import time.
+ModelOutput subclasses, validation falls back to ModelOutputArgs - which lacks
+loss/logits - and prints [ERROR] at import time.
 
 Fully automatic at ComfyUI prestartup (no user env vars):
   - Probe upstream ModelOutputArgs before installing any wrapper.
@@ -188,7 +188,7 @@ def apply_transformers_causal_lm_docstring_patch() -> bool:
     if _qwen_vl_modeling_already_imported():
         logger.warning(
             "CausalLM ModelOutput docstring patch skipped: Qwen VL modeling modules "
-            "already imported before prestartup — restart ComfyUI"
+            "already imported before prestartup - restart ComfyUI"
         )
         return False
 
@@ -209,7 +209,7 @@ def apply_transformers_causal_lm_docstring_patch() -> bool:
     if _upstream_model_output_args_has_causal_lm_fields(auto_docstring_module):
         logger.info(
             "CausalLM ModelOutput docstring patch skipped: transformers ModelOutputArgs "
-            "already documents loss and logits (upstream fixed — patch not installed)"
+            "already documents loss and logits (upstream fixed - patch not installed)"
         )
         return False
 
@@ -217,7 +217,7 @@ def apply_transformers_causal_lm_docstring_patch() -> bool:
     if import_probe is True:
         logger.info(
             "CausalLM ModelOutput docstring patch skipped: Qwen VL ModelOutput docstrings "
-            "resolve loss/logits without docstring errors (upstream fixed — patch not installed)"
+            "resolve loss/logits without docstring errors (upstream fixed - patch not installed)"
         )
         return False
 

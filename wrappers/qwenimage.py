@@ -84,7 +84,7 @@ class ComfyQwenImageWrapper(nn.Module):
         self.apply_awq_mod = apply_awq_mod
 
         # Log CPU offload setting on initialization
-        logger.info(f"🔧 CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
+        logger.info(f"[tool] CPU offload setting: '{cpu_offload_setting}' (VRAM margin: {vram_margin_gb}GB)")
 
         self.customized_forward = customized_forward
         self.forward_kwargs = forward_kwargs or {}
@@ -232,7 +232,7 @@ class ComfyQwenImageWrapper(nn.Module):
         # model_is_dirty: the transformer has LoRA applied but this wrapper expects
         # none. Only relevant if we were once a LoRA manager (i.e. we previously
         # composed into the transformer). A bypass-path wrapper that has never
-        # managed LoRAs must NOT declare the transformer dirty — another wrapper
+        # managed LoRAs must NOT declare the transformer dirty - another wrapper
         # (the ret_model wrapper) may have legitimately composed into it.
         model_is_dirty = (
             self._has_ever_had_loras and  # We were (or are) a LoRA manager

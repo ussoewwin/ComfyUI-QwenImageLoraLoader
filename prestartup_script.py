@@ -4,11 +4,142 @@ Inject apply_rotary_emb on comfy.ldm.qwen_image.model before any custom node __i
 ComfyUI-nunchaku loads before ComfyUI-QwenImageLoraLoader (Windows listdir order), so
 __init__.py alone is too late. prestartup_script.py runs from main.execute_prestartup_script().
 """
+import importlib
+import importlib.machinery
 import importlib.util
+import locale
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Source-encoding rescue (upstream support).
+#
+# Python decodes a .py file as UTF-8 unless it carries a coding cookie. When an
+# editor or an installer pipeline re-saves a file in a legacy code page (ANSI,
+# cp936/GBK, cp932, cp1252), the file is no longer valid UTF-8 and the import
+# dies with "(unicode error) 'utf-8' codec can't decode byte 0xNN". The pack
+# that owns the file then fails to load, whichever pack it is -- not only this
+# one.
+#
+# The stock loader still runs first, byte for byte, .pyc caching included. This
+# hook only steps in when that decode fails: it retries the same bytes with the
+# local code page and the common legacy ones, and logs every rescued file with
+# the code page it used. Nothing is silenced: the log names the file, the byte
+# offset, and the fact that its text may differ from the author's original.
+# ---------------------------------------------------------------------------
+_RESCUED_SOURCES = []
+_RESCUE_CANDIDATES = ("cp936", "cp932", "cp1252", "big5", "shift_jis", "latin-1")
+
+
+def _decode_failure_offset(message):
+    match = re.search(r"position (\d+)", message or "")
+    return int(match.group(1)) if match else -1
+
+
+def _is_decode_failure(exc):
+    text = str(exc)
+    return "codec can't decode" in text or "unicode error" in text
+
+
+def _rescue_compile(data, path, exc):
+    """Compile bytes the stock UTF-8 decode rejected, using a legacy code page."""
+    raw = data if isinstance(data, (bytes, bytearray)) else data.encode("utf-8", "surrogatepass")
+    candidates = []
+    preferred = locale.getpreferredencoding(False)
+    if preferred:
+        candidates.append(preferred)
+    candidates.extend(_RESCUE_CANDIDATES)
+    tried = set()
+    for encoding in candidates:
+        key = encoding.lower()
+        if key in tried:
+            continue
+        tried.add(key)
+        try:
+            source = raw.decode(encoding)
+        except (UnicodeDecodeError, LookupError):
+            continue
+        try:
+            code = compile(source, path, "exec", dont_inherit=True)
+        except SyntaxError:
+            continue
+        _RESCUED_SOURCES.append((path, encoding))
+        logger.warning(
+            "ComfyUI-QwenImageLoraLoader prestartup: source rescue: %s is not valid UTF-8 "
+            "(first invalid byte at %d); compiled as %s. This file was saved outside UTF-8 "
+            "(ANSI / cp936 / cp932 / cp1252). Re-download it or re-save it as UTF-8; text from "
+            "this file may differ from the author's original.",
+            path, _decode_failure_offset(str(exc)), encoding,
+        )
+        return code
+    raise exc
+
+
+def _install_source_encoding_rescue():
+    """Cover every source import in this process, before ComfyUI loads the packs."""
+    disabled = os.environ.get("HSWQ_NO_ENCODING_RESCUE", "").strip()
+    if disabled not in ("", "0"):
+        logger.warning(
+            "ComfyUI-QwenImageLoraLoader prestartup: source rescue disabled by "
+            "HSWQ_NO_ENCODING_RESCUE=%s",
+            disabled,
+        )
+        return False
+
+    loader_cls = importlib.machinery.SourceFileLoader
+    if not getattr(loader_cls.get_code, "__hswq_encoding_rescue__", False):
+        original_get_code = loader_cls.get_code
+
+        def get_code(self, fullname):
+            try:
+                return original_get_code(self, fullname)
+            except SyntaxError as exc:
+                if not _is_decode_failure(exc):
+                    raise
+                path = self.get_filename(fullname)
+                return _rescue_compile(self.get_data(path), path, exc)
+
+        get_code.__hswq_encoding_rescue__ = True
+        loader_cls.get_code = get_code
+
+    # Subclasses that override get_code (ComfyUI's governance loader does) reach
+    # the source through source_to_code instead; wrap the class that actually
+    # defines it. importlib.abc.SourceLoader is a different class, so resolve it
+    # from the real loader's MRO rather than assuming a module.
+    source_loader = None
+    for klass in loader_cls.__mro__:
+        if "source_to_code" in klass.__dict__:
+            source_loader = klass
+            break
+    if source_loader is None:
+        return True
+    if not getattr(source_loader.source_to_code, "__hswq_encoding_rescue__", False):
+        original_source_to_code = source_loader.source_to_code
+
+        def source_to_code(self, data, path, *, _optimize=-1):
+            try:
+                return original_source_to_code(self, data, path, _optimize=_optimize)
+            except SyntaxError as exc:
+                if not _is_decode_failure(exc):
+                    raise
+                return _rescue_compile(data, path, exc)
+
+        source_to_code.__hswq_encoding_rescue__ = True
+        source_loader.source_to_code = source_to_code
+    return True
+
+
+_ENCODING_RESCUE_INSTALLED = False
+try:
+    _ENCODING_RESCUE_INSTALLED = _install_source_encoding_rescue()
+except Exception:
+    logger.exception(
+        "ComfyUI-QwenImageLoraLoader prestartup: source rescue could not be installed"
+    )
+
 
 _PATCH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches")
 _NUNCHAKU_PATCH_PATH = os.path.join(_PATCH_DIR, "nunchaku_patch.py")

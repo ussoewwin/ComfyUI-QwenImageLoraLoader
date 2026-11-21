@@ -127,20 +127,20 @@ def _log_lora_format_detection(lora_name: str, detection: Dict[str, Any]) -> Non
     has_ia3 = detection["has_ia3"]
 
     if has_standard:
-        logger.info("  ✅ Standard LoRA (Rank-Decomposed)")
+        logger.info("  [OK] Standard LoRA (Rank-Decomposed)")
     if has_lokr:
-        logger.info("  ❌ LoKR (Lycoris) - Not Supported")
+        logger.info("  [X] LoKR (Lycoris) - Not Supported")
     if has_loha:
-        logger.info("  ❌ LoHa - Not Supported")
+        logger.info("  [X] LoHa - Not Supported")
     if has_ia3:
-        logger.info("  ❌ IA3 - Not Supported")
+        logger.info("  [X] IA3 - Not Supported")
 
     if not (has_standard or has_lokr or has_loha or has_ia3):
-        logger.info("  ❌ Unknown/Unsupported (no known LoRA keys detected)")
+        logger.info("  [X] Unknown/Unsupported (no known LoRA keys detected)")
 
     if has_standard:
         logger.info("")
-        logger.info("✅ Standard LoRA Details:")
+        logger.info("[OK] Standard LoRA Details:")
         logger.info("   Supported weight keys:")
         logger.info("   - lora_up.weight / lora_down.weight")
         logger.info("   - lora.up.weight / lora.down.weight")
@@ -150,7 +150,7 @@ def _log_lora_format_detection(lora_name: str, detection: Dict[str, Any]) -> Non
 
     if has_lokr:
         logger.info("")
-        logger.info("❌ LoKR (Lycoris) - Not Supported")
+        logger.info("[X] LoKR (Lycoris) - Not Supported")
         logger.info("   Issue: LoRAs in LoKR format (created by Lycoris) are not supported.")
         logger.info("   Important Note: This limitation applies specifically to Nunchaku quantization models.")
         logger.info("   LoKR format LoRAs may work with standard (non-quantized) Qwen Image models, but this node is designed for Nunchaku models only.")
@@ -165,7 +165,7 @@ def _log_lora_format_detection(lora_name: str, detection: Dict[str, Any]) -> Non
 
     if has_loha:
         logger.info("")
-        logger.info("❌ LoHa - Not Supported")
+        logger.info("[X] LoHa - Not Supported")
         logger.info("   Issue: LoRAs in LoHa format are not supported for Nunchaku quantization models in this loader.")
         logger.info("   Please convert LoHa to Standard LoRA format before use.")
         sample = detection.get("sample_loha") or []
@@ -174,7 +174,7 @@ def _log_lora_format_detection(lora_name: str, detection: Dict[str, Any]) -> Non
 
     if has_ia3:
         logger.info("")
-        logger.info("❌ IA3 - Not Supported")
+        logger.info("[X] IA3 - Not Supported")
         logger.info("   Issue: IA3 format is not supported for Nunchaku models in this loader.")
         logger.info("   Please use Standard LoRA formats.")
         sample = detection.get("sample_ia3") or []
@@ -535,8 +535,8 @@ def _convert_lokr_to_lora(lokr_weights: Dict[str, torch.Tensor], module_in_featu
     original_w1 = w1
     original_w2 = w2
     
-    # LoKR uses Kronecker product approximation: ΔW = w2 @ w1
-    # Standard LoRA uses: ΔW = B @ A
+    # LoKR uses Kronecker product approximation: deltaW = w2 @ w1
+    # Standard LoRA uses: deltaW = B @ A
     # We need to convert w2 @ w1 to B @ A format
     
     # w1 and w2 shapes can vary, handle common cases
@@ -1326,7 +1326,7 @@ def compose_loras_v2(
         should_apply_awq_mod = False
     
     if should_apply_awq_mod:
-        logger.info("⚠️  AWQ Modulation Layer LoRA Injection ENABLED (via override).")
+        logger.info("[warn]  AWQ Modulation Layer LoRA Injection ENABLED (via override).")
 
     # --- 3. Debug Inspection (First LoRA) ---
     # Safe unpack: entries may be 2-tuples (path, strength) or 3-tuples
@@ -1598,7 +1598,7 @@ def compose_loras_v2(
                 # Standard Linear / Nunchaku
                 if hasattr(module, "proj_down"):
                      target_dtype = module.proj_down.dtype
-                     # Nunchaku: skip the CPU→CPU device pre-transfer.
+                     # Nunchaku: skip the CPU->CPU device pre-transfer.
                      # _apply_lora_to_module will move these to the compute device (CUDA)
                      # itself. Pre-transferring to CPU here is a redundant memcpy (~960
                      # copies per generation) that wastes CPU memory bandwidth.
@@ -1671,7 +1671,7 @@ def compose_loras_v2(
     t_total_elapsed = t_apply_end - t_start
 
     if skipped_lora_names:
-        logger.warning("""\n⚠️  Some weights from the following LoRAs were automatically skipped 
+        logger.warning("""\n[warn]  Some weights from the following LoRAs were automatically skipped 
         because modulation layers (img_mod/txt_mod) are extremely sensitive to Nunchaku quantization. 
         To override this and force loading, set environment variable QWENIMAGE_LORA_APPLY_AWQ_MOD=1:""")
         for source in sorted(list(skipped_lora_names)):
@@ -1680,21 +1680,21 @@ def compose_loras_v2(
 
     # Display Report Card
     card_width = 70
-    border = "┌" + "─" * (card_width - 2) + "┐"
-    divider = "├" + "─" * (card_width - 2) + "┤"
-    bottom = "└" + "─" * (card_width - 2) + "┘"
+    border = "+" + "-" * (card_width - 2) + "+"
+    divider = "+" + "-" * (card_width - 2) + "+"
+    bottom = "+" + "-" * (card_width - 2) + "+"
 
     def _log_line(left_text: str, right_text: str = ""):
         padding_len = card_width - 4 - len(left_text) - len(right_text)
         if padding_len < 0:
             left_text = left_text[:card_width - 8 - len(right_text)] + "..."
             padding_len = card_width - 4 - len(left_text) - len(right_text)
-        logger.info(f"│ {left_text}{' ' * padding_len}{right_text} │")
+        logger.info(f"| {left_text}{' ' * padding_len}{right_text} |")
 
     logger.info(border)
     title = "NUNCHAKU QWEN LORA COMPOSITION REPORT"
     title_padding = (card_width - 2 - len(title)) // 2
-    logger.info(f"│{' ' * title_padding}{title}{' ' * (card_width - 2 - len(title) - title_padding)}│")
+    logger.info(f"|{' ' * title_padding}{title}{' ' * (card_width - 2 - len(title) - title_padding)}|")
     logger.info(divider)
     
     for i, entry in enumerate(report_entries, 1):
@@ -1704,7 +1704,7 @@ def compose_loras_v2(
         _log_line(f"   - Status:   {entry['load_type']}")
         _log_line(f"   - Time:     {entry['elapsed']:.3f}s")
         if i < len(report_entries):
-            logger.info("│" + " " * (card_width - 2) + "│")
+            logger.info("|" + " " * (card_width - 2) + "|")
             
     logger.info(divider)
     _log_line(f"Total Processed:      {len(report_entries)} LoRA(s)")
@@ -1785,7 +1785,7 @@ def set_lora_strength_v2(model: nn.Module, strength: float) -> None:
     for name, info in model._lora_slots.items():
         module = _get_module_by_name(model, name)
         # Skip if module not found, no appended weights, or no base_rank recorded
-        # (awq_w4a16 modulation slots don't store base_rank — they're handled by forward patching)
+        # (awq_w4a16 modulation slots don't store base_rank - they're handled by forward patching)
         if module is None or info.get("appended", 0) <= 0 or "base_rank" not in info:
             continue
 

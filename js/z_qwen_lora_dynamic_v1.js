@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-console.log("★★★ z_qwen_lora_dynamic_v1.js: Qwen Image LoRA Stack V1 ★★★");
+console.log("*** z_qwen_lora_dynamic_v1.js: Qwen Image LoRA Stack V1 ***");
 
 // Use LiteGraph built-in colors to ensure Light/Dark Mode compatibility
 const getColors = () => ({
@@ -104,8 +104,13 @@ class NunchakuLoraWidget {
 
     ctx.textAlign = "center";
 
-    // ▶ symbol
-    ctx.fillText("▶", valueCenter + arrowGap, midY + 4);
+    // right arrow (drawn as a triangle)
+    ctx.beginPath();
+    ctx.moveTo(valueCenter + arrowGap - 4, midY - 5);
+    ctx.lineTo(valueCenter + arrowGap + 4, midY);
+    ctx.lineTo(valueCenter + arrowGap - 4, midY + 5);
+    ctx.closePath();
+    ctx.fill();
     this.hitAreas.strengthInc = [valueCenter + arrowGap - 10, valueCenter + arrowGap + 10];
 
     // Numeric value
@@ -114,8 +119,13 @@ class NunchakuLoraWidget {
     ctx.fillText(valStr, valueCenter, midY + 4);
     this.hitAreas.strengthVal = [valueCenter - 18, valueCenter + 18];
 
-    // ◀ symbol
-    ctx.fillText("◀", valueCenter - arrowGap, midY + 4);
+    // left arrow (drawn as a triangle)
+    ctx.beginPath();
+    ctx.moveTo(valueCenter - arrowGap + 4, midY - 5);
+    ctx.lineTo(valueCenter - arrowGap - 4, midY);
+    ctx.lineTo(valueCenter - arrowGap + 4, midY + 5);
+    ctx.closePath();
+    ctx.fill();
     this.hitAreas.strengthDec = [valueCenter - arrowGap - 10, valueCenter - arrowGap + 10];
 
     ctx.restore();
@@ -198,7 +208,7 @@ app.registerExtension({
       }
 
       // Add "Add Lora" button
-      const btn = this.addWidget("button", "➕ Add Lora", null, (val, canvas, node, pos, event) => {
+      const btn = this.addWidget("button", " Add Lora", null, (val, canvas, node, pos, event) => {
         this.addLoraRowWithChooser(event);
       });
 
@@ -238,7 +248,7 @@ app.registerExtension({
       w.value = data || { enabled: true, lora_name: "None", lora_strength: 1.0 };
 
       // Insert above the button
-      const btnIdx = this.widgets.findIndex(x => x.name === "➕ Add Lora");
+      const btnIdx = this.widgets.findIndex(x => x.name === " Add Lora");
       this.widgets.splice(btnIdx, 0, w);
       this.loraWidgets.push(w);
 
@@ -273,22 +283,22 @@ app.registerExtension({
         const widget = slot.widget;
         return [
           {
-            content: widget.value.enabled ? "⚫ Toggle Off" : "🟢 Toggle On",
+            content: widget.value.enabled ? " Toggle Off" : " Toggle On",
             callback: () => {
               widget.value.enabled = !widget.value.enabled;
               this.setDirtyCanvas(true);
             }
           },
           {
-            content: "⬆️ Move Up",
+            content: " Move Up",
             callback: () => this.moveLora(widget, -1)
           },
           {
-            content: "⬇️ Move Down",
+            content: " Move Down",
             callback: () => this.moveLora(widget, 1)
           },
           {
-            content: "🗑️ Remove",
+            content: " Remove",
             callback: () => {
               const idx = this.widgets.indexOf(widget);
               this.widgets.splice(idx, 1);

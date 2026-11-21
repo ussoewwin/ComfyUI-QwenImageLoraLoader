@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.7.0 (最新)
+### v2.7.1 (最新)
+- **修复**：`prestartup_script.py` 不再导入 `torch` —— 移除 `patches/nunchaku_patch.py` 中模块级的 `import torch`，`apply_qwen_image_apply_rotary_emb_compat()` 改用导入钩子而非导入 `comfy.ldm`。因此 ComfyUI 不再因本节点打印 `WARNING: Potential Error in code: Torch already imported`（实测：prestartup 结束后 `torch=False comfy=False`）。
+  - 钩子在 `comfy.ldm.qwen_image.model` 被导入的瞬间注入别名；若该模块已在 `sys.modules` 中则立即注入。三道跳过判定（已注入 / ComfyUI 原生导出该符号 / ComfyUI-nunchaku 不再导入）保持不变。
+  - 在 ComfyUI 0.46.0 上仍是第二道判定生效：`apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb`，不安装别名。
+- **移除**：用于隐藏该警告的 `logging` 过滤器（`_TorchPreimportWarningFilter`、`suppress_torch_preimport_warning`、`QWENIMAGE_SUPPRESS_TORCH_WARNING`）。消息不再被任何地方抑制 —— 它消失是因为导入本身不再发生。
+- **技术详情**：参阅 [v2.7.1 发布说明](v2.7.1.md)。
+
+### v2.7.0
 - **新增**：为尚未更新 transformers 的用户恢复 `patches/transformers_qwen_vl_docstring_patch.py` 及其在 `prestartup_script.py` 中的接线 —— 低于 5.23 的版本在导入 `qwen3_vl` / `qwen2_5_vl` 时仍会打印 `[ERROR] ... loss/logits ... but not documented`，这些用户需要该防护。
   - v2.6.9 删除该补丁的依据是 transformers 5.23.0 不再通过 `ModelOutputArgs` 合并父类文档。该结论只对 5.23.0 及之后成立；更早版本仍会合并，因此那两行 `[ERROR]` 仍会出现。
   - 新栈上的行为不变：两道门都恢复，导入探测在子进程中执行，导入干净时不安装任何包装（transformers 5.23.0：stdout 与 stderr 的 `[ERROR]` 均为 0 行）。

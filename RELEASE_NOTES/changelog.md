@@ -5,7 +5,14 @@
   </tr>
 </table>
 
-### v2.7.0 (latest)
+### v2.7.1 (latest)
+- **Fixed**: `prestartup_script.py` no longer imports `torch` - the module-level `import torch` in `patches/nunchaku_patch.py` is gone and `apply_qwen_image_apply_rotary_emb_compat()` arms the alias through an import hook instead of importing `comfy.ldm`. ComfyUI therefore no longer logs `WARNING: Potential Error in code: Torch already imported` because of this node (measured: `torch=False comfy=False` after the prestartup pass).
+  - The hook applies the alias the moment `comfy.ldm.qwen_image.model` is imported, and immediately when that module is already in `sys.modules`. The three skip gates (already shimmed / ComfyUI exports the symbol natively / ComfyUI-nunchaku no longer imports it) are unchanged.
+  - On ComfyUI 0.46.0 the second gate still wins: `apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb`, so no alias is installed.
+- **Removed**: the `logging` filter that hid that warning (`_TorchPreimportWarningFilter`, `suppress_torch_preimport_warning`, `QWENIMAGE_SUPPRESS_TORCH_WARNING`). The message is no longer suppressed anywhere - it disappeared because the import no longer happens.
+- **Technical Details**: See [v2.7.1 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.7.1)
+
+### v2.7.0
 - **Added**: `patches/transformers_qwen_vl_docstring_patch.py` and its `prestartup_script.py` wiring are restored for users who have not updated transformers - releases older than 5.23 still print `[ERROR] ... loss/logits ... but not documented` when `qwen3_vl` / `qwen2_5_vl` are imported, and those users need the guard.
   - v2.6.9 removed the patch on the evidence that transformers 5.23.0 no longer merges the parent docs through `ModelOutputArgs`. That evidence holds for 5.23.0 and later only; older releases still merge, so the two `[ERROR]` lines still appear there.
   - Behaviour on new stacks is unchanged: both gates are back, the import probe runs in a subprocess, and nothing is installed when the import is clean (transformers 5.23.0: 0 `[ERROR]` lines on stdout and 0 on stderr).

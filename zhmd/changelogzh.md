@@ -5,7 +5,16 @@
   </tr>
 </table>
 
-### v2.7.1 (最新)
+### v2.7.2 (最新)
+- **修复**：**出荷源文件全部改为 ASCII，并在前置启动阶段救回被以旧代码页重新保存的源文件** —— 若 `.py` 被编辑器或安装流程以 ANSI / cp936 / cp932 / cp1252 重新保存，它就不再是有效的 UTF-8，导入时报 `(unicode error) 'utf-8' codec can't decode byte 0xNN`，该文件所属的包随之加载失败。本节点现在把这个情况一并接下来，不限于本包。（[Issue #35](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/35)）
+  - 出荷源文件仅含 ASCII：31 个出荷 `.py` / `.js` 中有 20 个带 239 个非 ASCII 字符（日志里的表情、制表符、箭头、控件名前缀）。全部替换为 ASCII（`[i]`、`[OK]`、`[X]`、`[warn]`、`[box]`、`[reload]`、`[tool]`、`-`、`->`、`<-`、`+`/`-`/`|`、`delta`、`OK`）；V1 堆节点的强度箭头改为用 canvas 画三角形，不再使用 `U+25B6` / `U+25C0` 字形；控件名不再带表情前缀。改动后实测：31 个出荷文件非 ASCII 为 0，23 个 `.py` 的 `compile` 全部通过，8 个 `.js` 的 `node --check` 全部通过。
+  - 为何 ASCII 才是根治：ASCII 字节在任何代码页转换下都不变，文件以 ANSI 重新保存后仍逐字节相同，用户的编辑器再也无法破坏本包。
+  - 前置启动阶段的源文件救回：`prestartup_script.py` 包裹 `SourceFileLoader.get_code` 与定义 `source_to_code` 的那个类，仅在原解码失败时介入。它依次尝试本地代码页、`cp936`、`cp932`、`cp1252`、`big5`、`shift_jis`、`latin-1`，并输出文件名、首个非法字节位置与实际采用的代码页 —— 不做任何隐藏。实测：cp936 保存的模块、包内子模块、以及覆写 `get_code` 的加载器（与 ComfyUI governance 加载器同型）均可加载；真正的 `SyntaxError` 仍照原样抛出；重复安装不会重复包裹。
+  - 正常路径无额外成本：仍先走原加载器，逐字节不变，`.pyc` 缓存照旧。设置 `HSWQ_NO_ENCODING_RESCUE=1` 可关闭，关闭本身也会输出日志。
+  - 需明示的限制：救回的文件保留其字节；保存时代码页无法表示的字符当时已被替换，因此救回的文本可能与作者原文不同。日志会说明这一点。
+- **技术详情**：参阅 [v2.7.2 发布说明](v2.7.2.md)。
+
+### v2.7.1
 - **修复**：`prestartup_script.py` 不再导入 `torch` —— 移除 `patches/nunchaku_patch.py` 中模块级的 `import torch`，`apply_qwen_image_apply_rotary_emb_compat()` 改用导入钩子而非导入 `comfy.ldm`。因此 ComfyUI 不再因本节点打印 `WARNING: Potential Error in code: Torch already imported`（实测：prestartup 结束后 `torch=False comfy=False`；[Issue #53](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/53)、[Issue #51](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/51)）。
   - 钩子在 `comfy.ldm.qwen_image.model` 被导入的瞬间注入别名；若该模块已在 `sys.modules` 中则立即注入。三道跳过判定（已注入 / ComfyUI 原生导出该符号 / ComfyUI-nunchaku 不再导入）保持不变。
   - 在 ComfyUI 0.46.0 上仍是第二道判定生效：`apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb`，不安装别名。

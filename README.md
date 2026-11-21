@@ -9,21 +9,12 @@
 
 A ComfyUI custom node for loading and applying LoRA (Low-Rank Adaptation) to Nunchaku Qwen Image and Z-ImageTurbo models, plus a Krea2 depth/openpose ControlNet LoRA loader. ComfyUI Nodes 2.0 compatible. **Requires Nunchaku 1.2.0+ and ComfyUI-Nunchaku 1.2.0+ for v4 functionality.**
 
-## ⚠️ **DEVELOPMENT STATUS**
-
-**Currently under development and testing. Debug logs are being output extensively. This does not affect functionality.**
-
-> Latest release: [v2.7.0 Release Notes](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/releases/tag/v2.7.0)
-> 
-
 ## Source
 
 This LoRA loader was extracted and modified from GavChap's fork:
 - **Original Fork**: [GavChap/ComfyUI-nunchaku (qwen-lora-suport-standalone branch)](https://github.com/GavChap/ComfyUI-nunchaku/tree/qwen-lora-suport-standalone)
 - **Extraction**: LoRA functionality was extracted from the full fork to create an independent custom node
 - **Integration**: Modified to work with the official ComfyUI-nunchaku plugin
-
-
 
 ## 🎉 MAJOR UPDATE: v2.2.0 - Nunchaku Z Image Turbo LoRA Support Added!
 

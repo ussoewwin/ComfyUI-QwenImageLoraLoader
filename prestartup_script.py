@@ -25,8 +25,7 @@ def _load_patch_module(module_name: str, path: str):
     return module
 
 
-# Load the nunchaku patch module once; reuse it for warning suppression and the
-# apply_rotary_emb compat shim.
+# Load the nunchaku patch module once; reuse it for the apply_rotary_emb compat shim.
 _patch_module = None
 try:
     _patch_module = _load_patch_module(

@@ -6,7 +6,7 @@
 </table>
 
 ### v2.7.1 (latest)
-- **Fixed**: `prestartup_script.py` no longer imports `torch` - the module-level `import torch` in `patches/nunchaku_patch.py` is gone and `apply_qwen_image_apply_rotary_emb_compat()` arms the alias through an import hook instead of importing `comfy.ldm`. ComfyUI therefore no longer logs `WARNING: Potential Error in code: Torch already imported` because of this node (measured: `torch=False comfy=False` after the prestartup pass).
+- **Fixed**: `prestartup_script.py` no longer imports `torch` - the module-level `import torch` in `patches/nunchaku_patch.py` is gone and `apply_qwen_image_apply_rotary_emb_compat()` arms the alias through an import hook instead of importing `comfy.ldm`. ComfyUI therefore no longer logs `WARNING: Potential Error in code: Torch already imported` because of this node (measured: `torch=False comfy=False` after the prestartup pass). ([Issue #53](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/53), [Issue #51](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/51))
   - The hook applies the alias the moment `comfy.ldm.qwen_image.model` is imported, and immediately when that module is already in `sys.modules`. The three skip gates (already shimmed / ComfyUI exports the symbol natively / ComfyUI-nunchaku no longer imports it) are unchanged.
   - On ComfyUI 0.46.0 the second gate still wins: `apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb`, so no alias is installed.
 - **Removed**: the `logging` filter that hid that warning (`_TorchPreimportWarningFilter`, `suppress_torch_preimport_warning`, `QWENIMAGE_SUPPRESS_TORCH_WARNING`). The message is no longer suppressed anywhere - it disappeared because the import no longer happens.

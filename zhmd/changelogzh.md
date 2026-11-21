@@ -6,7 +6,7 @@
 </table>
 
 ### v2.7.1 (最新)
-- **修复**：`prestartup_script.py` 不再导入 `torch` —— 移除 `patches/nunchaku_patch.py` 中模块级的 `import torch`，`apply_qwen_image_apply_rotary_emb_compat()` 改用导入钩子而非导入 `comfy.ldm`。因此 ComfyUI 不再因本节点打印 `WARNING: Potential Error in code: Torch already imported`（实测：prestartup 结束后 `torch=False comfy=False`）。
+- **修复**：`prestartup_script.py` 不再导入 `torch` —— 移除 `patches/nunchaku_patch.py` 中模块级的 `import torch`，`apply_qwen_image_apply_rotary_emb_compat()` 改用导入钩子而非导入 `comfy.ldm`。因此 ComfyUI 不再因本节点打印 `WARNING: Potential Error in code: Torch already imported`（实测：prestartup 结束后 `torch=False comfy=False`；[Issue #53](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/53)、[Issue #51](https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader/issues/51)）。
   - 钩子在 `comfy.ldm.qwen_image.model` 被导入的瞬间注入别名；若该模块已在 `sys.modules` 中则立即注入。三道跳过判定（已注入 / ComfyUI 原生导出该符号 / ComfyUI-nunchaku 不再导入）保持不变。
   - 在 ComfyUI 0.46.0 上仍是第二道判定生效：`apply_rotary_emb compat skipped: ComfyUI already exports apply_rotary_emb`，不安装别名。
 - **移除**：用于隐藏该警告的 `logging` 过滤器（`_TorchPreimportWarningFilter`、`suppress_torch_preimport_warning`、`QWENIMAGE_SUPPRESS_TORCH_WARNING`）。消息不再被任何地方抑制 —— 它消失是因为导入本身不再发生。
